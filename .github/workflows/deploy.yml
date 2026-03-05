@@ -1,0 +1,56 @@
+name: Deploy to Yandex Cloud Functions
+
+# Триггер: когда происходит push в ветку main
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Клонируем код репозитория
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Устанавливаем Node.js (нужен, чтобы установить зависимости)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # 3. Устанавливаем зависимости (они попадут в итоговый архив функции)
+      - name: Install dependencies
+        run: npm ci --only=production
+
+      # 4. Самый важный шаг: Деплой в Yandex Cloud!
+      - name: Deploy Function
+        id: sls-func
+        uses: yc-actions/yc-sls-function@v4
+        with:
+          # Секрет с ключом сервисного аккаунта
+          yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
+          # ID каталога
+          folder-id: ${{ secrets.FOLDER_ID }}
+          # ID функции (той самой, заготовки)
+          function-name: 'my-git-site' # Можно искать по имени, но мы используем ID
+          function-id: ${{ secrets.FUNCTION_ID }} # Надёжнее использовать ID
+          # Среда выполнения и точка входа
+          runtime: 'nodejs20' # Выбираем актуальную версию
+          entrypoint: 'index.handler' # Формат: имя_файла.имя_экспортируемой_функции
+          # Память и таймаут
+          memory: '256Mb'
+          # Что включаем в архив функции
+          include: |
+            ./index.js
+            ./node_modules
+            package.json
+          # Игнорируем исходники TypeScript, если бы они были
+          exclude: |
+            **/*.ts
+          # Метка версии (полезно для отладки)
+          tags: |
+            ${{ github.sha }}
+          # Асинхронный режим (для простого сайта не нужен)
+          async: false

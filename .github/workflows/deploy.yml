@@ -28,7 +28,7 @@ jobs:
           folder-id: ${{ secrets.FOLDER_ID }}
           # Используем имя функции (ту, которую создали в консоли)
           function-name: 'my-git-site'
-          runtime: 'nodejs20'
+          runtime: 'nodejs22'
           entrypoint: 'index.handler'
           memory: '256Mb'
           # Включаем только нужные файлы

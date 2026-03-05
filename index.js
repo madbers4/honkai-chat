@@ -3,7 +3,7 @@ let connections = new Set();        // множество активных conne
 let apiDomain = null;               // домен API Gateway (общий для всех)
 
 exports.handler = async (event, context) => {
-    const isWebSocket = event.requestContext && event.requestContext.routeKey;
+    const isWebSocket = event.requestContext && event.requestContext.connectionId;
 
     if (isWebSocket) {
         // === WebSocket-обработка ===

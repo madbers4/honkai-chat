@@ -1,8 +1,12 @@
-name: Deploy to Yandex Cloud Functions
+name: Deploy to Yandex Cloud VM
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
+
+env:
+  DEPLOY_PATH: /opt/honkai-chat
+  NODE_VERSION: '20'
 
 jobs:
   deploy:
@@ -14,27 +18,47 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci --only=production
+        run: npm ci
 
-      - name: Deploy Function
-        id: sls-func
-        uses: yc-actions/yc-sls-function@v4
-        with:
-          yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
-          folder-id: ${{ secrets.FOLDER_ID }}
-          function-name: 'my-git-site'
-          runtime: 'nodejs18'
-          entrypoint: 'index.handler'
-          memory: '256Mb'
-          service-account-id: ${{ secrets.SERVICE_ACCOUNT_ID }}   # ✅ добавляем ID сервисного аккаунта
-          include: |
-            ./index.js
-            ./node_modules
-            package.json
-          exclude: |
-            **/*.ts
-          async: false
+      - name: Build all workspaces
+        run: npm run build
+
+      - name: Copy scenario to server dist
+        run: cp -r server/src/scenario server/dist/scenario
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Rsync files to VM
+        run: |
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/deploy_key" \
+            --include='package.json' \
+            --include='package-lock.json' \
+            --include='shared/***' \
+            --include='server/package.json' \
+            --include='server/dist/***' \
+            --include='client/dist/***' \
+            --exclude='*' \
+            ./ ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:${{ env.DEPLOY_PATH }}/
+
+      - name: Install production deps and restart
+        run: |
+          ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
+            cd ${{ env.DEPLOY_PATH }}
+            npm ci --omit=dev
+            pm2 restart honkai-chat || pm2 start server/dist/index.js --name honkai-chat
+            pm2 save
+          EOF
+
+      - name: Cleanup SSH key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key

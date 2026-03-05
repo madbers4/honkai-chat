@@ -1,0 +1,511 @@
+{
+  "id": "penaconia",
+  "title": "Где исполняются мечты",
+  "description": "Групповой чат съемочной группы КММ в Пенаконии",
+  "initialCharacters": [
+    { "id": "clerk", "name": "Клерк КММ", "avatarUrl": "/avatars/clerk.svg", "stickerPack": [], "color": "#8B7355" },
+    { "id": "sunday", "name": "Воскресенье", "avatarUrl": "/avatars/sunday.svg", "stickerPack": [], "color": "#6B5B95" },
+    { "id": "firefly", "name": "Светлячок", "avatarUrl": "/avatars/firefly.svg", "stickerPack": [], "color": "#88B04B" },
+    { "id": "himeko", "name": "Химеко", "avatarUrl": "/avatars/himeko.svg", "stickerPack": [], "color": "#C0392B" },
+    { "id": "river", "name": "Река", "avatarUrl": "/avatars/river.svg", "stickerPack": [], "color": "#3498DB" }
+  ],
+  "steps": [
+    {
+      "type": "message",
+      "characterId": "river",
+      "messageType": "text",
+      "value": "О, новенький! Клерк КММ? Отлично.",
+      "_comment": "=== SCENE 1: ARRIVAL ==="
+    },
+    {
+      "type": "message",
+      "characterId": "river",
+      "messageType": "text",
+      "value": "Я — Река, режиссёр. Координирую отсюда, на площадку прийти не могу — долгая история, не спрашивай."
+    },
+    {
+      "type": "message",
+      "characterId": "river",
+      "messageType": "text",
+      "value": "Воскресенье введёт в курс. Слушай его."
+    },
+    {
+      "type": "message",
+      "characterId": "sunday",
+      "messageType": "text",
+      "value": "Добро пожаловать в Пенаконию. Мир снов."
+    },
+    {
+      "type": "message",
+      "characterId": "sunday",
+      "messageType": "text",
+      "value": "Фильм — короткий метр. Финансирование КММ. Дедлайн — завтра."
+    },
+    {
+      "type": "message",
+      "characterId": "sunday",
+      "messageType": "text",
+      "value": "Почти всё снято — осталось две сцены. Но у актёров «сломались эмоции». Механизм внутри встал, играть невозможно."
+    },
+    {
+      "type": "message",
+      "characterId": "river",
+      "messageType": "text",
+      "value": "В коробочке — шестерёнки. Механизм починки эмоций. Собери правильно рядом с актёром — и всё заработает."
+    },
+    {
+      "type": "message",
+      "characterId": "river",
+      "messageType": "text",
+      "value": "Просто доверься процессу!"
+    },
+    {
+      "type": "message",
+      "characterId": "sunday",
+      "messageType": "text",
+      "value": "Мне нужна твоя помощь. Я не могу сам подойти к Зарянке."
+    },
+    {
+      "type": "message",
+      "characterId": "sunday",
+      "messageType": "text",
+      "value": "Если я окажусь рядом — она меня узнает. А этого нельзя."
+    },
+    {
+      "type": "choice",
+      "target": "guest",
+      "options": [
+        {
+          "id": "take-box",
+          "label": "Взять коробочку и идти к Зарянке",
+          "actions": [
+            { "type": "message", "characterId": "clerk", "messageType": "text", "value": "Понял, иду." }
+          ]
+        },
+        {
+          "id": "ask-why",
+          "label": "Спросить, почему нельзя",
+          "actions": [
+            { "type": "message", "characterId": "clerk", "messageType": "text", "value": "А почему она не должна тебя узнать?" },
+            { "type": "delay", "ms": 1500 },
+            { "type": "message", "characterId": "sunday", "messageType": "text", "value": "...Это личное. Пожалуйста, просто помоги." },
+            { "type": "delay", "ms": 1000 },
+            { "type": "message", "characterId": "river", "messageType": "text", "value": "Так-так, не отвлекайтесь. Начинай с Зарянки!" }
+          ]
+        }
+      ],
+      "_comment": "Guest choice: go to Зарянка or ask why"
+    },
+    {
+      "type": "message",
+      "characterId": "river",
+      "messageType": "text",
+      "value": "Она у микрофона. Коробочку открывай — там шестерёнки. Справишься!"
+    },
+
+    {
+      "type": "message",
+      "characterId": "river",
+      "messageType": "text",
+      "value": "Шестерёнки — каждая отвечает за эмоцию. Собери в правильном порядке.",
+      "_comment": "=== SCENE 2: FIXING ЗАРЯНКА ==="
+    },
+    {
+      "type": "message",
+      "characterId": "river",
+      "messageType": "text",
+      "value": "Радость и грусть — всегда рядом, это важно!"
+    },
+    {
+      "type": "switchGuestMode",
+      "mode": "free",
+      "_comment": "Guest does physical activity — free chat while fixing Зарянка"
+    },
+    {
+      "type": "choice",
+      "target": "actor",
+      "options": [
+        {
+          "id": "robin-fixed",
+          "label": "Зарянка починена — продолжить",
+          "actions": [
+            { "type": "message", "characterId": "river", "messageType": "text", "value": "Ура! Заработало! Молодец!" },
+            { "type": "message", "characterId": "river", "messageType": "text", "value": "Теперь — сцена. Первая из двух." },
+            { "type": "message", "characterId": "river", "messageType": "text", "value": "Клерк — ты массовка. Зарянка знает, что делать. Снимайте!" }
+          ]
+        }
+      ],
+      "_comment": "Actor advances when Зарянка is fixed"
+    },
+    {
+      "type": "switchGuestMode",
+      "mode": "scenario",
+      "_comment": "Back to scenario mode for first scene filming"
+    },
+    {
+      "type": "choice",
+      "target": "actor",
+      "options": [
+        {
+          "id": "scene1-done",
+          "label": "Первая сцена снята",
+          "actions": [
+            { "type": "message", "characterId": "river", "messageType": "text", "value": "Отлично! Одна сцена в кармане. 🎬" },
+            { "type": "message", "characterId": "river", "messageType": "text", "value": "Теперь — подготовка ко второй. Нужно собрать оригами. Светлячок уже ждёт." }
+          ]
+        }
+      ],
+      "_comment": "Actor advances when first scene is filmed"
+    },
+
+    {
+      "type": "message",
+      "characterId": "firefly",
+      "messageType": "text",
+      "value": "О! Ты пришёл!",
+      "_comment": "=== SCENE 2.5: ORIGAMI ASSEMBLY ==="
+    },
+    {
+      "type": "message",
+      "characterId": "firefly",
+      "messageType": "text",
+      "value": "Ты — тот самый клерк? Который починил Зарянку?"
+    },
+    {
+      "type": "message",
+      "characterId": "firefly",
+      "messageType": "text",
+      "value": "Спасибо-спасибо-спасибо! Она мне написала — говорит, снова чувствует. Я так рада!"
+    },
+    {
+      "type": "message",
+      "characterId": "river",
+      "messageType": "text",
+      "value": "Светлячок — наша вторая актриса. Последняя сцена — с ней."
+    },
+    {
+      "type": "message",
+      "characterId": "river",
+      "messageType": "text",
+      "value": "Но сначала нужны декорации: оригами. Помогите ей, пожалуйста."
+    },
+    {
+      "type": "message",
+      "characterId": "firefly",
+      "messageType": "text",
+      "value": "Мне нужна помощь с лягушкой... Три попытки. Три катастрофы. 🐸"
+    },
+    {
+      "type": "message",
+      "characterId": "river",
+      "messageType": "text",
+      "value": "Инструкция по лягушке — вот."
+    },
+    {
+      "type": "message",
+      "characterId": "river",
+      "messageType": "img",
+      "value": "/images/frog-instructions.png"
+    },
+    {
+      "type": "message",
+      "characterId": "river",
+      "messageType": "text",
+      "value": "Она нужна для финальной сцены. Серьёзно."
+    },
+    {
+      "type": "message",
+      "characterId": "river",
+      "messageType": "text",
+      "value": "(Ладно, немножко шучу. Но она правда нужна.)"
+    },
+    {
+      "type": "message",
+      "characterId": "sunday",
+      "messageType": "text",
+      "value": "Звезда — надежда. А лягушка — прыжок в неизвестность."
+    },
+    {
+      "type": "message",
+      "characterId": "river",
+      "messageType": "text",
+      "value": "Конечно согласился! Он же профессионал. Клерк КММ — лучшая массовка в галактике."
+    },
+    {
+      "type": "switchGuestMode",
+      "mode": "free",
+      "_comment": "Guest does origami — free chat"
+    },
+    {
+      "type": "choice",
+      "target": "actor",
+      "options": [
+        {
+          "id": "origami-done",
+          "label": "Оригами собраны — к финальной сцене",
+          "actions": [
+            { "type": "message", "characterId": "firefly", "messageType": "text", "value": "Мы готовы! Последняя сцена! 🎬" },
+            { "type": "message", "characterId": "firefly", "messageType": "text", "value": "Пойдёмте снимать!" }
+          ]
+        }
+      ],
+      "_comment": "Actor advances when origami is done"
+    },
+
+    {
+      "type": "switchGuestMode",
+      "mode": "scenario",
+      "_comment": "=== SCENE 3: THE REVEAL ==="
+    },
+    {
+      "type": "choice",
+      "target": "actor",
+      "options": [
+        {
+          "id": "lights-out",
+          "label": "Свет гаснет — запустить трансформацию",
+          "actions": [
+            { "type": "action", "value": "⚡ Свет на площадке гаснет." },
+            { "type": "delay", "ms": 2000 }
+          ]
+        }
+      ],
+      "_comment": "Actor triggers lights out and transformation sequence"
+    },
+    {
+      "type": "action",
+      "value": "Река вышла из чата."
+    },
+    {
+      "type": "transformCharacter",
+      "fromId": "river",
+      "toId": "sparkle",
+      "newName": "Искорка",
+      "newAvatarUrl": "/avatars/sparkle.svg",
+      "_comment": "Река → Искорка reveal"
+    },
+    {
+      "type": "action",
+      "value": "Искорка вошла в чат."
+    },
+    {
+      "type": "message",
+      "characterId": "sparkle",
+      "messageType": "text",
+      "value": "Сюрприз."
+    },
+    {
+      "type": "message",
+      "characterId": "sparkle",
+      "messageType": "text",
+      "value": "Это не Река. Это никогда не был Река."
+    },
+    {
+      "type": "message",
+      "characterId": "sparkle",
+      "messageType": "text",
+      "value": "Река написал только… ну, ничего не написал. Он правда в неприятностях."
+    },
+    {
+      "type": "message",
+      "characterId": "sparkle",
+      "messageType": "text",
+      "value": "А в чате всё это время была я."
+    },
+    {
+      "type": "message",
+      "characterId": "sparkle",
+      "messageType": "text",
+      "value": "Приятно было познакомиться! Заново. ✨"
+    },
+    {
+      "type": "message",
+      "characterId": "sparkle",
+      "messageType": "text",
+      "value": "А теперь — главное."
+    },
+    {
+      "type": "message",
+      "characterId": "sparkle",
+      "messageType": "text",
+      "value": "В оригами-декорациях на вашей площадке спрятаны хлопушки."
+    },
+    {
+      "type": "message",
+      "characterId": "sparkle",
+      "messageType": "text",
+      "value": "Какие именно — не скажу. Это было бы слишком просто."
+    },
+    {
+      "type": "message",
+      "characterId": "sparkle",
+      "messageType": "text",
+      "value": "Искусство — это взрыв. 💥"
+    },
+    {
+      "type": "message",
+      "characterId": "sparkle",
+      "messageType": "text",
+      "value": "Таймер где-то среди декораций. Тикает. Удачи!"
+    },
+
+    {
+      "type": "message",
+      "characterId": "sunday",
+      "messageType": "text",
+      "value": "Подождите. Таймер. Тикает.",
+      "_comment": "=== SCENE 4: THE BIG CHOICE ==="
+    },
+    {
+      "type": "message",
+      "characterId": "firefly",
+      "messageType": "text",
+      "value": "Лягушка?! Та, которую ты сложил по инструкции «Реки»!"
+    },
+    {
+      "type": "message",
+      "characterId": "sunday",
+      "messageType": "text",
+      "value": "Все инструкции в чате — от неё. Включая инструкцию по лягушке."
+    },
+    {
+      "type": "message",
+      "characterId": "sparkle",
+      "messageType": "text",
+      "value": "Ну что, нашли? Я старалась."
+    },
+    {
+      "type": "message",
+      "characterId": "sparkle",
+      "messageType": "text",
+      "value": "В каждой — по хлопушке. Конфетти. Шум. Красота."
+    },
+    {
+      "type": "message",
+      "characterId": "sparkle",
+      "messageType": "text",
+      "value": "Представьте: финальный кадр, все вместе, и — БАМ. Бумажный снег. Настоящий финал."
+    },
+    {
+      "type": "message",
+      "characterId": "sunday",
+      "messageType": "text",
+      "value": "Ты здесь от КММ. У тебя контракт. КММ утвердила сценарий — никаких хлопушек."
+    },
+    {
+      "type": "message",
+      "characterId": "firefly",
+      "messageType": "text",
+      "value": "Но если мы не сделаем — мы просто доснимем скучный корпоративный фильм."
+    },
+    {
+      "type": "message",
+      "characterId": "sparkle",
+      "messageType": "text",
+      "value": "КММ хочет, чтобы всё было по плану. Но план — это не фильм. План — это расписание."
+    },
+    {
+      "type": "message",
+      "characterId": "sparkle",
+      "messageType": "text",
+      "value": "А фильм — это когда ты не знаешь, что будет дальше. И всё равно нажимаешь."
+    },
+    {
+      "type": "choice",
+      "target": "guest",
+      "options": [
+        {
+          "id": "explode",
+          "label": "💥 Взорвать хлопушки!",
+          "actions": [
+            { "type": "message", "characterId": "clerk", "messageType": "text", "value": "Взрываем. Все вместе." }
+          ]
+        },
+        {
+          "id": "remove",
+          "label": "📋 Убрать хлопушки",
+          "actions": [
+            { "type": "message", "characterId": "clerk", "messageType": "text", "value": "Нет. Убираем хлопушки. Контракт есть контракт." }
+          ]
+        }
+      ],
+      "_comment": "THE BIG CHOICE: хлопушки or contract"
+    },
+    {
+      "type": "branch",
+      "branches": {
+        "explode": [
+          {
+            "type": "message",
+            "characterId": "firefly",
+            "messageType": "text",
+            "value": "Все вместе? 🎉"
+          },
+          {
+            "type": "message",
+            "characterId": "sunday",
+            "messageType": "text",
+            "value": "Раз уж я здесь — пусть хоть это будет по-настоящему."
+          },
+          {
+            "type": "action",
+            "value": "💥 Хлопушки срабатывают! Конфетти, бумажный снег, шум!"
+          },
+          {
+            "type": "message",
+            "characterId": "sparkle",
+            "messageType": "text",
+            "value": "Вот. Вот это — кино. Не по сценарию. По-настоящему."
+          },
+          {
+            "type": "message",
+            "characterId": "sparkle",
+            "messageType": "text",
+            "value": "Камера работала. Я проверила. 📷"
+          },
+          {
+            "type": "action",
+            "value": "🎬 Финал А — «Не по сценарию»"
+          }
+        ],
+        "remove": [
+          {
+            "type": "message",
+            "characterId": "sunday",
+            "messageType": "text",
+            "value": "…Понятно. По сценарию. Как КММ хотела."
+          },
+          {
+            "type": "message",
+            "characterId": "firefly",
+            "messageType": "text",
+            "value": "Ладно. Пойдём доснимать. По сценарию."
+          },
+          {
+            "type": "message",
+            "characterId": "sparkle",
+            "messageType": "text",
+            "value": "Ну вот. Хлопушки в коробке. Корпоративное кино спасено."
+          },
+          {
+            "type": "message",
+            "characterId": "sparkle",
+            "messageType": "text",
+            "value": "Поздравляю. Босс будет доволен."
+          },
+          {
+            "type": "message",
+            "characterId": "firefly",
+            "messageType": "text",
+            "value": "Лягушка так и не прыгнула. 🐸"
+          },
+          {
+            "type": "action",
+            "value": "📋 Финал Б — «По сценарию КММ»"
+          }
+        ]
+      },
+      "_comment": "Branching endings based on the big choice"
+    }
+  ]
+}

@@ -54,6 +54,8 @@ jobs:
       - name: Install production deps and restart
         run: |
           ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
             cd /opt/honkai-chat
             npm install --omit=dev
             pm2 restart honkai-chat || pm2 start server/dist/index.js --name honkai-chat

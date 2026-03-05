@@ -57,6 +57,32 @@
   background: #fde8e8;
 }
 
+.admin-menu__start {
+  width: 100%;
+  padding: var(--space-md);
+  border: none;
+  border-radius: 8px;
+  background: #e8f5e9;
+  color: #2e7d32;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  text-align: center;
+  font-family: var(--font-family);
+  transition: background 0.15s ease;
+  margin-bottom: var(--space-sm);
+}
+
+.admin-menu__start:hover:not(:disabled) {
+  background: #c8e6c9;
+}
+
+.admin-menu__start:disabled {
+  background: var(--choice-hover);
+  color: var(--action-text);
+  cursor: default;
+}
+
 /* ─── Character Picker ─── */
 
 .character-picker {

@@ -11,6 +11,32 @@ interface Props {
 export function ChatInner({ role }: Props) {
   const chat = useChat(role);
 
+  // Guest sees welcome screen while scenario hasn't started (no messages, no typing)
+  const showWelcome =
+    role === "guest" &&
+    chat.state.messages.length === 0 &&
+    chat.state.typingCharacters.size === 0;
+
+  if (showWelcome) {
+    return (
+      <div className="welcome-screen">
+        <div className="welcome-screen__card">
+          <div className="welcome-screen__title">Где исполняются мечты</div>
+          <div className="welcome-screen__subtitle">
+            Групповой чат съемочной группы.
+          </div>
+          <button
+            className="welcome-screen__enter"
+            disabled={!chat.state.isConnected}
+            onClick={() => chat.startScenario()}
+          >
+            {chat.state.isConnected ? "Войти в чат" : "Подключение..."}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="chat-page">
       <ChatHeader
@@ -19,6 +45,8 @@ export function ChatInner({ role }: Props) {
         currentCharacterId={chat.state.currentCharacterId}
         onSwitchCharacter={chat.switchCharacter}
         onReset={chat.resetChat}
+        onStartScenario={chat.startScenario}
+        canStartScenario={chat.state.messages.length === 0}
         isConnected={chat.state.isConnected}
       />
       <MessageList

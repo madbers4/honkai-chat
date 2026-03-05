@@ -101,13 +101,7 @@ export function handleConnection(
     sessions: getSessionsInfo(),
   });
 
-  // Auto-start scenario when a guest connects to a fresh state
-  if (session.role === 'guest' && state.scenarioIndex === 0 && state.messages.length === 0) {
-    // Small delay to let the client initialize
-    setTimeout(() => {
-      scenarioEngine.processNextStep();
-    }, 500);
-  }
+  // Scenario is started explicitly via adminStartScenario (from guest "Войти" or actor admin panel)
 
   // ─── Message handler ───
   ws.on('message', (data) => {
@@ -216,6 +210,15 @@ function handleClientMessage(
         scenarioEngine.loadScenario(state.scenario);
       }
 
+      // Send reset to ALL connections first, then close guest sessions
+      for (const [sid, sessionData] of state.sessions) {
+        const connWs = state.connections.get(sid);
+        if (connWs && connWs.readyState === WebSocket.OPEN) {
+          const freshInit = buildInitMessage(sessionData);
+          connWs.send(JSON.stringify({ type: 'reset', init: freshInit }));
+        }
+      }
+
       // Close and remove guest sessions so a new guest can join fresh
       const guestSessionIds: string[] = [];
       for (const [sid, sessionData] of state.sessions) {
@@ -230,15 +233,6 @@ function handleClientMessage(
         }
         state.connections.delete(sid);
         state.sessions.delete(sid);
-      }
-
-      // Send reset with fresh init to remaining (actor) connections
-      for (const [sid, sessionData] of state.sessions) {
-        const connWs = state.connections.get(sid);
-        if (connWs && connWs.readyState === WebSocket.OPEN) {
-          const freshInit = buildInitMessage(sessionData);
-          connWs.send(JSON.stringify({ type: 'reset', init: freshInit }));
-        }
       }
       break;
     }
@@ -307,6 +301,15 @@ function handleClientMessage(
       }
 
       scenarioEngine.processNextStep();
+      break;
+    }
+
+    case 'adminStartScenario': {
+      // Both guest ("Войти в чат") and actor ("Запустить сценарий") can trigger
+      // Only start if scenario hasn't begun yet
+      if (state.scenarioIndex === 0 && state.messages.length === 0) {
+        scenarioEngine.processNextStep();
+      }
       break;
     }
   }

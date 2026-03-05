@@ -61,6 +61,10 @@ export function useChat(role: Role) {
     send(factory.createAdvanceScenario());
   }, [send]);
 
+  const startScenario = useCallback(() => {
+    send(factory.createAdminStartScenario());
+  }, [send]);
+
   const resetChat = useCallback(() => {
     send(factory.createAdminReset());
   }, [send]);
@@ -77,6 +81,7 @@ export function useChat(role: Role) {
     switchCharacter,
     switchActorMode,
     advanceScenario,
+    startScenario,
     resetChat,
     requestSync,
   };

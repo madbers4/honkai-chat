@@ -33,3 +33,7 @@ export function createRequestSync(): ClientMessage {
 export function createAdvanceScenario(): ClientMessage {
   return { type: 'advanceScenario' };
 }
+
+export function createAdminStartScenario(): ClientMessage {
+  return { type: 'adminStartScenario' };
+}

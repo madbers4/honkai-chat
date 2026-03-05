@@ -3,12 +3,16 @@
   "title": "Где исполняются мечты",
   "description": "Групповой чат съемочной группы КММ в Пенаконии",
   "initialCharacters": [
-    { "id": "clerk", "name": "Клерк КММ", "avatarUrl": "/avatars/clerk.webp", "stickerPack": [], "color": "#8B7355" },
+    { "id": "clerk", "name": "Клерк432242", "avatarUrl": "/avatars/clerk.webp", "stickerPack": [], "color": "#8B7355" },
     { "id": "sunday", "name": "Воскресенье", "avatarUrl": "/avatars/sunday.webp", "stickerPack": [], "color": "#6B5B95" },
-    { "id": "firefly", "name": "Светлячок", "avatarUrl": "/avatars/firefly.svg", "stickerPack": [], "color": "#88B04B" },
+    { "id": "firefly", "name": "Светлячок", "avatarUrl": "/avatars/firefly.webp", "stickerPack": [], "color": "#88B04B" },
     { "id": "river", "name": "Река", "avatarUrl": "/avatars/river.png", "stickerPack": [], "color": "#3498DB" }
   ],
   "steps": [
+    {
+      "type": "action",
+      "value": "Клерк432242 вошел в чат."
+    },
     {
       "type": "message",
       "characterId": "river",

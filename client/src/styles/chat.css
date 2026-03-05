@@ -1,3 +1,58 @@
+/* ─── Welcome Screen ─── */
+
+.welcome-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background: var(--bg-primary);
+}
+
+.welcome-screen__card {
+  text-align: center;
+  padding: var(--space-xl) var(--space-xl);
+  max-width: 320px;
+  width: calc(100% - var(--space-xl) * 2);
+}
+
+.welcome-screen__title {
+  font-family: var(--font-family-accent);
+  font-size: 28px;
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--space-sm);
+  color: var(--choice-text);
+}
+
+.welcome-screen__subtitle {
+  font-size: var(--font-size-base);
+  color: var(--action-text);
+  margin-bottom: var(--space-xl);
+  line-height: var(--line-height-normal);
+}
+
+.welcome-screen__enter {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  background: var(--bubble-outgoing);
+  color: var(--choice-text);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-medium);
+  font-family: var(--font-family);
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.welcome-screen__enter:hover {
+  background: #dbc88e;
+}
+
+.welcome-screen__enter:active {
+  transform: scale(0.98);
+}
+
 /* ─── Chat Page Layout ─── */
 
 .chat-page {

@@ -7,6 +7,8 @@ interface Props {
   currentCharacterId: string;
   onSwitchCharacter: (id: string) => void;
   onReset: () => void;
+  onStartScenario: () => void;
+  canStartScenario: boolean;
   onClose: () => void;
 }
 
@@ -15,6 +17,8 @@ export function AdminMenu({
   currentCharacterId,
   onSwitchCharacter,
   onReset,
+  onStartScenario,
+  canStartScenario,
   onClose,
 }: Props) {
   const [showConfirm, setShowConfirm] = useState(false);
@@ -32,6 +36,17 @@ export function AdminMenu({
           />
         </div>
         <div className="admin-menu__divider" />
+        {canStartScenario && (
+          <button
+            className="admin-menu__start"
+            onClick={() => {
+              onStartScenario();
+              onClose();
+            }}
+          >
+            ▶ Запустить сценарий
+          </button>
+        )}
         <button
           className="admin-menu__reset"
           onClick={() => setShowConfirm(true)}

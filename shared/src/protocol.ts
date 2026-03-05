@@ -125,6 +125,10 @@ export interface ClientAdvanceScenario {
   type: 'advanceScenario';
 }
 
+export interface ClientAdminStartScenario {
+  type: 'adminStartScenario';
+}
+
 export type ClientMessage =
   | ClientChoiceSelect
   | ClientFreeMessage
@@ -132,4 +136,5 @@ export type ClientMessage =
   | ClientSwitchCharacter
   | ClientSwitchActorMode
   | ClientRequestSync
-  | ClientAdvanceScenario;
+  | ClientAdvanceScenario
+  | ClientAdminStartScenario;

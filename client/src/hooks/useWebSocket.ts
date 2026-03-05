@@ -51,6 +51,12 @@ export function useWebSocket(
           });
           break;
         case 'reset':
+          if (role === 'guest') {
+            // Guest: clear session and reload to show welcome screen
+            localStorage.removeItem('honkai-chat-session');
+            window.location.reload();
+            return;
+          }
           dispatch({ type: 'RESET', init: msg.init });
           break;
         case 'guestModeSwitch':

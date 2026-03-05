@@ -8,6 +8,8 @@ interface Props {
   currentCharacterId: string;
   onSwitchCharacter: (id: string) => void;
   onReset: () => void;
+  onStartScenario: () => void;
+  canStartScenario: boolean;
   isConnected: boolean;
 }
 
@@ -17,6 +19,8 @@ export function ChatHeader({
   currentCharacterId,
   onSwitchCharacter,
   onReset,
+  onStartScenario,
+  canStartScenario,
   isConnected,
 }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -49,6 +53,8 @@ export function ChatHeader({
             setMenuOpen(false);
           }}
           onReset={onReset}
+          onStartScenario={onStartScenario}
+          canStartScenario={canStartScenario}
           onClose={() => setMenuOpen(false)}
         />
       )}

@@ -1,109 +1,92 @@
-// Глобальные переменные (сохраняются между вызовами в рамках одного экземпляра функции)
-let connections = new Set();        // множество активных connectionId
-let apiDomain = null;               // домен API Gateway (общий для всех)
+// Глобальные переменные (сохраняются в рамках одного экземпляра)
+let connections = new Set();
+let apiDomain = null;
 
 exports.handler = async (event) => {
-    // === УНИВЕРСАЛЬНОЕ ОПРЕДЕЛЕНИЕ ТИПА ЗАПРОСА ===
-    // Если есть connectionId – это WebSocket-событие, иначе – HTTP
+    // Определяем WebSocket по наличию connectionId
     const isWebSocket = event.requestContext && event.requestContext.connectionId;
 
-    // Для отладки – логируем входящий event (уберите, если не нужно)
     console.log('INCOMING:', JSON.stringify({
-        type: isWebSocket ? 'WEBSOCKET' : 'HTTP',
+        type: isWebSocket ? 'WS' : 'HTTP',
         connectionId: event.requestContext?.connectionId,
         routeKey: event.requestContext?.routeKey,
-        body: event.body
-    }, null, 2));
+        body: event.body?.substring(0, 200)
+    }));
 
     if (isWebSocket) {
-        // === WebSocket-обработка ===
-        const { connectionId, routeKey, apiGateway } = event.requestContext;
-        const domain = apiGateway?.domain;
+        const ctx = event.requestContext;
+        const connectionId = ctx.connectionId;
+        const routeKey = ctx.routeKey || '$default';
+        const domain = ctx.apiGateway?.domain;
 
-        // Запоминаем домен при первом вызове (нужен для отправки ответов)
-        if (domain && !apiDomain) {
-            apiDomain = domain;
-        }
+        if (domain && !apiDomain) apiDomain = domain;
 
-        console.log(`WebSocket | routeKey: ${routeKey}, connectionId: ${connectionId}`);
+        console.log(`WS | ${routeKey} | ${connectionId}`);
 
         // --- Подключение ---
         if (routeKey === '$connect') {
             connections.add(connectionId);
-            console.log(`Клиент подключился. Всего подключений: ${connections.size}`);
+            console.log(`Connected. Total: ${connections.size}`);
             return { statusCode: 200 };
         }
 
         // --- Отключение ---
         if (routeKey === '$disconnect') {
             connections.delete(connectionId);
-            console.log(`Клиент отключился. Осталось: ${connections.size}`);
+            console.log(`Disconnected. Left: ${connections.size}`);
             return { statusCode: 200 };
         }
 
-        // --- Сообщение ($default или любой другой routeKey) ---
-        // Парсим тело сообщения (если оно есть)
+        // --- Сообщение ---
+        // Парсим тело
         let message = {};
         if (event.body) {
             try {
                 message = JSON.parse(event.body);
-            } catch (e) {
-                // Если не JSON – сохраняем как текст
+            } catch {
                 message = { text: event.body };
             }
         }
 
-        // Сообщение для рассылки
-        const broadcastMessage = {
-            broadcast: message,
-            time: new Date().toISOString(),
-            sender: connectionId
-        };
+        const token = process.env.YC_TOKEN;
+        const time = new Date().toISOString();
 
-        // Рассылаем всем КРОМЕ отправителя
+        // 1. Отправляем эхо отправителю
+        if (apiDomain && connectionId) {
+            const echoUrl = `https://${apiDomain}/@connections/${connectionId}`;
+            await fetch(echoUrl, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ echo: message, time, from: connectionId })
+            }).catch(err => console.error('Echo error:', err.message));
+        }
+
+        // 2. Рассылаем всем остальным (broadcast)
         if (apiDomain) {
-            const token = process.env.YC_TOKEN; // IAM-токен сервисного аккаунта
+            const broadcastMsg = { broadcast: message, time, sender: connectionId };
             const promises = [];
-
             for (const connId of connections) {
-                // Не отправляем самому себе
                 if (connId === connectionId) continue;
-
                 const url = `https://${apiDomain}/@connections/${connId}`;
                 promises.push(
                     fetch(url, {
                         method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(broadcastMessage)
-                    })
-                    .then(async resp => {
-                        if (!resp.ok) {
-                            // Если соединение уже закрыто (код 410), удаляем его из списка
-                            if (resp.status === 410) {
-                                connections.delete(connId);
-                                console.log(`Клиент ${connId} больше не доступен (410), удалён из списка`);
-                            } else {
-                                const errText = await resp.text();
-                                console.error(`Ошибка отправки клиенту ${connId}: ${resp.status} – ${errText}`);
-                            }
+                        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify(broadcastMsg)
+                    }).then(async resp => {
+                        if (!resp.ok && resp.status === 410) {
+                            connections.delete(connId);
+                            console.log(`Removed stale connection ${connId}`);
                         }
-                    })
-                    .catch(err => {
-                        console.error(`Исключение при отправке клиенту ${connId}:`, err.message);
-                    })
+                    }).catch(err => console.error(`Send to ${connId} failed:`, err.message))
                 );
             }
-
             await Promise.allSettled(promises);
-            console.log(`Сообщение разослано ${promises.length} клиентам`);
         }
 
         return { statusCode: 200 };
     } else {
-        // === HTTP: возвращаем HTML-страницу с тестовым клиентом ===
+        // HTTP: возвращаем HTML-страницу с клиентом
         const html = `<!DOCTYPE html>
 <html>
 <head>
@@ -165,13 +148,16 @@ exports.handler = async (event) => {
             };
 
             socket.onmessage = (event) => {
-                // Универсальная обработка входящих данных (строки или Blob)
+                // Универсальная обработка любых типов данных
                 if (typeof event.data === 'string') {
                     log(event.data);
                 } else if (event.data instanceof Blob) {
                     const reader = new FileReader();
                     reader.onload = () => log(reader.result);
                     reader.readAsText(event.data);
+                } else if (event.data instanceof ArrayBuffer) {
+                    const decoder = new TextDecoder('utf-8');
+                    log(decoder.decode(event.data));
                 } else {
                     log('Неподдерживаемый тип данных: ' + typeof event.data);
                 }

@@ -1,3 +1,20 @@
+/* ─── Fonts ─── */
+@font-face {
+  font-family: 'Star Rail';
+  src: url('/font/Star_Rail.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'HSR Cipher';
+  src: url('/font/honkai-star-rail-cipher.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Reset */
 *,
 *::before,
@@ -82,8 +99,9 @@ body {
   --image-max-width: 220px;
 
   /* Typography */
-  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    sans-serif;
+  --font-family: 'Star Rail', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, sans-serif;
+  --font-family-accent: 'HSR Cipher', var(--font-family);
   --font-size-xs: 11px;
   --font-size-sm: 13px;
   --font-size-base: 15px;

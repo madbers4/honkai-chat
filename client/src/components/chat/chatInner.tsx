@@ -25,6 +25,7 @@ export function ChatInner({ role }: Props) {
         messages={chat.displayMessages}
         typingCharacters={chat.state.typingCharacters}
         characters={chat.state.characters}
+        currentCharacterId={chat.state.currentCharacterId}
       />
       <BottomActions
         role={role}

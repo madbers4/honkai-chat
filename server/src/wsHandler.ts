@@ -101,8 +101,8 @@ export function handleConnection(
     sessions: getSessionsInfo(),
   });
 
-  // If this is the first connection and scenario hasn't started, start it
-  if (isNew && state.scenarioIndex === 0 && state.connections.size === 1) {
+  // Auto-start scenario when a guest connects to a fresh state
+  if (session.role === 'guest' && state.scenarioIndex === 0 && state.messages.length === 0) {
     // Small delay to let the client initialize
     setTimeout(() => {
       scenarioEngine.processNextStep();
@@ -216,7 +216,23 @@ function handleClientMessage(
         scenarioEngine.loadScenario(state.scenario);
       }
 
-      // Send reset with fresh init to all
+      // Close and remove guest sessions so a new guest can join fresh
+      const guestSessionIds: string[] = [];
+      for (const [sid, sessionData] of state.sessions) {
+        if (sessionData.role === 'guest') {
+          guestSessionIds.push(sid);
+        }
+      }
+      for (const sid of guestSessionIds) {
+        const guestWs = state.connections.get(sid);
+        if (guestWs && guestWs.readyState === WebSocket.OPEN) {
+          guestWs.close();
+        }
+        state.connections.delete(sid);
+        state.sessions.delete(sid);
+      }
+
+      // Send reset with fresh init to remaining (actor) connections
       for (const [sid, sessionData] of state.sessions) {
         const connWs = state.connections.get(sid);
         if (connWs && connWs.readyState === WebSocket.OPEN) {

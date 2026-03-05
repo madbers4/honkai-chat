@@ -39,6 +39,7 @@ function applyInit(state: ChatState, init: ServerInit): ChatState {
     role: init.role,
     characters,
     messages: init.messages,
+    typingCharacters: new Set(),
     guestMode: init.guestMode,
     activeChoices: init.activeChoices,
     sessions: init.connectedSessions,
@@ -73,15 +74,15 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
     case "CHARACTER_TRANSFORM": {
       const characters = new Map(state.characters);
       const oldChar = characters.get(action.fromId);
-      if (oldChar) {
-        characters.delete(action.fromId);
-        characters.set(action.toId, {
-          ...oldChar,
-          id: action.toId as CharacterDef["id"],
-          name: action.newName,
-          avatarUrl: action.newAvatarUrl,
-        });
-      }
+      const newChar = {
+        ...(oldChar ?? { stickerPack: [], color: "#9B59B6" }),
+        id: action.toId as CharacterDef["id"],
+        name: action.newName,
+        avatarUrl: action.newAvatarUrl,
+      } as CharacterDef;
+      // Keep old entry so historical messages (characterId=fromId) still resolve
+      characters.set(action.fromId, newChar);
+      characters.set(action.toId, newChar);
       let currentCharacterId = state.currentCharacterId;
       if (currentCharacterId === action.fromId) {
         currentCharacterId = action.toId;

@@ -52,6 +52,7 @@
 }
 
 .chat-header__title {
+  font-family: var(--font-family-accent);
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-bold);
   line-height: var(--line-height-tight);
@@ -226,6 +227,10 @@
   cursor: pointer;
   transition: background 0.15s ease;
   font-family: var(--font-family);
+  white-space: normal;
+  word-break: break-word;
+  height: auto;
+  min-height: 48px;
 }
 
 .choice-button:hover {
@@ -245,10 +250,13 @@
   border-top: 1px solid var(--border-light);
   padding: var(--space-sm) var(--space-md);
   gap: var(--space-sm);
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .free-input__field {
   flex: 1;
+  min-width: 0;
   border: none;
   outline: none;
   font-size: var(--font-size-base);

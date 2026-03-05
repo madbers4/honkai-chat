@@ -31,8 +31,8 @@ export function transformCharacter(
     color: existing?.color ?? '#9B59B6',
   };
 
-  // Remove old, add new
-  state.characters.delete(fromId);
+  // Keep old entry so historical messages (characterId=fromId) still resolve
+  state.characters.set(fromId, newChar);
   state.characters.set(toId, newChar);
 }
 

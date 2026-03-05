@@ -9,9 +9,15 @@ interface Props {
   messages: DisplayMessage[];
   typingCharacters: Set<string>;
   characters: Map<string, CharacterDef>;
+  currentCharacterId: string;
 }
 
-export function MessageList({ messages, typingCharacters, characters }: Props) {
+export function MessageList({
+  messages,
+  typingCharacters,
+  characters,
+  currentCharacterId,
+}: Props) {
   const listRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
@@ -41,10 +47,11 @@ export function MessageList({ messages, typingCharacters, characters }: Props) {
       {Array.from(typingCharacters).map((charId) => {
         const char = characters.get(charId);
         if (!char) return null;
+        const source = charId === currentCharacterId ? "outgoing" : "incoming";
         return (
           <div
             key={`typing-${charId}`}
-            className="message-row message-row--incoming message-enter"
+            className={`message-row message-row--${source} message-enter`}
           >
             <img className="avatar" src={char.avatarUrl} alt={char.name} />
             <div className="message-content">

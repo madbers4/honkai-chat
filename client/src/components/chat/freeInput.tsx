@@ -32,8 +32,12 @@ export function FreeInput({ onSend, stickers }: Props) {
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const url = URL.createObjectURL(file);
-    onSend("img", url);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = reader.result as string;
+      onSend("img", base64);
+    };
+    reader.readAsDataURL(file);
     if (ref.current) ref.current.value = "";
   };
 

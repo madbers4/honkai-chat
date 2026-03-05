@@ -4,14 +4,11 @@
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    }
-  },
   "scripts": {
-    "build": "tsc",
+    "build": "tsup src/index.ts --format esm --dts",
     "dev": "tsc --watch"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1"
   }
 }

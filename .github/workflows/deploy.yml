@@ -32,11 +32,16 @@ jobs:
         run: cp -r server/src/scenario server/dist/scenario
 
       - name: Setup SSH key
+        env:
+          DEPLOY_KEY: ${{ secrets.VM_SSH_KEY }}
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.VM_SSH_KEY }}" > ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/deploy_key
+          sed -i 's/\r$//' ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
+          echo "Key fingerprint:"
+          ssh-keygen -l -f ~/.ssh/deploy_key || echo "INVALID KEY FORMAT"
 
       - name: Rsync files to VM
         run: |

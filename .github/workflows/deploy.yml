@@ -26,18 +26,15 @@ jobs:
         with:
           yc-sa-json-credentials: ${{ secrets.YC_SA_JSON_CREDENTIALS }}
           folder-id: ${{ secrets.FOLDER_ID }}
-          # Используем имя функции (ту, которую создали в консоли)
           function-name: 'my-git-site'
-          runtime: 'nodejs22'
+          runtime: 'nodejs18'
           entrypoint: 'index.handler'
           memory: '256Mb'
-          # Включаем только нужные файлы
+          service-account-id: ${{ secrets.SERVICE_ACCOUNT_ID }}   # ✅ добавляем ID сервисного аккаунта
           include: |
             ./index.js
             ./node_modules
             package.json
           exclude: |
             **/*.ts
-          # Теги пока убираем, чтобы избежать ошибки валидации
-          # tags: ${{ github.sha }}
           async: false

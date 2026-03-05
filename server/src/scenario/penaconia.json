@@ -281,7 +281,7 @@
       "fromId": "river",
       "toId": "sparkle",
       "newName": "Искорка",
-      "newAvatarUrl": "/avatars/sparkle.svg",
+      "newAvatarUrl": "/avatars/sparkle.webp",
       "_comment": "Река → Искорка reveal"
     },
     {

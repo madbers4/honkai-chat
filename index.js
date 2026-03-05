@@ -1,6 +1,8 @@
-// Универсальная функция: обрабатывает HTTP и WebSocket
+// Глобальные переменные (сохраняются между вызовами в рамках одного экземпляра функции)
+let connections = new Set();        // множество активных connectionId
+let apiDomain = null;               // домен API Gateway (общий для всех)
+
 exports.handler = async (event, context) => {
-    // Определяем тип события
     const isWebSocket = event.requestContext && event.requestContext.routeKey;
 
     if (isWebSocket) {
@@ -8,15 +10,24 @@ exports.handler = async (event, context) => {
         const { connectionId, routeKey, apiGateway } = event.requestContext;
         const domain = apiGateway?.domain;
 
+        // Запоминаем домен при первом вызове
+        if (domain && !apiDomain) {
+            apiDomain = domain;
+        }
+
         console.log(`WebSocket event: ${routeKey}, connection: ${connectionId}`);
 
         // Подключение
         if (routeKey === '$connect') {
+            connections.add(connectionId);
+            console.log(`Текущее количество подключений: ${connections.size}`);
             return { statusCode: 200 };
         }
 
         // Отключение
         if (routeKey === '$disconnect') {
+            connections.delete(connectionId);
+            console.log(`Отключился ${connectionId}, осталось: ${connections.size}`);
             return { statusCode: 200 };
         }
 
@@ -29,38 +40,55 @@ exports.handler = async (event, context) => {
                 message = { text: event.body };
             }
 
-            // Отправляем эхо-ответ обратно клиенту
-            if (domain && connectionId) {
-                const url = `https://${domain}/@connections/${connectionId}`;
-                const token = process.env.YC_TOKEN; // IAM-токен сервисного аккаунта
+            // Сообщение для рассылки
+            const broadcastMessage = {
+                broadcast: message,
+                time: new Date().toISOString(),
+                sender: connectionId
+            };
 
-                try {
-                    await fetch(url, {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            echo: message,
-                            time: new Date().toISOString(),
-                            connectionId: connectionId
+            // Рассылаем всем подключённым клиентам
+            if (apiDomain) {
+                const token = process.env.YC_TOKEN;
+                const promises = [];
+
+                for (const connId of connections) {
+                    // Не отправляем самому отправителю (опционально, можно и ему)
+                    if (connId === connectionId) continue;
+
+                    const url = `https://${apiDomain}/@connections/${connId}`;
+                    promises.push(
+                        fetch(url, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(broadcastMessage)
+                        }).catch(err => {
+                            console.error(`Ошибка отправки клиенту ${connId}:`, err.message);
+                            // Если соединение уже закрыто (410 GONE), удаляем его из списка
+                            if (err.response?.status === 410) {
+                                connections.delete(connId);
+                            }
                         })
-                    });
-                } catch (error) {
-                    console.error('Error sending message:', error.message);
+                    );
                 }
+
+                await Promise.allSettled(promises);
+                console.log(`Сообщение разослано ${promises.length} клиентам`);
             }
+
             return { statusCode: 200 };
         }
 
         return { statusCode: 400 };
     } else {
-        // === HTTP-обработка (отдаём HTML-страницу) ===
+        // === HTTP: отдаём HTML-страницу с фиксированным WebSocket URL ===
         const html = `<!DOCTYPE html>
 <html>
 <head>
-    <title>WebSocket Echo Test</title>
+    <title>WebSocket Broadcast Test</title>
     <meta charset="utf-8">
     <style>
         body { font-family: sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
@@ -71,7 +99,8 @@ exports.handler = async (event, context) => {
     </style>
 </head>
 <body>
-    <h2>WebSocket Echo Test</h2>
+    <h2>WebSocket Broadcast Test</h2>
+    <p>URL: <code>wss://d5d026k9uet5ke497j8d.a6hc9vya.apigw.yandexcloud.net</code></p>
     <div id="status">🔴 Отключено</div>
     <div id="messages"></div>
     <div>
@@ -82,6 +111,7 @@ exports.handler = async (event, context) => {
     </div>
 
     <script>
+        const WS_URL = 'wss://d5d026k9uet5ke497j8d.a6hc9vya.apigw.yandexcloud.net';
         let socket = null;
         const messagesDiv = document.getElementById('messages');
         const statusDiv = document.getElementById('status');
@@ -108,10 +138,7 @@ exports.handler = async (event, context) => {
         }
 
         connectBtn.addEventListener('click', () => {
-            const wsUrl = prompt('Введите URL WebSocket (например wss://ваш-домен.apigw.yandexcloud.net/)');
-            if (!wsUrl) return;
-
-            socket = new WebSocket(wsUrl);
+            socket = new WebSocket(WS_URL);
 
             socket.onopen = () => {
                 log('Соединение установлено');

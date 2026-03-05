@@ -44,9 +44,14 @@ jobs:
           rsync -avz --delete \
             --include='package.json' \
             --include='package-lock.json' \
+            --include='shared/' \
             --include='shared/***' \
+            --include='server/' \
             --include='server/package.json' \
+            --include='server/dist/' \
             --include='server/dist/***' \
+            --include='client/' \
+            --include='client/dist/' \
             --include='client/dist/***' \
             --exclude='*' \
             ./ ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:${{ env.DEPLOY_PATH }}/

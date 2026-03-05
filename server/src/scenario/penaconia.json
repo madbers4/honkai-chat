@@ -5,8 +5,8 @@
   "initialCharacters": [
     { "id": "clerk", "name": "Клерк КММ", "avatarUrl": "/avatars/clerk.svg", "stickerPack": [], "color": "#8B7355" },
     { "id": "sunday", "name": "Воскресенье", "avatarUrl": "/avatars/sunday.webp", "stickerPack": [], "color": "#6B5B95" },
-    { "id": "firefly", "name": "Светлячок", "avatarUrl": "/avatars/firefly.svg", "stickerPack": [], "color": "#88B04B" },
     { "id": "himeko", "name": "Химеко", "avatarUrl": "/avatars/himeko.svg", "stickerPack": [], "color": "#C0392B" },
+    { "id": "firefly", "name": "Светлячок", "avatarUrl": "/avatars/firefly.svg", "stickerPack": [], "color": "#88B04B" },
     { "id": "river", "name": "Река", "avatarUrl": "/avatars/river.png", "stickerPack": [], "color": "#3498DB" }
   ],
   "steps": [

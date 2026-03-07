@@ -27,10 +27,14 @@ function buildInitMessage(session: SessionData): ServerInit {
   let activeChoices: ActiveChoice | null = null;
   if (state.pendingChoice) {
     const pc = state.pendingChoice;
-    const isTarget =
+    const isRoleTarget =
       (pc.target === 'guest' && session.role === 'guest') ||
       (pc.target === 'actor' && session.role === 'actor');
-    if (isTarget) {
+    // If targetCharacterId is set, only show to that specific character (or root)
+    const isCharTarget = pc.targetCharacterId
+      ? (session.characterId === pc.targetCharacterId || session.actorMode === 'root')
+      : true;
+    if (isRoleTarget && isCharTarget) {
       activeChoices = {
         stepIndex: pc.stepIndex,
         options: pc.options,
@@ -163,13 +167,13 @@ function handleClientMessage(
         return;
       }
 
-      // Validate: guest allowed free mode
-      if (session.role === 'guest' && state.guestMode !== 'free') {
+      // Block free messages for everyone during scenario mode (between activities)
+      if (state.guestMode !== 'free') {
         ws.send(
           JSON.stringify({
             type: 'error',
             code: 'FREE_NOT_ALLOWED',
-            message: 'Guest free mode not active',
+            message: 'Free mode not active — scenario in progress',
           }),
         );
         return;

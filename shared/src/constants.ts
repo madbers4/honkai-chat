@@ -1,4 +1,4 @@
-export const characterIds = ['clerk', 'sunday', 'firefly', 'himeko', 'river', 'sparkle'] as const;
+export const characterIds = ['clerk', 'sunday', 'firefly', 'himeko', 'river', 'sparkle', 'robin'] as const;
 export type CharacterId = typeof characterIds[number];
 
 export const roles = ['guest', 'actor'] as const;

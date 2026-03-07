@@ -65,3 +65,23 @@ export function broadcastExcept(sessionId: string, msg: ServerMessage): void {
     }
   }
 }
+
+/** Send to sessions whose current characterId matches + root actors */
+export function broadcastToCharacterId(characterId: string, msg: ServerMessage): void {
+  const state = getState();
+  const sent = new Set<string>();
+
+  for (const [sessionId, session] of state.sessions) {
+    if (session.characterId === characterId || (session.role === 'actor' && session.actorMode === 'root')) {
+      if (!sent.has(sessionId)) {
+        const ws = state.connections.get(sessionId);
+        if (ws) {
+          if (!safeSend(ws, msg)) {
+            cleanupStale(sessionId, ws);
+          }
+        }
+        sent.add(sessionId);
+      }
+    }
+  }
+}

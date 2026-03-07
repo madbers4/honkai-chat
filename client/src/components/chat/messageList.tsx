@@ -56,7 +56,7 @@ export function MessageList({
             <img className="avatar" src={char.avatarUrl} alt={char.name} />
             <div className="message-content">
               <div className="username">{char.name}</div>
-              <TypingIndicator />
+              <TypingIndicator source={source} />
             </div>
           </div>
         );

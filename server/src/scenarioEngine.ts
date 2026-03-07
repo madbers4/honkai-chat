@@ -14,11 +14,13 @@ import type {
 } from '@honkai-chat/shared';
 import { timing } from '@honkai-chat/shared';
 import { getState, addMessage } from './state.js';
-import { broadcastAll, broadcastToRole } from './broadcast.js';
+import { broadcastAll, broadcastToRole, broadcastToCharacterId } from './broadcast.js';
 import {
   transformCharacter as doTransformCharacter,
   getCharactersRecord,
 } from './characters.js';
+
+const messageGap = 350;
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -58,6 +60,9 @@ async function processMessageAction(
   };
   addMessage(msg);
   broadcastAll({ type: 'newMessage', message: msg });
+
+  // Pause after message so the next typing indicator doesn't fire instantly
+  await delay(messageGap);
 }
 
 async function processActionAction(value: string): Promise<void> {
@@ -70,6 +75,9 @@ async function processActionAction(value: string): Promise<void> {
   };
   addMessage(msg);
   broadcastAll({ type: 'newMessage', message: msg });
+
+  // Pause after action so subsequent steps don't overlap
+  await delay(messageGap);
 }
 
 async function executeActions(actions: ScenarioAction[]): Promise<void> {
@@ -176,14 +184,18 @@ export class ScenarioEngine {
       options: step.options.map((o: ChoiceOption) => ({ id: o.id, label: o.label })),
     };
 
-    // Send choices to target role
+    // Send choices to target role (or specific character if targetCharacterId set)
     const choicesMsg = {
       type: 'choices' as const,
       stepIndex: this.stepIndex,
       options: state.pendingChoice.options,
     };
 
-    broadcastToRole(step.target, choicesMsg);
+    if (step.targetCharacterId) {
+      broadcastToCharacterId(step.targetCharacterId, choicesMsg);
+    } else {
+      broadcastToRole(step.target, choicesMsg);
+    }
   }
 
   async handleChoiceSelect(optionId: string, stepIndex: number): Promise<void> {

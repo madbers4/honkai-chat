@@ -35,19 +35,22 @@ export function BottomActions({
 }: Props) {
   const isRoot = currentCharacterId === "root";
   const isActor = role === "actor";
+  const isGuest = role === "guest";
 
-  const currentMode = isActor ? actorMode : guestMode;
-  const inScenarioMode = currentMode === "scenario" || currentMode === "root";
+  // Free chat is allowed only when guestMode is 'free' (applies to EVERYONE)
+  const isFreePhase = guestMode === "free";
 
   const currentChar = characters.get(currentCharacterId);
   const stickers = currentChar?.stickerPack || [];
 
   return (
     <div className="bottom-actions">
-      {inScenarioMode && activeChoices && (
+      {/* Choices are visible to anyone who receives them (guest or targeted actor) */}
+      {activeChoices && (
         <ChoicePanel choices={activeChoices} onSelect={onSelectChoice} />
       )}
 
+      {/* Root always has advance button when no choices pending */}
       {isRoot && !activeChoices && (
         <div className="choice-panel">
           <button
@@ -59,11 +62,13 @@ export function BottomActions({
         </div>
       )}
 
-      {!inScenarioMode && !isRoot && (
+      {/* Free input only during free phase, not for root */}
+      {isFreePhase && !isRoot && (
         <FreeInput onSend={onSendFreeMessage} stickers={stickers} />
       )}
 
-      {isActor && !isRoot && (
+      {/* Mode toggle for actor (not root) during free phase only */}
+      {isActor && !isRoot && isFreePhase && (
         <ModeToggle
           currentMode={actorMode as "scenario" | "free"}
           onToggle={(mode) => onSwitchActorMode(mode)}

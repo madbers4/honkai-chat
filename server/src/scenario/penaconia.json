@@ -562,11 +562,6 @@
       ],
       "_comment": "=== SCENE 6: LIGHTS OUT ==="
     },
-
-    {
-      "type": "switchGuestMode",
-      "mode": "scenario"
-    },
     {
       "type": "action",
       "value": "Река вышла из чата."

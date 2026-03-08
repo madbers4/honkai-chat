@@ -42,26 +42,26 @@ body {
 
 :root {
   /* Background */
-  --bg-primary: #e8e4e0;
-  --bg-header: #ffffff;
-  --bg-bottom: #f5f2ef;
+  --bg-primary: #d5d3d4;
+  --bg-header: #d5d3d4;
+  --bg-bottom: #cac8c8;
   --bg-body: #1e1e1e;
 
   /* Bubbles */
-  --bubble-incoming: #ffffff;
-  --bubble-outgoing: #e8d5a3;
-  --bubble-incoming-text: #2c2c2c;
-  --bubble-outgoing-text: #2c2c2c;
+  --bubble-incoming: #ededed;
+  --bubble-outgoing: #d1bd95;
+  --bubble-incoming-text: #434343;
+  --bubble-outgoing-text: #434343;
 
   /* Action messages */
-  --action-text: #8e8e93;
+  --action-text: #rgb(24 24 24);
   --action-icon: #b8b5b0;
 
   /* Choice buttons */
-  --choice-bg: #ffffff;
-  --choice-border: #d6d3cf;
-  --choice-text: #3c3c3c;
-  --choice-hover: #f0ede8;
+  --choice-bg: #e9e8e8;
+  --choice-border: #b6b4b4;
+  --choice-text: #454545;
+  --choice-hover: #f7f7f7;
 
   /* Character name colors */
   --name-clerk: #8b7355;
@@ -72,7 +72,7 @@ body {
   --name-sparkle: #9b59b6;
 
   /* UI */
-  --border-light: #e0ddd8;
+  --border-light: #b5b4b4;
   --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.08);
   --overlay-bg: rgba(0, 0, 0, 0.3);
 

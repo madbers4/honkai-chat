@@ -24,8 +24,6 @@
 }
 
 .welcome-screen__subtitle {
-  font-size: var(--font-size-base);
-  color: var(--action-text);
   margin-bottom: var(--space-xl);
   line-height: var(--line-height-normal);
 }
@@ -42,7 +40,7 @@
   font-family: var(--font-family);
   cursor: pointer;
   transition: background 0.15s ease, transform 0.1s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 2px rgb(182 180 180);
 }
 
 .welcome-screen__enter:hover {
@@ -74,8 +72,24 @@
   align-items: center;
   min-height: var(--header-height);
   padding: var(--space-md) var(--space-lg);
+  padding-bottom: 10px;
+  padding-bottom: 12px;
   background: var(--bg-header);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 8px 10px rgb(213 211 212);
+  position: relative;
+}
+
+.chat-header::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 16px;
+  right: 16px;
+  height: 4px;
+  background:
+    radial-gradient(circle, #b5b4b4 2px, transparent 2px) left center / 4px 4px no-repeat,
+    radial-gradient(circle, #b5b4b4 2px, transparent 2px) right center / 4px 4px no-repeat,
+    linear-gradient(#b5b4b4, #b5b4b4) center / calc(100% - 8px) 2px no-repeat;
 }
 
 .chat-header__admin-trigger {
@@ -110,13 +124,15 @@
   font-family: var(--font-family-accent);
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-bold);
-  line-height: var(--line-height-tight);
+  line-height: 1.8;
 }
 
 .chat-header__subtitle {
-  font-size: var(--font-size-sm);
-  color: var(--action-text);
   line-height: var(--line-height-tight);
+  color: #777777;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.0px;
 }
 
 /* ─── Message List ─── */
@@ -167,11 +183,12 @@
 /* ─── Username ─── */
 
 .username {
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
   margin-bottom: 2px;
   line-height: var(--line-height-tight);
-  color: var(--action-text);
+  color: #686868;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  font-size: 13px;
 }
 
 /* ─── Bubble ─── */
@@ -187,21 +204,24 @@
 .bubble--incoming {
   background: var(--bubble-incoming);
   color: var(--bubble-incoming-text);
-  border-bottom: 2px solid #d0ccc6;
-  border-left: 2px solid #d0ccc6;
-  border-top-left-radius: 6px;
+  border-bottom: 2px solid #9f9f9f;
+  border-left: 1px solid #9f9f9f;
+  border-top-left-radius: 0px;
 }
 
 .bubble--outgoing {
   background: var(--bubble-outgoing);
   color: var(--bubble-outgoing-text);
-  border-bottom: 2px solid #d4c28e;
-  border-right: 2px solid #d4c28e;
-  border-top-right-radius: 6px;
+  border-bottom: 2px solid #a3a1a5;
+  border-right: 1px solid #a3a1a5;
+  border-top-right-radius: 0px;
 }
 
 .bubble--text {
   white-space: pre-wrap;
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
 }
 
 .bubble--img {
@@ -268,18 +288,21 @@
   width: 100%;
   background: var(--choice-bg);
   border: 1px solid var(--choice-border);
-  padding: 14px;
+  padding: 8px;
+  font-size: 16px;
+  font-weight: 600;
   font-size: var(--font-size-base);
   color: var(--choice-text);
   text-align: center;
-  border-radius: 10px;
+  letter-spacing: 0.2px;
+  border-radius: 0;
   cursor: pointer;
   transition: background 0.15s ease;
   font-family: var(--font-family);
   white-space: normal;
   word-break: break-word;
   height: auto;
-  min-height: 48px;
+  box-shadow: 0 2px 2px rgb(182, 180, 180);
 }
 
 .choice-button:hover {
@@ -295,8 +318,8 @@
 .free-input {
   display: flex;
   align-items: center;
-  background: #ffffff;
-  border-top: 1px solid var(--border-light);
+  background: #ededed;
+  /* border-top: 1px solid var(--border-light); */
   padding: var(--space-sm) var(--space-md);
   gap: var(--space-sm);
   max-width: 100%;
@@ -354,7 +377,7 @@
 .bottom-actions {
   position: sticky;
   bottom: 0;
-  border-top: 1px solid var(--border-light);
+  border-top: 2px solid var(--border-light);
   background: var(--bg-bottom);
 }
 

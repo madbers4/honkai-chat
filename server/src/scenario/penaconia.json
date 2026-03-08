@@ -3,10 +3,10 @@
   "title": "Где исполняются мечты",
   "description": "Групповой чат съемочной группы КММ в Пенаконии",
   "initialCharacters": [
-    { "id": "clerk", "name": "Клерк_4322423...", "avatarUrl": "/avatars/clerk.webp", "stickerPack": [], "color": "#8B7355" },
+    { "id": "clerk", "name": "Клерк43224", "avatarUrl": "/avatars/clerk.webp", "stickerPack": [], "color": "#8B7355" },
     { "id": "sunday", "name": "Понедельник", "avatarUrl": "/avatars/sunday.webp", "stickerPack": [], "color": "#6B5B95" },
     { "id": "firefly", "name": "Светлячок", "avatarUrl": "/avatars/firefly.webp", "stickerPack": [], "color": "#88B04B" },
-    { "id": "river", "name": "Река", "avatarUrl": "/avatars/river.png", "stickerPack": [], "color": "#3498DB" },
+    { "id": "river", "name": "Река", "avatarUrl": "/avatars/river.webp", "stickerPack": [], "color": "#3498DB" },
     { "id": "sparkle", "name": "Искорка", "avatarUrl": "/avatars/sparkle.png", "stickerPack": [], "color": "#E91E8A" },
     { "id": "robin", "name": "Зарянка", "avatarUrl": "/avatars/robin.png", "stickerPack": [], "color": "#E8A87C" }
   ],

@@ -171,7 +171,7 @@
   border-radius: 50%;
   flex-shrink: 0;
   overflow: hidden;
-  background: var(--border-light);
+  background: #4e4e4e;
 }
 
 .avatar img {
@@ -188,7 +188,7 @@
   color: #686868;
   font-weight: 600;
   letter-spacing: 0.8px;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 /* ─── Bubble ─── */

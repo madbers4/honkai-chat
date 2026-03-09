@@ -32,6 +32,7 @@ function calculateTypingDelay(_value: string, _explicitDelay?: number): number {
     timing.typingDelayBase + _value.length * timing.typingDelayPerChar,
     timing.typingDelayMax,
   );
+  
 }
 
 async function processMessageAction(

@@ -27,7 +27,11 @@ function delay(ms: number): Promise<void> {
 }
 
 function calculateTypingDelay(_value: string, _explicitDelay?: number): number {
-  return 0;
+ if (_explicitDelay !== undefined) return _explicitDelay;
+  return Math.min(
+    timing.typingDelayBase + _value.length * timing.typingDelayPerChar,
+    timing.typingDelayMax,
+  );
 }
 
 async function processMessageAction(

@@ -14,7 +14,7 @@ import type {
 } from '@honkai-chat/shared';
 import { timing } from '@honkai-chat/shared';
 import { getState, addMessage } from './state.js';
-import { broadcastAll, broadcastToRole, broadcastToCharacterId } from './broadcast.js';
+import { broadcastAll } from './broadcast.js';
 import {
   transformCharacter as doTransformCharacter,
   getCharactersRecord,
@@ -26,12 +26,8 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function calculateTypingDelay(value: string, explicitDelay?: number): number {
-  if (explicitDelay !== undefined) return explicitDelay;
-  return Math.min(
-    timing.typingDelayBase + value.length * timing.typingDelayPerChar,
-    timing.typingDelayMax,
-  );
+function calculateTypingDelay(_value: string, _explicitDelay?: number): number {
+  return 0;
 }
 
 async function processMessageAction(
@@ -106,12 +102,20 @@ export class ScenarioEngine {
   private stepIndex: number = 0;
   private isProcessing: boolean = false;
   private lastChoiceOptionId: string | null = null;
+  private advanceConfirmed: boolean = false;
+  /** Full options (with actions) for the currently pending choice */
+  private pendingChoiceFullOptions: ChoiceOption[] | null = null;
+  /** Remaining branch steps to execute after a nested choice is resolved */
+  private branchContinuation: ScenarioStep[] | null = null;
 
   loadScenario(scenario: Scenario): void {
     this.scenario = scenario;
     this.stepIndex = 0;
     this.isProcessing = false;
     this.lastChoiceOptionId = null;
+    this.advanceConfirmed = false;
+    this.pendingChoiceFullOptions = null;
+    this.branchContinuation = null;
   }
 
   async processNextStep(): Promise<void> {
@@ -129,6 +133,24 @@ export class ScenarioEngine {
     }
   }
 
+  /** Initial scenario start — auto-confirms the first action step */
+  async startScenario(): Promise<void> {
+    this.advanceConfirmed = true;
+    await this.processNextStep();
+  }
+
+  /** Called when actor confirms a pending action advance */
+  async handleAdvance(): Promise<void> {
+    const state = getState();
+    if (!state.pendingAdvance) return;
+
+    state.pendingAdvance = null;
+    broadcastAll({ type: 'pendingAdvanceDismissed' });
+
+    this.advanceConfirmed = true;
+    await this.processNextStep();
+  }
+
   private async processStep(step: ScenarioStep): Promise<void> {
     const state = getState();
 
@@ -140,6 +162,22 @@ export class ScenarioEngine {
         await this.processChoiceStep(step);
         return; // DON'T advance — wait for handleChoiceSelect
       case 'action':
+        if (step.target && !this.advanceConfirmed) {
+          // Pause — only when target is explicitly set
+          const target = step.target;
+          const targetCharId = target === 'actor'
+            ? (step.targetCharacterId ?? this.findNextCharacterId())
+            : 'system';
+          state.pendingAdvance = { target, characterId: targetCharId, actionText: step.value };
+          broadcastAll({
+            type: 'pendingAdvance',
+            target,
+            characterId: targetCharId,
+            actionText: step.value,
+          });
+          return; // DON'T advance — wait for handleAdvance
+        }
+        this.advanceConfirmed = false;
         await this.processActionStep(step);
         break;
       case 'transformCharacter':
@@ -148,9 +186,11 @@ export class ScenarioEngine {
       case 'switchGuestMode':
         await this.processSwitchGuestModeStep(step);
         break;
-      case 'branch':
-        await this.processBranchStep(step);
+      case 'branch': {
+        const paused = await this.processBranchStep(step);
+        if (paused) return; // DON'T advance — wait for handleChoiceSelect
         break;
+      }
     }
 
     // Advance to next step
@@ -162,6 +202,22 @@ export class ScenarioEngine {
       this.isProcessing = false;
       await this.processNextStep();
     }
+  }
+
+  /** Look ahead from current position to find the next message step's characterId */
+  private findNextCharacterId(): string {
+    if (!this.scenario) return 'system';
+    // Look forward
+    for (let i = this.stepIndex + 1; i < this.scenario.steps.length; i++) {
+      const s = this.scenario.steps[i];
+      if (s.type === 'message') return s.characterId;
+    }
+    // Fallback: look backward
+    for (let i = this.stepIndex - 1; i >= 0; i--) {
+      const s = this.scenario.steps[i];
+      if (s.type === 'message') return s.characterId;
+    }
+    return 'system';
   }
 
   private async processMessageStep(step: MessageStep): Promise<void> {
@@ -176,26 +232,40 @@ export class ScenarioEngine {
   private async processChoiceStep(step: ChoiceStep): Promise<void> {
     const state = getState();
 
+    // Always resolve target character — explicit or derived from option actions
+    const targetCharId = step.targetCharacterId ?? this.deriveCharacterFromOptions(step.options);
+
+    // Store full options for handleChoiceSelect (safe even for nested choices in branches)
+    this.pendingChoiceFullOptions = step.options;
+
     // Store pending choice
     state.pendingChoice = {
       stepIndex: this.stepIndex,
       target: step.target,
-      targetCharacterId: step.targetCharacterId,
+      targetCharacterId: targetCharId,
       options: step.options.map((o: ChoiceOption) => ({ id: o.id, label: o.label })),
     };
 
-    // Send choices to target role (or specific character if targetCharacterId set)
+    // Send choices to ALL clients — visibility is handled client-side
     const choicesMsg = {
       type: 'choices' as const,
       stepIndex: this.stepIndex,
+      target: step.target,
+      targetCharacterId: targetCharId,
       options: state.pendingChoice.options,
     };
 
-    if (step.targetCharacterId) {
-      broadcastToCharacterId(step.targetCharacterId, choicesMsg);
-    } else {
-      broadcastToRole(step.target, choicesMsg);
+    broadcastAll(choicesMsg);
+  }
+
+  /** Derive the acting character from a choice's option actions */
+  private deriveCharacterFromOptions(options: ChoiceOption[]): string {
+    for (const option of options) {
+      for (const action of option.actions) {
+        if (action.type === 'message') return action.characterId;
+      }
     }
+    return 'system';
   }
 
   async handleChoiceSelect(optionId: string, stepIndex: number): Promise<void> {
@@ -221,13 +291,32 @@ export class ScenarioEngine {
     state.branchContext.set(optionId, optionId);
     this.lastChoiceOptionId = optionId;
 
-    // Find the chosen option and execute its actions
-    if (!this.scenario) return;
-    const currentStep = this.scenario.steps[this.stepIndex] as ChoiceStep;
-    const chosenOption = currentStep.options.find((o: ChoiceOption) => o.id === optionId);
+    // Use stored full options — safe even for nested choices in branches
+    // where this.stepIndex may point to the parent branch step, not the choice
+    const chosenOption = this.pendingChoiceFullOptions?.find((o: ChoiceOption) => o.id === optionId);
+    this.pendingChoiceFullOptions = null;
 
     if (chosenOption && chosenOption.actions.length > 0) {
       await executeActions(chosenOption.actions);
+    }
+
+    // If there's a branch continuation (nested choice inside a branch), resume it
+    if (this.branchContinuation) {
+      const remaining = this.branchContinuation;
+      this.branchContinuation = null;
+
+      for (let i = 0; i < remaining.length; i++) {
+        const branchStep = remaining[i];
+        if (branchStep.type === 'choice') {
+          // Another nested choice — store the rest as continuation and pause again
+          if (i + 1 < remaining.length) {
+            this.branchContinuation = remaining.slice(i + 1);
+          }
+          await this.processChoiceStep(branchStep);
+          return; // Wait for next handleChoiceSelect
+        }
+        await this.executeBranchStep(branchStep);
+      }
     }
 
     // Advance to next step
@@ -235,7 +324,7 @@ export class ScenarioEngine {
     state.scenarioIndex = this.stepIndex;
 
     // Continue processing
-    if (this.stepIndex < this.scenario.steps.length) {
+    if (this.scenario && this.stepIndex < this.scenario.steps.length) {
       await this.processNextStep();
     }
   }
@@ -272,7 +361,8 @@ export class ScenarioEngine {
     broadcastAll({ type: 'guestModeSwitch', mode: step.mode });
   }
 
-  private async processBranchStep(step: BranchStep): Promise<void> {
+  /** @returns true if the branch paused on a nested choice */
+  private async processBranchStep(step: BranchStep): Promise<boolean> {
     // Find the last choice option from branchContext
     let matchingBranch: ScenarioStep[] | null = null;
 
@@ -285,13 +375,23 @@ export class ScenarioEngine {
 
     if (!matchingBranch) {
       console.warn('[scenarioEngine] processBranchStep: no matching branch found');
-      return;
+      return false;
     }
 
-    // Execute all steps in the branch sequentially
-    for (const branchStep of matchingBranch) {
+    // Execute all steps in the branch sequentially, pausing if a nested choice is hit
+    for (let i = 0; i < matchingBranch.length; i++) {
+      const branchStep = matchingBranch[i];
+      if (branchStep.type === 'choice') {
+        // Store remaining steps as continuation for after choice is resolved
+        if (i + 1 < matchingBranch.length) {
+          this.branchContinuation = matchingBranch.slice(i + 1);
+        }
+        await this.processChoiceStep(branchStep);
+        return true; // Paused — wait for handleChoiceSelect
+      }
       await this.executeBranchStep(branchStep);
     }
+    return false;
   }
 
   private async executeBranchStep(step: ScenarioStep): Promise<void> {
@@ -327,6 +427,9 @@ export class ScenarioEngine {
     this.stepIndex = 0;
     this.isProcessing = false;
     this.lastChoiceOptionId = null;
+    this.advanceConfirmed = false;
+    this.pendingChoiceFullOptions = null;
+    this.branchContinuation = null;
     const state = getState();
     state.scenarioIndex = 0;
   }

@@ -2,13 +2,15 @@ import { useCallback, useMemo } from 'react';
 import { useChatContext } from '../context/chatContext';
 import { useWebSocket } from './useWebSocket';
 import { useSession } from './useSession';
+import { useAuth } from './useAuth';
 import * as factory from '../lib/messageFactory';
 import type { DisplayMessage, Role } from '../types';
 
 export function useChat(role: Role) {
   const { state, dispatch } = useChatContext();
   const { sessionId } = useSession();
-  const { send } = useWebSocket(role, state.currentCharacterId, sessionId);
+  const { authenticated, authParam } = useAuth(role);
+  const { send } = useWebSocket(role, state.currentCharacterId, sessionId, authParam);
 
   // Compute display messages from raw ChatMessages + character registry
   const displayMessages: DisplayMessage[] = useMemo(() => {
@@ -69,12 +71,27 @@ export function useChat(role: Role) {
     send(factory.createAdminReset());
   }, [send]);
 
+  const switchVariant = useCallback(
+    (variant: string) => {
+      send(factory.createSwitchVariant(variant));
+    },
+    [send],
+  );
+
+  const toggleNoScenario = useCallback(
+    (enabled: boolean) => {
+      send(factory.createToggleNoScenario(enabled));
+    },
+    [send],
+  );
+
   const requestSync = useCallback(() => {
     send(factory.createRequestSync());
   }, [send]);
 
   return {
     state,
+    authenticated,
     displayMessages,
     sendFreeMessage,
     selectChoice,
@@ -83,6 +100,8 @@ export function useChat(role: Role) {
     advanceScenario,
     startScenario,
     resetChat,
+    switchVariant,
+    toggleNoScenario,
     requestSync,
   };
 }

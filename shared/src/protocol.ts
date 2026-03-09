@@ -1,5 +1,5 @@
 import type { ChatMessage, CharacterDef } from './models';
-import type { CharacterId, GuestMode, Role } from './constants';
+import type { CharacterId, GuestMode, Role, ScenarioVariant } from './constants';
 
 // ─── Server → Client ───
 
@@ -11,7 +11,15 @@ export interface SessionInfo {
 
 export interface ActiveChoice {
   stepIndex: number;
+  target: 'guest' | 'actor';
+  targetCharacterId: string;
   options: { id: string; label: string }[];
+}
+
+export interface PendingAdvance {
+  target: 'guest' | 'actor';
+  characterId: string;
+  actionText: string;
 }
 
 export interface ServerInit {
@@ -24,7 +32,10 @@ export interface ServerInit {
   scenarioIndex: number;
   guestMode: GuestMode;
   activeChoices: ActiveChoice | null;
+  pendingAdvance: PendingAdvance | null;
   connectedSessions: SessionInfo[];
+  scenarioVariant: ScenarioVariant;
+  noScenario: boolean;
 }
 
 export interface ServerNewMessage {
@@ -41,6 +52,8 @@ export interface ServerTyping {
 export interface ServerChoices {
   type: 'choices';
   stepIndex: number;
+  target: 'guest' | 'actor';
+  targetCharacterId: string;
   options: { id: string; label: string }[];
 }
 
@@ -71,6 +84,28 @@ export interface ServerSessionUpdate {
   sessions: SessionInfo[];
 }
 
+export interface ServerPendingAdvance {
+  type: 'pendingAdvance';
+  target: 'guest' | 'actor';
+  characterId: string;
+  actionText: string;
+}
+
+export interface ServerPendingAdvanceDismissed {
+  type: 'pendingAdvanceDismissed';
+}
+
+export interface ServerVariantChanged {
+  type: 'variantChanged';
+  variant: ScenarioVariant;
+  init: ServerInit;
+}
+
+export interface ServerNoScenarioChanged {
+  type: 'noScenarioChanged';
+  noScenario: boolean;
+}
+
 export interface ServerError {
   type: 'error';
   code: string;
@@ -87,6 +122,10 @@ export type ServerMessage =
   | ServerReset
   | ServerGuestModeSwitch
   | ServerSessionUpdate
+  | ServerPendingAdvance
+  | ServerPendingAdvanceDismissed
+  | ServerVariantChanged
+  | ServerNoScenarioChanged
   | ServerError;
 
 // ─── Client → Server ───
@@ -129,6 +168,16 @@ export interface ClientAdminStartScenario {
   type: 'adminStartScenario';
 }
 
+export interface ClientSwitchVariant {
+  type: 'switchVariant';
+  variant: ScenarioVariant;
+}
+
+export interface ClientToggleNoScenario {
+  type: 'toggleNoScenario';
+  enabled: boolean;
+}
+
 export type ClientMessage =
   | ClientChoiceSelect
   | ClientFreeMessage
@@ -137,4 +186,6 @@ export type ClientMessage =
   | ClientSwitchActorMode
   | ClientRequestSync
   | ClientAdvanceScenario
-  | ClientAdminStartScenario;
+  | ClientAdminStartScenario
+  | ClientSwitchVariant
+  | ClientToggleNoScenario;

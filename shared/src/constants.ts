@@ -10,6 +10,22 @@ export type ActorMode = typeof actorModes[number];
 export const guestModes = ['scenario', 'free'] as const;
 export type GuestMode = typeof guestModes[number];
 
+export const scenarioVariants = ['default', 'no-sunday', 'no-firefly', 'no-robin'] as const;
+export type ScenarioVariant = typeof scenarioVariants[number];
+
+export const scenarioVariantLabels: Record<ScenarioVariant, string> = {
+  'default': 'Полный состав',
+  'no-sunday': 'Без Понедельника',
+  'no-firefly': 'Без Светлячка',
+  'no-robin': 'Без Зарянки',
+};
+
+// ─── Auth ───
+
+export const guestToken = 'hsr-guest-2026';
+export const actorKey = 'hsr-actor-penaconia';
+export const testGuestKey = 'hsr-test-guest';
+
 export const timing = {
   typingDelayBase: 1500,
   typingDelayPerChar: 30,

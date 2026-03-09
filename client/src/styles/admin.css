@@ -161,6 +161,86 @@
   max-width: 56px;
 }
 
+/* ─── Variant Picker ─── */
+
+.variant-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.variant-picker__item {
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--choice-text);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-family);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.variant-picker__item:hover {
+  background: var(--choice-hover);
+}
+
+.variant-picker__item--active {
+  background: #e8f0fe;
+  border-color: #4285f4;
+  color: #1a73e8;
+  cursor: default;
+}
+
+.variant-picker__item--active:hover {
+  background: #e8f0fe;
+}
+
+/* ─── Confirm Variant Button ─── */
+
+.confirm-dialog__btn--confirm-variant {
+  background: #1a73e8;
+  color: #ffffff;
+}
+
+.confirm-dialog__btn--confirm-variant:hover {
+  background: #1565c0;
+}
+
+/* ─── No-Scenario Toggle ─── */
+
+.admin-menu__no-scenario {
+  width: 100%;
+  padding: var(--space-md);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--choice-text);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  text-align: center;
+  font-family: var(--font-family);
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.admin-menu__no-scenario:hover {
+  background: var(--choice-hover);
+}
+
+.admin-menu__no-scenario--active {
+  background: #fff3e0;
+  border-color: #ff9800;
+  color: #e65100;
+}
+
+.admin-menu__no-scenario--active:hover {
+  background: #ffe0b2;
+}
+
 /* ─── Confirm Dialog ─── */
 
 .confirm-dialog {

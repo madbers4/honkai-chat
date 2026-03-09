@@ -10,7 +10,9 @@ import type {
   ClientMessage,
   ServerInit,
   ActiveChoice,
+  PendingAdvance,
   SessionInfo,
+  ScenarioVariant,
 } from '@honkai-chat/shared';
 
 export type {
@@ -25,7 +27,9 @@ export type {
   ClientMessage,
   ServerInit,
   ActiveChoice,
+  PendingAdvance,
   SessionInfo,
+  ScenarioVariant,
 };
 
 // ─── Client-only UI state ───
@@ -39,9 +43,12 @@ export interface ChatState {
   messages: ChatMessage[];
   typingCharacters: Set<string>;
   activeChoices: ActiveChoice | null;
+  pendingAdvance: PendingAdvance | null;
   guestMode: GuestMode;
   actorMode: ActorMode;
   sessions: SessionInfo[];
+  scenarioVariant: ScenarioVariant;
+  noScenario: boolean;
 }
 
 export type ChatAction =
@@ -51,6 +58,8 @@ export type ChatAction =
   | { type: 'SET_TYPING'; characterId: string; isTyping: boolean }
   | { type: 'SET_CHOICES'; choices: ActiveChoice }
   | { type: 'DISMISS_CHOICES' }
+  | { type: 'SET_PENDING_ADVANCE'; pendingAdvance: PendingAdvance }
+  | { type: 'DISMISS_PENDING_ADVANCE' }
   | {
       type: 'CHARACTER_TRANSFORM';
       fromId: string;
@@ -62,4 +71,6 @@ export type ChatAction =
   | { type: 'GUEST_MODE_SWITCH'; mode: GuestMode }
   | { type: 'SESSION_UPDATE'; sessions: SessionInfo[] }
   | { type: 'SWITCH_CHARACTER'; characterId: string }
-  | { type: 'SWITCH_ACTOR_MODE'; mode: ActorMode };
+  | { type: 'SWITCH_ACTOR_MODE'; mode: ActorMode }
+  | { type: 'VARIANT_CHANGED'; variant: ScenarioVariant; init: ServerInit }
+  | { type: 'NO_SCENARIO_CHANGED'; noScenario: boolean };

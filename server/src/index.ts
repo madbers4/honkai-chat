@@ -1,14 +1,14 @@
 import { createServer } from 'http';
-import { existsSync, readFileSync } from 'fs';
+import { existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import express from 'express';
 import { WebSocketServer } from 'ws';
-import type { Scenario } from '@honkai-chat/shared';
 import { getState } from './state.js';
 import { initCharacters } from './characters.js';
 import { scenarioEngine } from './scenarioEngine.js';
 import { handleConnection } from './wsHandler.js';
+import { loadScenario } from './scenarioLoader.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -39,21 +39,18 @@ wss.on('connection', (ws, req) => {
   const role = url.searchParams.get('role') ?? '';
   const characterId = url.searchParams.get('characterId') ?? '';
   const sessionId = url.searchParams.get('sessionId') ?? undefined;
+  const token = url.searchParams.get('token') ?? undefined;
+  const key = url.searchParams.get('key') ?? undefined;
 
-  handleConnection(ws, { role, characterId, sessionId });
+  handleConnection(ws, { role, characterId, sessionId, token, key });
 });
 
 // ─── Load scenario and start ───
-function loadScenario(): Scenario {
-  const scenarioPath = join(__dirname, 'scenario', 'penaconia.json');
-  const raw = readFileSync(scenarioPath, 'utf-8');
-  return JSON.parse(raw) as Scenario;
-}
-
 try {
   const scenario = loadScenario();
   const state = getState();
   state.scenario = scenario;
+  state.scenarioVariant = 'default';
   initCharacters(scenario);
   scenarioEngine.loadScenario(scenario);
   console.log(`[server] Loaded scenario: "${scenario.title}" (${scenario.steps.length} steps)`);

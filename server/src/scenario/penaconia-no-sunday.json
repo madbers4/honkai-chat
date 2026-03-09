@@ -1,10 +1,9 @@
 {
-  "id": "penaconia",
-  "title": "Где исполняются мечты",
-  "description": "Групповой чат съемочной группы КММ в Пенаконии",
+  "id": "penaconia-no-sunday",
+  "title": "Где исполняются мечты (без Понедельника)",
+  "description": "Групповой чат съемочной группы КММ в Пенаконии — Светлячок за камерой",
   "initialCharacters": [
     { "id": "clerk", "name": "Клерк43224", "avatarUrl": "/avatars/clerk.webp", "stickerPack": [], "color": "#8B7355" },
-    { "id": "sunday", "name": "Понедельник", "avatarUrl": "/avatars/sunday.webp", "stickerPack": ["/stickers/sunday-1.webp", "/stickers/sunday-2.webp", "/stickers/sunday-3.webp", "/stickers/sunday-4.webp", "/stickers/sunday-5.webp", "/stickers/sunday-6.webp"], "color": "#6B5B95" },
     { "id": "firefly", "name": "Светлячок", "avatarUrl": "/avatars/firefly.webp", "stickerPack": ["/stickers/firefly-1.webp", "/stickers/firefly-2.webp", "/stickers/firefly-3.webp"], "color": "#88B04B" },
     { "id": "river", "name": "Река", "avatarUrl": "/avatars/river.webp", "stickerPack": [], "color": "#3498DB" },
     { "id": "sparkle", "name": "Искорка", "avatarUrl": "/avatars/sparkle.webp", "stickerPack": ["/stickers/sparkle-1.webp", "/stickers/sparkle-2.webp", "/stickers/sparkle-3.webp", "/stickers/sparkle-4.webp", "/stickers/sparkle-5.webp", "/stickers/sparkle-6.webp"], "color": "#E91E8A" },
@@ -30,9 +29,9 @@
         },
         {
           "id": "arrive-meme",
-          "label": "Коробочка от парня с грустными глазами — это нормально?",
+          "label": "Коробочка от девушки с яркими глазами — это нормально?",
           "actions": [
-            { "type": "message", "characterId": "clerk", "messageType": "text", "value": "Клерк на месте. Меня встретил парень с грустными глазами и вручил коробочку. Это нормальная процедура, или мне беспокоиться?" }
+            { "type": "message", "characterId": "clerk", "messageType": "text", "value": "Клерк на месте. Меня встретила девушка с яркими глазами и вручила коробочку. Это нормальная процедура, или мне беспокоиться?" }
           ]
         },
         {
@@ -43,15 +42,14 @@
           ]
         }
       ],
-      "_comment": "Clerk's first message — his personality shines through"
+      "_comment": "Clerk's first message"
     },
 
     {
       "type": "message",
       "characterId": "river",
       "messageType": "text",
-      "value": "О! Наконец-то. Живой клерк. Настоящий. Ты очень кстати.",
-      "_comment": "=== River (Sparkle in disguise) — theatrical, playful, with flair ==="
+      "value": "О! Наконец-то. Живой клерк. Настоящий. Ты очень кстати."
     },
     {
       "type": "message",
@@ -100,33 +98,33 @@
       "type": "message",
       "characterId": "river",
       "messageType": "text",
-      "value": "Понедельник — наш оператор. Он на площадке рядом с тобой. Объяснит на месте, что к чему.",
-      "_comment": "=== Transition to IRL with Sunday ==="
+      "value": "Светлячок — наш оператор. Она на площадке рядом с тобой. Объяснит на месте, что к чему.",
+      "_comment": "=== Firefly is the operator in this variant ==="
     },
 
     {
       "type": "choice",
       "target": "actor",
-      "targetCharacterId": "sunday",
+      "targetCharacterId": "firefly",
       "options": [
         {
-          "id": "sunday-detailed",
+          "id": "firefly-detailed",
           "label": "Доложить Реке, что клерк надёжный и идёт к Зарянке",
           "actions": [
-            { "type": "message", "characterId": "sunday", "messageType": "text", "value": "Река, клерк ввёден в курс дела. Коробочку с механизмом передал." },
-            { "type": "message", "characterId": "sunday", "messageType": "text", "value": "Он производит впечатление надёжного человека. Направляю к Зарянке." }
+            { "type": "message", "characterId": "firefly", "messageType": "text", "value": "Река, клерк ввёден в курс дела! Коробочку с механизмом передала." },
+            { "type": "message", "characterId": "firefly", "messageType": "text", "value": "Он производит впечатление надёжного человека. Направляю к Зарянке! 🌟" }
           ]
         },
         {
-          "id": "sunday-warm",
+          "id": "firefly-warm",
           "label": "Верю, что механизм ей поможет — пусть снова услышит мелодию",
           "actions": [
-            { "type": "message", "characterId": "sunday", "messageType": "text", "value": "Река. Клерк готов, идёт к Зарянке." },
-            { "type": "message", "characterId": "sunday", "messageType": "text", "value": "Я верю, что этот механизм ей поможет. Пусть она снова услышит свою мелодию." }
+            { "type": "message", "characterId": "firefly", "messageType": "text", "value": "Река! Клерк готов, идёт к Зарянке." },
+            { "type": "message", "characterId": "firefly", "messageType": "text", "value": "Я верю, что этот механизм ей поможет. Пусть она снова услышит свою мелодию. 💫" }
           ]
         }
       ],
-      "_comment": "Sunday writes to River — elegant, with care for Robin"
+      "_comment": "Firefly writes to River as operator"
     },
 
     {
@@ -156,11 +154,11 @@
         },
         {
           "id": "go-robin-question",
-          "label": "А почему оператор сам не может подойти к актрисе?",
+          "label": "А почему оператор сама не может подойти к актрисе?",
           "actions": [
-            { "type": "message", "characterId": "clerk", "messageType": "text", "value": "Подождите. А почему оператор сам не может подойти к актрисе?" },
+            { "type": "message", "characterId": "clerk", "messageType": "text", "value": "Подождите. А почему оператор сама не может подойти к актрисе?" },
             { "type": "delay", "ms": 1500 },
-            { "type": "message", "characterId": "river", "messageType": "text", "value": "У него свои причины. Поверь, он бы хотел. Просто... не может. Помоги ей, ладно?" },
+            { "type": "message", "characterId": "river", "messageType": "text", "value": "У неё свои причины. Поверь, она бы хотела. Просто... камеру нельзя оставлять. Помоги ей, ладно?" },
             { "type": "delay", "ms": 800 },
             { "type": "message", "characterId": "clerk", "messageType": "text", "value": "Ладно. Иду." }
           ]
@@ -228,7 +226,7 @@
       "characterId": "river",
       "messageType": "text",
       "value": "Да! Заработало! Клерк, ты гений! 🎉",
-      "_comment": "=== SCENE 3: FIRST FILMING ==="
+      "_comment": "=== SCENE 3: FIRST FILMING — Firefly operates, Robin acts ==="
     },
     {
       "type": "message",
@@ -294,31 +292,31 @@
     {
       "type": "choice",
       "target": "actor",
-      "targetCharacterId": "sunday",
+      "targetCharacterId": "firefly",
       "options": [
         {
-          "id": "sunday-film1-poetic",
+          "id": "firefly-film1-poetic",
           "label": "Камера на позиции, она улыбается настоящей улыбкой",
           "actions": [
-            { "type": "message", "characterId": "sunday", "messageType": "text", "value": "Река. Камера на позиции. Она улыбается. Настоящей улыбкой." },
-            { "type": "message", "characterId": "sunday", "messageType": "sticker", "value": "/stickers/sunday-1.webp" }
+            { "type": "message", "characterId": "firefly", "messageType": "text", "value": "Река! Камера на позиции. Она улыбается. Настоящей улыбкой! 🌟" },
+            { "type": "message", "characterId": "firefly", "messageType": "sticker", "value": "/stickers/firefly-3.webp" }
           ]
         },
         {
-          "id": "sunday-film1-brief",
+          "id": "firefly-film1-brief",
           "label": "Камера готова, все на местах, снимаем",
           "actions": [
-            { "type": "message", "characterId": "sunday", "messageType": "text", "value": "Камера готова. Все на местах. Снимаем." }
+            { "type": "message", "characterId": "firefly", "messageType": "text", "value": "Камера готова! Все на местах. Снимаем! 🎬" }
           ]
         }
       ],
-      "_comment": "Sunday signals ready — he's moved by Robin's recovery"
+      "_comment": "Firefly signals ready as operator"
     },
 
     {
       "type": "switchGuestMode",
       "mode": "free",
-      "_comment": "Filming first scene"
+      "_comment": "Filming first scene — Robin acts, Firefly operates"
     },
 
     {
@@ -334,25 +332,25 @@
             { "type": "message", "characterId": "robin", "messageType": "text", "value": "Знаешь, кино — совсем не страшно. Особенно когда снова чувствуешь каждый момент." },
             { "type": "message", "characterId": "robin", "messageType": "text", "value": "Спасибо клерку. За механизм. За то, что не побоялся чинить чужие чувства." },
             { "type": "message", "characterId": "robin", "messageType": "sticker", "value": "/stickers/robin-4.webp" },
-            { "type": "message", "characterId": "robin", "messageType": "text", "value": "Ухожу в гримёрку! 💫" }
+            { "type": "message", "characterId": "robin", "messageType": "text", "value": "Теперь моя очередь помочь — беру камеру! 📷" }
           ]
         },
         {
           "id": "scene1-done-brief",
-          "label": "Сцена снята, ухожу в гримёрку",
+          "label": "Сцена снята, меняемся — беру камеру",
           "actions": [
-            { "type": "message", "characterId": "robin", "messageType": "text", "value": "Сцена снята. Ухожу в гримёрку." },
+            { "type": "message", "characterId": "robin", "messageType": "text", "value": "Сцена снята. Теперь моя очередь за камерой!" },
             { "type": "message", "characterId": "robin", "messageType": "sticker", "value": "/stickers/robin-1.webp" }
           ]
         }
       ],
-      "_comment": "Robin thanks crew, exits to dressing room"
+      "_comment": "Robin thanks crew, takes camera for scene 2"
     },
 
     {
       "type": "switchGuestMode",
       "mode": "scenario",
-      "_comment": "=== SCENE 4: ORIGAMI — Firefly joins ==="
+      "_comment": "=== SCENE 4: SWAP — Robin takes camera, Firefly prepares to act ==="
     },
 
     {
@@ -371,31 +369,19 @@
       "type": "message",
       "characterId": "river",
       "messageType": "text",
-      "value": "Светлячок — вторая актриса. Она уже на подходе."
+      "value": "Светлячок, передавай камеру Зарянке — теперь ты в кадре!"
     },
     {
       "type": "message",
       "characterId": "firefly",
       "messageType": "text",
-      "value": "Привет-привет!! 🌟"
+      "value": "Ура!! Моя очередь сниматься! 🌟"
     },
     {
       "type": "message",
       "characterId": "firefly",
       "messageType": "text",
-      "value": "Рада, что Зарянка снова чувствует! Правда?! Это же потрясающе!"
-    },
-    {
-      "type": "message",
-      "characterId": "firefly",
-      "messageType": "text",
-      "value": "Хорошо, что она снова способна чувствовать — по-настоящему чувствовать. В мире снов иногда происходят странные вещи."
-    },
-    {
-      "type": "message",
-      "characterId": "firefly",
-      "messageType": "text",
-      "value": "Так! По делу. Для финальной сцены нужны оригами-декорации: журавли, цветы, звёзды... и лягушка."
+      "value": "Но сначала — декорации. Для финальной сцены нужны оригами: журавли, цветы, звёзды... и лягушка."
     },
     {
       "type": "message",
@@ -419,7 +405,7 @@
       "type": "message",
       "characterId": "firefly",
       "messageType": "text",
-      "value": "Скоро буду на площадке! Начинайте без меня!"
+      "value": "Зарянка, поможешь с камерой? А мы с клерком разберёмся с декорациями!"
     },
 
     {
@@ -466,7 +452,7 @@
     {
       "type": "switchGuestMode",
       "mode": "free",
-      "_comment": "Activity: origami — Sunday, Clerk, Firefly"
+      "_comment": "Activity: origami — Firefly, Clerk, Robin helps"
     },
 
     {
@@ -492,13 +478,13 @@
           ]
         }
       ],
-      "_comment": "Firefly (or root) confirms origami done"
+      "_comment": "Firefly confirms origami done"
     },
 
     {
       "type": "switchGuestMode",
       "mode": "scenario",
-      "_comment": "=== SCENE 5: FINAL SCENE ==="
+      "_comment": "=== SCENE 5: FINAL SCENE — Robin operates camera, Firefly acts ==="
     },
 
     {
@@ -511,7 +497,7 @@
       "type": "message",
       "characterId": "river",
       "messageType": "text",
-      "value": "Раскадровка. Клерк — массовка. Понедельник — за камерой. Светлячок — в кадре."
+      "value": "Раскадровка. Клерк — массовка. Зарянка — за камерой. Светлячок — в кадре."
     },
     {
       "type": "message",
@@ -523,38 +509,38 @@
     {
       "type": "choice",
       "target": "actor",
-      "targetCharacterId": "sunday",
+      "targetCharacterId": "robin",
       "options": [
         {
-          "id": "sunday-scene2-poetic",
+          "id": "robin-scene2-poetic",
           "label": "Декорации как сон, который не хочется забывать — мотор!",
           "actions": [
-            { "type": "message", "characterId": "sunday", "messageType": "text", "value": "Последняя сцена. Декорации выглядят... как сон, который не хочется забывать." },
-            { "type": "message", "characterId": "sunday", "messageType": "text", "value": "Камера готова. Мотор! 🎬" },
-            { "type": "message", "characterId": "sunday", "messageType": "sticker", "value": "/stickers/sunday-2.webp" }
+            { "type": "message", "characterId": "robin", "messageType": "text", "value": "Последняя сцена. Декорации выглядят... как сон, который не хочется забывать." },
+            { "type": "message", "characterId": "robin", "messageType": "text", "value": "Камера готова. Мотор! 🎬" },
+            { "type": "message", "characterId": "robin", "messageType": "sticker", "value": "/stickers/robin-3.webp" }
           ]
         },
         {
-          "id": "sunday-scene2-brief",
+          "id": "robin-scene2-brief",
           "label": "Всё на местах, снимаем",
           "actions": [
-            { "type": "message", "characterId": "sunday", "messageType": "text", "value": "Всё на местах. Снимаем." }
+            { "type": "message", "characterId": "robin", "messageType": "text", "value": "Всё на местах. Снимаем!" }
           ]
         }
       ],
-      "_comment": "Sunday starts filming"
+      "_comment": "Robin operates camera for scene 2"
     },
 
     {
       "type": "switchGuestMode",
       "mode": "free",
-      "_comment": "Filming final scene"
+      "_comment": "Filming final scene — Firefly acts"
     },
 
     {
       "type": "choice",
       "target": "actor",
-      "targetCharacterId": "sunday",
+      "targetCharacterId": "robin",
       "options": [
         {
           "id": "lights-out",
@@ -565,12 +551,12 @@
           ]
         }
       ],
-      "_comment": "=== SCENE 6: LIGHTS OUT ==="
+      "_comment": "=== SCENE 6: LIGHTS OUT — Robin triggers as camera operator ==="
     },
     {
-          "type": "switchGuestMode",
-          "mode": "scenario"
-        },
+      "type": "switchGuestMode",
+      "mode": "scenario"
+    },
     {
       "type": "action",
       "value": "Река вышла из чата."
@@ -675,29 +661,6 @@
     },
 
     {
-      "type": "choice",
-      "target": "actor",
-      "targetCharacterId": "sunday",
-      "options": [
-        {
-          "id": "react-sunday-again",
-          "label": "Искорка опять за своё...",
-          "actions": [
-            { "type": "message", "characterId": "sunday", "messageType": "text", "value": "Искорка. Она снова..." }
-          ]
-        },
-        {
-          "id": "react-sunday-every",
-          "label": "Каждый раз одно и то же с ней",
-          "actions": [
-            { "type": "message", "characterId": "sunday", "messageType": "text", "value": "Каждый раз. Каждый. Раз." }
-          ]
-        }
-      ],
-      "_comment": "Sunday reacts to Sparkle reveal"
-    },
-
-    {
       "type": "message",
       "characterId": "sparkle",
       "messageType": "text",
@@ -749,29 +712,29 @@
     {
       "type": "choice",
       "target": "actor",
-      "targetCharacterId": "sunday",
+      "targetCharacterId": "robin",
       "options": [
         {
           "id": "found-poppers-calm",
           "label": "Не бомбы — хлопушки с конфетти в каждой фигурке",
           "actions": [
-            { "type": "message", "characterId": "sunday", "messageType": "text", "value": "Выдохните. Это не бомбы." },
-            { "type": "message", "characterId": "sunday", "messageType": "text", "value": "Хлопушки. В каждой фигурке — конфетти. Журавли, звёзды, лягушка — всё." },
-            { "type": "message", "characterId": "sunday", "messageType": "text", "value": "Каждая фигурка, которую мы с таким старанием собирали... Признаю: изящная работа." }
+            { "type": "message", "characterId": "robin", "messageType": "text", "value": "Выдохните. Это не бомбы." },
+            { "type": "message", "characterId": "robin", "messageType": "text", "value": "Хлопушки. В каждой фигурке — конфетти. Журавли, звёзды, лягушка — всё." },
+            { "type": "message", "characterId": "robin", "messageType": "text", "value": "Каждая фигурка, которую мы с таким старанием собирали... Признаю: изящная работа." }
           ]
         },
         {
           "id": "found-poppers-dramatic",
           "label": "Она начинила всю площадку — и это даже красиво",
           "actions": [
-            { "type": "message", "characterId": "sunday", "messageType": "text", "value": "...Не взрывчатка." },
+            { "type": "message", "characterId": "robin", "messageType": "text", "value": "...Не взрывчатка." },
             { "type": "delay", "ms": 1200 },
-            { "type": "message", "characterId": "sunday", "messageType": "text", "value": "Хлопушки с конфетти. Она начинила всю площадку. Каждый журавль, каждую звезду, каждую лягушку." },
-            { "type": "message", "characterId": "sunday", "messageType": "text", "value": "В каком-то смысле... это даже красиво. Если бы не тикающий таймер." }
+            { "type": "message", "characterId": "robin", "messageType": "text", "value": "Хлопушки с конфетти. Она начинила всю площадку. Каждый журавль, каждую звезду, каждую лягушку." },
+            { "type": "message", "characterId": "robin", "messageType": "text", "value": "В каком-то смысле... это даже красиво. Если бы не тикающий таймер." }
           ]
         }
       ],
-      "_comment": "Sunday reports findings"
+      "_comment": "Robin reports findings (as camera operator on scene)"
     },
 
     {
@@ -857,15 +820,15 @@
           {
             "type": "choice",
             "target": "actor",
-            "targetCharacterId": "robin",
+            "targetCharacterId": "firefly",
             "options": [
               {
                 "id": "finale-explode-done",
                 "label": "Мы сделали это — спасибо всем за этот кадр!",
                 "actions": [
-                  { "type": "message", "characterId": "robin", "messageType": "text", "value": "Мы сделали это! 🎬✨" },
-                  { "type": "message", "characterId": "robin", "messageType": "text", "value": "Даже в мире снов свет находит, куда пробиться. Спасибо всем. Спасибо за этот кадр." },
-                  { "type": "message", "characterId": "robin", "messageType": "sticker", "value": "/stickers/robin-5.webp" }
+                  { "type": "message", "characterId": "firefly", "messageType": "text", "value": "Мы сделали это! 🎬✨" },
+                  { "type": "message", "characterId": "firefly", "messageType": "text", "value": "Даже в мире снов свет находит, куда пробиться. Спасибо всем. Спасибо за этот кадр." },
+                  { "type": "message", "characterId": "firefly", "messageType": "sticker", "value": "/stickers/firefly-3.webp" }
                 ]
               }
             ]
@@ -893,24 +856,24 @@
           {
             "type": "choice",
             "target": "actor",
-            "targetCharacterId": "sunday",
+            "targetCharacterId": "robin",
             "options": [
               {
-                "id": "finale-a-sunday-report",
+                "id": "finale-a-robin-report",
                 "label": "Финал снят — этот кадр стоил всего",
                 "actions": [
-                  { "type": "message", "characterId": "sunday", "messageType": "text", "value": "Искорка. Финал снят. Не по сценарию — но этот кадр стоил всего." }
+                  { "type": "message", "characterId": "robin", "messageType": "text", "value": "Искорка. Финал снят. Не по сценарию — но этот кадр стоил всего." }
                 ]
               },
               {
-                "id": "finale-a-sunday-brief",
+                "id": "finale-a-robin-brief",
                 "label": "Финал снят, камера зафиксировала",
                 "actions": [
-                  { "type": "message", "characterId": "sunday", "messageType": "text", "value": "Финал снят. Камера зафиксировала." }
+                  { "type": "message", "characterId": "robin", "messageType": "text", "value": "Финал снят. Камера зафиксировала." }
                 ]
               }
             ],
-            "_comment": "Sunday reports to Sparkle — everyone else is nearby IRL"
+            "_comment": "Robin reports as camera operator"
           },
           {
             "type": "message",
@@ -928,13 +891,13 @@
           {
             "type": "choice",
             "target": "actor",
-            "targetCharacterId": "robin",
+            "targetCharacterId": "firefly",
             "options": [
               {
                 "id": "finale-remove-done",
                 "label": "Сцена доснята, фильм готов",
                 "actions": [
-                  { "type": "message", "characterId": "robin", "messageType": "text", "value": "Сцена доснята. Фильм готов." }
+                  { "type": "message", "characterId": "firefly", "messageType": "text", "value": "Сцена доснята. Фильм готов." }
                 ]
               }
             ]
@@ -956,24 +919,24 @@
           {
             "type": "choice",
             "target": "actor",
-            "targetCharacterId": "sunday",
+            "targetCharacterId": "robin",
             "options": [
               {
-                "id": "finale-b-sunday-report",
+                "id": "finale-b-robin-report",
                 "label": "Контракт выполнен, фильм сдан",
                 "actions": [
-                  { "type": "message", "characterId": "sunday", "messageType": "text", "value": "Контракт выполнен. Фильм сдан." }
+                  { "type": "message", "characterId": "robin", "messageType": "text", "value": "Контракт выполнен. Фильм сдан." }
                 ]
               },
               {
-                "id": "finale-b-sunday-brief",
+                "id": "finale-b-robin-brief",
                 "label": "По сценарию, как и хотели",
                 "actions": [
-                  { "type": "message", "characterId": "sunday", "messageType": "text", "value": "По сценарию. Как и хотели." }
+                  { "type": "message", "characterId": "robin", "messageType": "text", "value": "По сценарию. Как и хотели." }
                 ]
               }
             ],
-            "_comment": "Sunday reports to Sparkle — everyone else is nearby IRL"
+            "_comment": "Robin reports as camera operator"
           }
         ]
       },

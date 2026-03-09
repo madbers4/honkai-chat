@@ -11,6 +11,20 @@ interface Props {
 export function ChatInner({ role }: Props) {
   const chat = useChat(role);
 
+  // Auth gate — no valid token/key in URL
+  if (!chat.authenticated) {
+    return (
+      <div className="welcome-screen">
+        <div className="welcome-screen__card">
+          <div className="welcome-screen__title">Доступ запрещён</div>
+          <div className="welcome-screen__subtitle">
+            Отсканируйте QR-код для входа.
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Guest sees welcome screen while scenario hasn't started (no messages, no typing)
   const showWelcome =
     role === "guest" &&
@@ -48,6 +62,10 @@ export function ChatInner({ role }: Props) {
         onStartScenario={chat.startScenario}
         canStartScenario={chat.state.messages.length === 0}
         isConnected={chat.state.isConnected}
+        scenarioVariant={chat.state.scenarioVariant}
+        onSwitchVariant={chat.switchVariant}
+        noScenario={chat.state.noScenario}
+        onToggleNoScenario={chat.toggleNoScenario}
       />
       <MessageList
         messages={chat.displayMessages}
@@ -58,14 +76,14 @@ export function ChatInner({ role }: Props) {
       <BottomActions
         role={role}
         activeChoices={chat.state.activeChoices}
+        pendingAdvance={chat.state.pendingAdvance}
         guestMode={chat.state.guestMode}
-        actorMode={chat.state.actorMode}
         currentCharacterId={chat.state.currentCharacterId}
         characters={chat.state.characters}
         onSelectChoice={chat.selectChoice}
         onSendFreeMessage={chat.sendFreeMessage}
-        onSwitchActorMode={chat.switchActorMode}
         onAdvanceScenario={chat.advanceScenario}
+        noScenario={chat.state.noScenario}
       />
     </div>
   );

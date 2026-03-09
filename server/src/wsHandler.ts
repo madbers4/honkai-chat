@@ -8,7 +8,10 @@ import type {
   ActorMode,
   ServerInit,
   ActiveChoice,
+  PendingAdvance,
+  ScenarioVariant,
 } from '@honkai-chat/shared';
+import { scenarioVariants, guestToken, actorKey, testGuestKey } from '@honkai-chat/shared';
 import {
   getState,
   addMessage,
@@ -19,46 +22,63 @@ import {
 import { broadcastAll, broadcastTo, broadcastExcept } from './broadcast.js';
 import { getCharactersRecord, initCharacters } from './characters.js';
 import { scenarioEngine } from './scenarioEngine.js';
+import { loadScenario } from './scenarioLoader.js';
 
 function buildInitMessage(session: SessionData): ServerInit {
   const state = getState();
 
-  // Determine active choices for this session
+  // Send active choices to ALL sessions — visibility is handled client-side
   let activeChoices: ActiveChoice | null = null;
   if (state.pendingChoice) {
     const pc = state.pendingChoice;
-    const isRoleTarget =
-      (pc.target === 'guest' && session.role === 'guest') ||
-      (pc.target === 'actor' && session.role === 'actor');
-    // If targetCharacterId is set, only show to that specific character (or root)
-    const isCharTarget = pc.targetCharacterId
-      ? (session.characterId === pc.targetCharacterId || session.actorMode === 'root')
-      : true;
-    if (isRoleTarget && isCharTarget) {
-      activeChoices = {
-        stepIndex: pc.stepIndex,
-        options: pc.options,
-      };
-    }
+    activeChoices = {
+      stepIndex: pc.stepIndex,
+      target: pc.target,
+      targetCharacterId: pc.targetCharacterId ?? 'system',
+      options: pc.options,
+    };
+  }
+
+  // Determine pending advance for this session
+  let pendingAdvance: PendingAdvance | null = null;
+  if (state.pendingAdvance) {
+    pendingAdvance = {
+      target: state.pendingAdvance.target,
+      characterId: state.pendingAdvance.characterId,
+      actionText: state.pendingAdvance.actionText,
+    };
   }
 
   return {
-    type: 'init',
-    sessionId: session.sessionId,
-    role: session.role,
-    characterId: session.characterId,
-    messages: state.messages,
-    characters: getCharactersRecord(),
-    scenarioIndex: state.scenarioIndex,
-    guestMode: state.guestMode,
-    activeChoices,
-    connectedSessions: getSessionsInfo(),
-  };
+  type: 'init',
+  sessionId: session.sessionId,
+  role: session.role,
+  characterId: session.characterId,
+  messages: state.messages,
+  characters: getCharactersRecord(),
+  scenarioIndex: state.scenarioIndex,
+  guestMode: state.guestMode,
+  activeChoices,
+  pendingAdvance,
+  connectedSessions: getSessionsInfo(),
+  scenarioVariant: state.scenarioVariant,
+  noScenario: state.noScenario,
+};
+}
+
+function validateAuth(role: Role, token?: string, key?: string): boolean {
+  if (role === 'actor') {
+    return key === actorKey;
+  }
+  // role === 'guest': accept either valid key (testGuest) or valid token (regular guest)
+  if (key) return key === testGuestKey;
+  if (token) return token === guestToken;
+  return false;
 }
 
 export function handleConnection(
   ws: WebSocket,
-  params: { role: string; characterId: string; sessionId?: string },
+  params: { role: string; characterId: string; sessionId?: string; token?: string; key?: string },
 ): void {
   const state = getState();
   let session: SessionData;
@@ -66,7 +86,7 @@ export function handleConnection(
 
   // Check for reconnection
   if (params.sessionId && state.sessions.has(params.sessionId)) {
-    // Reconnect — re-associate WebSocket
+    // Reconnect — re-associate WebSocket, skip auth (already validated)
     session = state.sessions.get(params.sessionId)!;
     state.connections.set(session.sessionId, ws);
     console.log(`[ws] Reconnected session ${session.sessionId} (${session.role})`);
@@ -79,11 +99,19 @@ export function handleConnection(
       return;
     }
 
+    // ─── Auth validation ───
+    if (!validateAuth(role, params.token, params.key)) {
+      console.log(`[ws] Auth failed for role=${role}`);
+      ws.send(JSON.stringify({ type: 'error', code: 'AUTH_FAILED', message: 'Invalid or missing auth credentials' }));
+      ws.close();
+      return;
+    }
+
     const sessionId = uuidv4();
     session = {
       sessionId,
       role,
-      characterId: params.characterId || (role === 'guest' ? 'clerk' : 'sunday'),
+      characterId: role === 'guest' ? 'clerk' : (params.characterId || 'root'),
       actorMode: role === 'actor' ? 'scenario' : 'scenario',
       guestMode: state.guestMode,
       connectedAt: Date.now(),
@@ -167,8 +195,9 @@ function handleClientMessage(
         return;
       }
 
-      // Block free messages for everyone during scenario mode (between activities)
-      if (state.guestMode !== 'free') {
+      // In noScenario mode everyone can write freely regardless of guestMode
+      // Otherwise block free messages during scenario mode (between activities)
+      if (!state.noScenario && state.guestMode !== 'free') {
         ws.send(
           JSON.stringify({
             type: 'error',
@@ -267,6 +296,8 @@ function handleClientMessage(
         type: 'sessionUpdate',
         sessions: getSessionsInfo(),
       });
+
+      // No need to re-evaluate choices — visibility is handled client-side
       break;
     }
 
@@ -293,18 +324,43 @@ function handleClientMessage(
     }
 
     case 'advanceScenario': {
-      if (session.role !== 'actor' || session.actorMode !== 'root') {
-        ws.send(
-          JSON.stringify({
-            type: 'error',
-            code: 'UNAUTHORIZED',
-            message: 'Only root mode actors can advance scenario',
-          }),
-        );
-        return;
-      }
+      if (state.pendingAdvance) {
+        const pa = state.pendingAdvance;
+        const isRoot = session.role === 'actor' && session.actorMode === 'root';
 
-      scenarioEngine.processNextStep();
+        let authorized = false;
+        if (pa.target === 'guest') {
+          authorized = session.role === 'guest' || isRoot;
+        } else {
+          // target === 'actor'
+          authorized = isRoot || (session.role === 'actor' && session.characterId === pa.characterId);
+        }
+
+        if (!authorized) {
+          ws.send(
+            JSON.stringify({
+              type: 'error',
+              code: 'UNAUTHORIZED',
+              message: 'Not authorized to advance this action',
+            }),
+          );
+          return;
+        }
+        scenarioEngine.handleAdvance();
+      } else {
+        // No pending advance — only actors may force-advance
+        if (session.role !== 'actor') {
+          ws.send(
+            JSON.stringify({
+              type: 'error',
+              code: 'UNAUTHORIZED',
+              message: 'Only actors can advance scenario',
+            }),
+          );
+          return;
+        }
+        scenarioEngine.processNextStep();
+      }
       break;
     }
 
@@ -312,7 +368,103 @@ function handleClientMessage(
       // Both guest ("Войти в чат") and actor ("Запустить сценарий") can trigger
       // Only start if scenario hasn't begun yet
       if (state.scenarioIndex === 0 && state.messages.length === 0) {
-        scenarioEngine.processNextStep();
+        scenarioEngine.startScenario();
+      }
+      break;
+    }
+
+    case 'toggleNoScenario': {
+      if (session.role !== 'actor') {
+        ws.send(
+          JSON.stringify({
+            type: 'error',
+            code: 'UNAUTHORIZED',
+            message: 'Only actors can toggle no-scenario mode',
+          }),
+        );
+        return;
+      }
+
+      state.noScenario = msg.enabled;
+      console.log(`[server] No-scenario mode ${msg.enabled ? 'enabled' : 'disabled'}`);
+
+      broadcastAll({ type: 'noScenarioChanged', noScenario: msg.enabled });
+      break;
+    }
+
+    case 'switchVariant': {
+      if (session.role !== 'actor') {
+        ws.send(
+          JSON.stringify({
+            type: 'error',
+            code: 'UNAUTHORIZED',
+            message: 'Only actors can switch scenario variant',
+          }),
+        );
+        return;
+      }
+
+      const variant = msg.variant as ScenarioVariant;
+      if (!scenarioVariants.includes(variant)) {
+        ws.send(
+          JSON.stringify({
+            type: 'error',
+            code: 'INVALID_VARIANT',
+            message: `Invalid variant: ${variant}`,
+          }),
+        );
+        return;
+      }
+
+      // Load new scenario variant
+      try {
+        const newScenario = loadScenario(variant);
+
+        // Reset state
+        resetState();
+        scenarioEngine.reset();
+
+        // Apply new scenario
+        state.scenario = newScenario;
+        state.scenarioVariant = variant;
+        initCharacters(newScenario);
+        scenarioEngine.loadScenario(newScenario);
+
+        console.log(`[server] Switched to variant "${variant}": "${newScenario.title}" (${newScenario.steps.length} steps)`);
+
+        // Send variantChanged to ALL connections first, then close guest sessions
+        for (const [sid, sessionData] of state.sessions) {
+          const connWs = state.connections.get(sid);
+          if (connWs && connWs.readyState === WebSocket.OPEN) {
+            const freshInit = buildInitMessage(sessionData);
+            connWs.send(JSON.stringify({ type: 'variantChanged', variant, init: freshInit }));
+          }
+        }
+
+        // Close and remove guest sessions so a new guest can join fresh
+        const guestSessionIds: string[] = [];
+        for (const [sid, sessionData] of state.sessions) {
+          if (sessionData.role === 'guest') {
+            guestSessionIds.push(sid);
+          }
+        }
+        for (const sid of guestSessionIds) {
+          const guestWs = state.connections.get(sid);
+          if (guestWs && guestWs.readyState === WebSocket.OPEN) {
+            guestWs.close();
+          }
+          state.connections.delete(sid);
+          state.sessions.delete(sid);
+        }
+      } catch (err) {
+        console.error(`[server] Failed to load variant "${variant}":`, err);
+        ws.send(
+          JSON.stringify({
+            type: 'error',
+            code: 'VARIANT_LOAD_ERROR',
+            message: `Failed to load variant: ${variant}`,
+          }),
+        );
       }
       break;
     }

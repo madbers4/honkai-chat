@@ -59,6 +59,8 @@ export type ScenarioAction =
 export interface ActionStep {
   type: 'action';
   value: string;
+  target?: 'guest' | 'actor';
+  targetCharacterId?: CharacterId;
   _comment?: string;
 }
 

@@ -37,3 +37,11 @@ export function createAdvanceScenario(): ClientMessage {
 export function createAdminStartScenario(): ClientMessage {
   return { type: 'adminStartScenario' };
 }
+
+export function createSwitchVariant(variant: string): ClientMessage {
+  return { type: 'switchVariant', variant } as ClientMessage;
+}
+
+export function createToggleNoScenario(enabled: boolean): ClientMessage {
+  return { type: 'toggleNoScenario', enabled } as ClientMessage;
+}

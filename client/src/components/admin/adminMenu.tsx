@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { CharacterPicker } from "./characterPicker";
-import type { CharacterDef } from "../../types";
+import type { CharacterDef, ScenarioVariant } from "../../types";
+import { scenarioVariantLabels, scenarioVariants } from "@honkai-chat/shared";
 
 interface Props {
   characters: Map<string, CharacterDef>;
@@ -10,6 +11,10 @@ interface Props {
   onStartScenario: () => void;
   canStartScenario: boolean;
   onClose: () => void;
+  scenarioVariant: ScenarioVariant;
+  onSwitchVariant: (variant: string) => void;
+  noScenario: boolean;
+  onToggleNoScenario: (enabled: boolean) => void;
 }
 
 export function AdminMenu({
@@ -20,8 +25,14 @@ export function AdminMenu({
   onStartScenario,
   canStartScenario,
   onClose,
+  scenarioVariant,
+  onSwitchVariant,
+  noScenario,
+  onToggleNoScenario,
 }: Props) {
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showVariantConfirm, setShowVariantConfirm] =
+    useState<ScenarioVariant | null>(null);
 
   return (
     <>
@@ -35,6 +46,34 @@ export function AdminMenu({
             onSelect={onSwitchCharacter}
           />
         </div>
+        <div className="admin-menu__divider" />
+        <div className="admin-menu__section">
+          <div className="admin-menu__section-title">Версия сценария</div>
+          <div className="variant-picker">
+            {scenarioVariants.map((v) => (
+              <button
+                key={v}
+                className={`variant-picker__item ${v === scenarioVariant ? "variant-picker__item--active" : ""}`}
+                onClick={() => {
+                  if (v !== scenarioVariant) {
+                    setShowVariantConfirm(v);
+                  }
+                }}
+              >
+                {scenarioVariantLabels[v]}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="admin-menu__divider" />
+        <button
+          className={`admin-menu__no-scenario ${noScenario ? "admin-menu__no-scenario--active" : ""}`}
+          onClick={() => {
+            onToggleNoScenario(!noScenario);
+          }}
+        >
+          {noScenario ? "📝 Без сценария (вкл)" : "📝 Без сценария"}
+        </button>
         <div className="admin-menu__divider" />
         {canStartScenario && (
           <button
@@ -81,6 +120,40 @@ export function AdminMenu({
                 }}
               >
                 Сбросить
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showVariantConfirm && (
+        <div className="confirm-dialog">
+          <div
+            className="confirm-dialog__overlay"
+            onClick={() => setShowVariantConfirm(null)}
+          />
+          <div className="confirm-dialog__card fade-enter">
+            <div className="confirm-dialog__title">Сменить сценарий?</div>
+            <div className="confirm-dialog__text">
+              Сценарий будет переключён на «
+              {scenarioVariantLabels[showVariantConfirm]}». Все сообщения будут
+              удалены, сценарий начнётся заново (ожидание гостя).
+            </div>
+            <div className="confirm-dialog__actions">
+              <button
+                className="confirm-dialog__btn confirm-dialog__btn--cancel"
+                onClick={() => setShowVariantConfirm(null)}
+              >
+                Отмена
+              </button>
+              <button
+                className="confirm-dialog__btn confirm-dialog__btn--confirm-variant"
+                onClick={() => {
+                  onSwitchVariant(showVariantConfirm);
+                  setShowVariantConfirm(null);
+                  onClose();
+                }}
+              >
+                Переключить
               </button>
             </div>
           </div>

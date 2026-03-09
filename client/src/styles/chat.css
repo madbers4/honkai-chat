@@ -447,6 +447,96 @@
   color: var(--choice-text);
 }
 
+/* ─── Action Confirmation Dialog ─── */
+
+.action-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  animation: dialogFadeIn 0.15s ease-out;
+}
+
+.action-dialog {
+  background: var(--bg-header);
+  border-radius: 16px;
+  padding: var(--space-lg);
+  min-width: 280px;
+  max-width: 400px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  animation: dialogScaleIn 0.15s ease-out;
+}
+
+.action-dialog__title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--choice-text);
+  margin-bottom: var(--space-sm);
+}
+
+.action-dialog__text {
+  font-size: var(--font-size-md);
+  color: var(--action-text);
+  margin-bottom: var(--space-lg);
+  line-height: 1.4;
+}
+
+.action-dialog__buttons {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: flex-end;
+}
+
+.action-dialog__btn {
+  padding: var(--space-xs) var(--space-md);
+  border-radius: 12px;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  font-family: var(--font-family);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.action-dialog__btn--cancel {
+  background: transparent;
+  color: var(--action-text);
+  border-color: var(--border-light);
+}
+
+.action-dialog__btn--cancel:hover {
+  background: var(--choice-hover);
+}
+
+.action-dialog__btn--confirm {
+  background: var(--name-sunday);
+  color: #ffffff;
+  border-color: var(--name-sunday);
+}
+
+.action-dialog__btn--confirm:hover {
+  opacity: 0.85;
+}
+
+@keyframes dialogFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes dialogScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 /* ─── Free Input Wrapper ─── */
 
 .free-input-wrapper {

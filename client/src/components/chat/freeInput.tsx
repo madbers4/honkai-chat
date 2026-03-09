@@ -73,13 +73,13 @@ export function FreeInput({ onSend, stickers }: Props) {
             😊
           </button>
         )}
-        <button
+        {/* <button
           className="free-input__btn"
           onClick={() => cameraRef.current?.click()}
           title="Сделать фото"
         >
           📷
-        </button>
+        </button> */}
         <input
           ref={cameraRef}
           type="file"

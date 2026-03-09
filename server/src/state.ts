@@ -7,6 +7,7 @@ import type {
   ActorMode,
   Role,
   SessionInfo,
+  ScenarioVariant,
 } from '@honkai-chat/shared';
 
 // ─── Server-only types ───
@@ -27,6 +28,12 @@ export interface PendingChoice {
   options: { id: string; label: string }[];
 }
 
+export interface PendingAdvanceData {
+  target: 'guest' | 'actor';
+  characterId: string;
+  actionText: string;
+}
+
 export interface ServerState {
   messages: ChatMessage[];
   sessions: Map<string, SessionData>;
@@ -35,8 +42,11 @@ export interface ServerState {
   scenarioIndex: number;
   guestMode: GuestMode;
   pendingChoice: PendingChoice | null;
+  pendingAdvance: PendingAdvanceData | null;
   branchContext: Map<string, string>;
   scenario: Scenario | null;
+  scenarioVariant: ScenarioVariant;
+  noScenario: boolean;
 }
 
 // ─── Singleton ───
@@ -52,8 +62,11 @@ function createInitialState(): ServerState {
     scenarioIndex: 0,
     guestMode: 'scenario',
     pendingChoice: null,
+    pendingAdvance: null,
     branchContext: new Map(),
     scenario: null,
+    scenarioVariant: 'default',
+    noScenario: false,
   };
 }
 
@@ -70,6 +83,7 @@ export function resetState(): void {
   state.scenarioIndex = 0;
   state.guestMode = 'scenario';
   state.pendingChoice = null;
+  state.pendingAdvance = null;
   state.branchContext = new Map();
   state.characters = new Map();
 

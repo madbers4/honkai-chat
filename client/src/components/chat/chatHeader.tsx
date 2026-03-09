@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AdminMenu } from "../admin/adminMenu";
-import type { CharacterDef } from "../../types";
+import type { CharacterDef, ScenarioVariant } from "../../types";
 
 interface Props {
   role: string;
@@ -11,6 +11,10 @@ interface Props {
   onStartScenario: () => void;
   canStartScenario: boolean;
   isConnected: boolean;
+  scenarioVariant: ScenarioVariant;
+  onSwitchVariant: (variant: string) => void;
+  noScenario: boolean;
+  onToggleNoScenario: (enabled: boolean) => void;
 }
 
 export function ChatHeader({
@@ -22,6 +26,10 @@ export function ChatHeader({
   onStartScenario,
   canStartScenario,
   isConnected,
+  scenarioVariant,
+  onSwitchVariant,
+  noScenario,
+  onToggleNoScenario,
 }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -56,6 +64,10 @@ export function ChatHeader({
           onStartScenario={onStartScenario}
           canStartScenario={canStartScenario}
           onClose={() => setMenuOpen(false)}
+          scenarioVariant={scenarioVariant}
+          onSwitchVariant={onSwitchVariant}
+          noScenario={noScenario}
+          onToggleNoScenario={onToggleNoScenario}
         />
       )}
     </div>

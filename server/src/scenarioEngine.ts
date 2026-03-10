@@ -31,7 +31,7 @@ function calculateTypingDelay(_value: string, _explicitDelay?: number): number {
   return Math.min(
     timing.typingDelayBase + _value.length * timing.typingDelayPerChar,
     timing.typingDelayMax,
-  ) / 1.65;
+  ) / 2;
 
 }
 

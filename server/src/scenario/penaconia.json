@@ -85,57 +85,10 @@
     },
     {
       "type": "message",
-      "characterId": "robin",
-      "messageType": "sticker",
-      "value": "/stickers/robin-2.webp",
-      "_comment": "Robin tries to communicate — but without emotions, only stickers"
-    },
-    {
-      "type": "message",
-      "characterId": "river",
-      "messageType": "text",
-      "value": "Видишь? Это Зарянка. Наша главная актриса. Она великолепно поёт, прекрасно играет... но сейчас — только стикеры. Слова не идут."
-    },
-    {
-      "type": "message",
       "characterId": "river",
       "messageType": "text",
       "value": "Понедельник — наш оператор. Он на площадке рядом с тобой. Объяснит на месте, что к чему.",
-      "_comment": "=== Transition to IRL with Sunday ==="
     },
-
-    {
-      "type": "choice",
-      "target": "actor",
-      "targetCharacterId": "sunday",
-      "options": [
-        {
-          "id": "sunday-detailed",
-          "label": "Доложить Реке, что клерк надёжный и идёт к Зарянке",
-          "actions": [
-            { "type": "message", "characterId": "sunday", "messageType": "text", "value": "Река, клерк ввёден в курс дела. Коробочку с механизмом передал." },
-            { "type": "message", "characterId": "sunday", "messageType": "text", "value": "Он производит впечатление надёжного человека. Направляю к Зарянке." }
-          ]
-        },
-        {
-          "id": "sunday-warm",
-          "label": "Верю, что механизм ей поможет — пусть снова услышит мелодию",
-          "actions": [
-            { "type": "message", "characterId": "sunday", "messageType": "text", "value": "Река. Клерк готов, идёт к Зарянке." },
-            { "type": "message", "characterId": "sunday", "messageType": "text", "value": "Я верю, что этот механизм ей поможет. Пусть она снова услышит свою мелодию." }
-          ]
-        }
-      ],
-      "_comment": "Sunday writes to River — elegant, with care for Robin"
-    },
-
-    {
-      "type": "message",
-      "characterId": "river",
-      "messageType": "text",
-      "value": "🔥🔥🔥"
-    },
-
     {
       "type": "choice",
       "target": "guest",
@@ -167,14 +120,6 @@
         }
       ],
       "_comment": "Clerk heads to Robin"
-    },
-
-    {
-      "type": "message",
-      "characterId": "river",
-      "messageType": "text",
-      "value": "Она у микрофона. Открывай коробочку — и доверься процессу.",
-      "_comment": "=== SCENE 2: FIXING ROBIN ==="
     },
     {
       "type": "message",
@@ -331,7 +276,6 @@
           "label": "Кино совсем не страшно, когда снова чувствуешь — ухожу в гримёрку",
           "actions": [
             { "type": "message", "characterId": "robin", "messageType": "text", "value": "Река! Первая сцена снята. 🎬" },
-            { "type": "message", "characterId": "robin", "messageType": "text", "value": "Знаешь, кино — совсем не страшно. Особенно когда снова чувствуешь каждый момент." },
             { "type": "message", "characterId": "robin", "messageType": "text", "value": "Спасибо клерку. За механизм. За то, что не побоялся чинить чужие чувства." },
             { "type": "message", "characterId": "robin", "messageType": "sticker", "value": "/stickers/robin-4.webp" },
             { "type": "message", "characterId": "robin", "messageType": "text", "value": "Ухожу в гримёрку! 💫" }
@@ -389,12 +333,6 @@
       "type": "message",
       "characterId": "firefly",
       "messageType": "text",
-      "value": "Хорошо, что она снова способна чувствовать — по-настоящему чувствовать. В мире снов иногда происходят странные вещи."
-    },
-    {
-      "type": "message",
-      "characterId": "firefly",
-      "messageType": "text",
       "value": "Так! По делу. Для финальной сцены нужны оригами-декорации: журавли, цветы, звёзды... и лягушка."
     },
     {
@@ -419,9 +357,8 @@
       "type": "message",
       "characterId": "firefly",
       "messageType": "text",
-      "value": "Скоро буду на площадке! Начинайте без меня!"
+      "value": "Скоро буду на площадке!"
     },
-
     {
       "type": "choice",
       "target": "guest",
@@ -478,8 +415,7 @@
           "id": "origami-done-excited",
           "label": "Всё собрано, площадка как из сна — пойдёмте снимать!",
           "actions": [
-            { "type": "message", "characterId": "firefly", "messageType": "text", "value": "Река!! Всё собрано! Журавли на потолке, звёзды на стенах, лягушка на декорации!" },
-            { "type": "message", "characterId": "firefly", "messageType": "text", "value": "У клерка, кстати, отличные руки — лягушка получилась так, будто всегда тут была. Подозрительно хорошо для бюрократа!" },
+            { "type": "message", "characterId": "firefly", "messageType": "text", "value": "Река!! Всё собрано! У клерка, кстати, отличные руки — лягушка получилась так, будто всегда тут была. Подозрительно хорошо для бюрократа!" },
             { "type": "message", "characterId": "firefly", "messageType": "sticker", "value": "/stickers/firefly-3.webp" },
             { "type": "message", "characterId": "firefly", "messageType": "text", "value": "Площадка — как из сна. Красиво. Пойдёмте снимать!! 🎬" }
           ]

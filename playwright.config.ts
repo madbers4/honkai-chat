@@ -9,6 +9,14 @@ export default defineConfig({
       name: "mobile",
       use: { ...devices["iPhone 13"], defaultBrowserType: "chromium" },
     },
+    {
+      name: "android",
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 393, height: 650 },
+        defaultBrowserType: "chromium",
+      },
+    },
     { name: "desktop", use: { viewport: { width: 1440, height: 1000 } } },
   ],
   webServer: {

@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type ReactNode,
@@ -22,6 +23,7 @@ import {
 import { adjacentMines } from "./minesweeper";
 import { difficulties } from "./difficulty";
 import { parseGame, STORAGE_KEY } from "./storage";
+import { LiveCommentary } from "./LiveCommentary";
 import "./game.css";
 
 function freshGame(): Game {
@@ -137,7 +139,9 @@ function MessageList({
           </div>
         ),
         index + 1 === boardMessageIndex ? (
-          <div key="game-board">{board}</div>
+          <div className="board-slot" key="game-board">
+            {board}
+          </div>
         ) : null,
       ])}
     </div>
@@ -172,9 +176,36 @@ function BoardView({
   dispatch: (action: Action) => void;
 }) {
   const [flagMode, setFlagMode] = useState(false);
+  const frame = useRef<HTMLDivElement>(null);
+  const help = useRef<HTMLDetailsElement>(null);
+  const [square, setSquare] = useState<number | undefined>();
   const locked = !isActive(game);
   const { size, mineCount } = game.board;
   useEffect(() => setFlagMode(false), [game.failedAttempts, game.difficulty]);
+  useLayoutEffect(() => {
+    if (locked || !frame.current) {
+      setSquare(undefined);
+      return;
+    }
+    const element = frame.current;
+    const fit = () => {
+      const minimum = size * 26 + (size - 1) * 3;
+      setSquare(
+        Math.max(
+          minimum,
+          Math.floor(Math.min(element.clientWidth, element.clientHeight, 360)),
+        ),
+      );
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [locked, size]);
+  // Свернуть подсказку перед следующим раундом, сохранив режим флажков при бонусе.
+  useEffect(() => {
+    if (!locked && help.current) help.current.open = false;
+  }, [locked]);
   return (
     <section className="mine-panel" aria-label="Панель обезвреживания">
       <div className="panel-title">
@@ -188,8 +219,7 @@ function BoardView({
       </div>
       <div className="board-meta">
         <span>
-          {difficulties[game.difficulty].label} · {size} × {size} · мин:{" "}
-          {mineCount}
+          {difficulties[game.difficulty].label} · {size} × {size}
         </span>
         <span>
           Открыто {game.board.revealed.length}/{size * size - mineCount}
@@ -211,70 +241,77 @@ function BoardView({
           ⚑ Флажок · {game.board.flags.length}/{mineCount}
         </button>
       </div>
-      <div
-        className="mine-grid"
-        role="group"
-        aria-label="Поле сапёра"
-        style={{ gridTemplateColumns: `repeat(${size}, 1fr)` }}
-      >
-        {Array.from({ length: size * size }, (_, cell) => {
-          const open = game.board.revealed.includes(cell);
-          const flagged = game.board.flags.includes(cell);
-          const exploded = game.board.exploded === cell;
-          const mine =
-            (game.phase === "retry" ||
-              game.phase === "lost" ||
-              game.phase === "won") &&
-            game.board.mines.includes(cell);
-          const count = open ? adjacentMines(game.board, cell) : 0;
-          const description = exploded
-            ? "взорванная мина"
-            : mine
-              ? "мина"
-              : open
-                ? `${count} мин рядом`
-                : flagged
-                  ? "флажок"
-                  : "закрыта";
-          return (
-            <button
-              key={cell}
-              type="button"
-              className={`mine-cell${open ? " open" : ""}${flagged ? " flagged" : ""}${mine ? " mine" : ""}${exploded ? " exploded" : ""}`}
-              data-count={count}
-              aria-label={`Ряд ${Math.floor(cell / size) + 1}, столбец ${(cell % size) + 1}: ${description}`}
-              disabled={locked || open}
-              onClick={() =>
-                dispatch({ type: flagMode ? "flag" : "reveal", cell })
-              }
-              onContextMenu={(event) => {
-                event.preventDefault();
-                if (!locked) dispatch({ type: "flag", cell });
-              }}
-            >
-              {mine ? (
-                "✹"
-              ) : flagged ? (
-                "⚑"
-              ) : open ? (
-                count || <span className="empty-cell">·</span>
-              ) : (
-                <span className="closed-cell">◇</span>
-              )}
-            </button>
-          );
-        })}
+      <div className="board-frame" ref={frame}>
+        <div
+          className="mine-grid"
+          role="group"
+          aria-label="Поле сапёра"
+          style={{
+            gridTemplateColumns: `repeat(${size}, 1fr)`,
+            width: square,
+            height: square,
+          }}
+        >
+          {Array.from({ length: size * size }, (_, cell) => {
+            const open = game.board.revealed.includes(cell);
+            const flagged = game.board.flags.includes(cell);
+            const exploded = game.board.exploded === cell;
+            const mine =
+              (game.phase === "retry" ||
+                game.phase === "lost" ||
+                game.phase === "won") &&
+              game.board.mines.includes(cell);
+            const count = open ? adjacentMines(game.board, cell) : 0;
+            const description = exploded
+              ? "взорванная мина"
+              : mine
+                ? "мина"
+                : open
+                  ? `${count} мин рядом`
+                  : flagged
+                    ? "флажок"
+                    : "закрыта";
+            return (
+              <button
+                key={cell}
+                type="button"
+                className={`mine-cell${open ? " open" : ""}${flagged ? " flagged" : ""}${mine ? " mine" : ""}${exploded ? " exploded" : ""}`}
+                data-count={count}
+                aria-label={`Ряд ${Math.floor(cell / size) + 1}, столбец ${(cell % size) + 1}: ${description}`}
+                disabled={locked || open}
+                onClick={() =>
+                  dispatch({ type: flagMode ? "flag" : "reveal", cell })
+                }
+                onContextMenu={(event) => {
+                  event.preventDefault();
+                  if (!locked) dispatch({ type: "flag", cell });
+                }}
+              >
+                {mine ? (
+                  "✹"
+                ) : flagged ? (
+                  "⚑"
+                ) : open ? (
+                  count || <span className="empty-cell">·</span>
+                ) : (
+                  <span className="closed-cell">◇</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
-      <p className="board-hint">
-        {flagMode
-          ? "Отмечай подозрительные клетки. Нажми на флажок ещё раз, чтобы убрать его."
-          : "Цифра — число мин рядом, включая диагонали. Открой все безопасные клетки."}
-      </p>
-      {!game.board.mines.length && (
-        <p className="safe-first">Первый ход безопасный. Даже Искра обещала.</p>
-      )}
-      <details className="game-help">
-        <summary>Как играть?</summary>
+      <details className="game-help" ref={help}>
+        <summary aria-label="Как играть?">
+          <span>Как играть?</span>
+          <span className="first-move-note">Первый ход безопасный</span>
+        </summary>
+        <p className="board-hint">
+          {flagMode
+            ? "Отмечай подозрительные клетки. Нажми на флажок ещё раз, чтобы убрать его."
+            : "Цифра — число мин рядом, включая диагонали. Открой все безопасные клетки."}
+        </p>
+
         <p>
           Выбери любую клетку. Цифры показывают количество мин вокруг неё. Если
           рядом с «1» осталась только одна закрытая клетка, там мина. Отметь её
@@ -453,6 +490,25 @@ function GuestPage() {
   const typing = !ready && game.typingAt !== null && now >= game.typingAt;
   const hasBoard = game.boardMessageIndex !== null;
 
+  useLayoutEffect(() => {
+    const container = viewport.current;
+    if (!container) return;
+    const fit = () => {
+      container.style.setProperty(
+        "--play-height",
+        `${container.clientHeight}px`,
+      );
+      if (active)
+        container
+          .querySelector(".mine-panel")
+          ?.scrollIntoView({ block: "start" });
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [active, game.phase === "welcome"]);
+
   useEffect(() => {
     const container = viewport.current;
     if (!container) return;
@@ -472,7 +528,7 @@ function GuestPage() {
 
   return (
     <main
-      className={`game-layout${game.phase === "lost" ? " has-exploded" : ""}`}
+      className={`game-layout${active ? " is-playing" : ""}${game.startedAt !== null ? " has-started" : ""}${game.phase === "lost" ? " has-exploded" : ""}`}
     >
       <aside className="show-sidebar">
         <a className="stand-brand" href="./">
@@ -671,21 +727,8 @@ function GuestPage() {
             </div>
           </div>
         )}
-        {(active || game.phase === "retry") && game.commentary.text && (
-          <aside className="live-commentary" aria-label="Комментарии Искры">
-            <Avatar />
-            <div
-              className="commentary-cloud"
-              key={game.commentary.serial}
-              role="status"
-              aria-live="polite"
-            >
-              <span className="commentary-name">
-                Искра <span>· смотрит твою игру</span>
-              </span>
-              <p>{game.commentary.text}</p>
-            </div>
-          </aside>
+        {active && !finished && game.commentary.text && (
+          <LiveCommentary commentary={game.commentary} />
         )}
       </section>
     </main>

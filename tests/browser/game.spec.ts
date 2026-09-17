@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { reactionLines } from "../../client/src/game/commentary";
 import { PNG } from "pngjs";
 import jsQR from "jsqr";
 import { STORAGE_KEY } from "../../client/src/game/storage";
@@ -55,6 +56,7 @@ async function solve(page: Page) {
     )
       await page.locator(".mine-cell").nth(cell).click();
   }
+  await expect(page.locator(".live-commentary")).toHaveCount(0);
   await flushChat(page);
 }
 test.beforeEach(async ({ page }) => {
@@ -85,6 +87,7 @@ test("fast victory leads to one harder encore; reload and offline play preserve 
   }
   await flushChat(page);
   expect((await saved(page)).phase).toBe("encore");
+  await expect(page.locator(".live-commentary")).toHaveCount(0);
   await expect(
     page.getByRole("heading", { name: "Площадка спасена!" }),
   ).toHaveCount(0);
@@ -100,6 +103,7 @@ test("fast victory leads to one harder encore; reload and offline play preserve 
   await expect(
     page.getByRole("heading", { name: "Площадка спасена!" }),
   ).toBeVisible();
+  await expect(page.locator(".live-commentary")).toHaveCount(0);
   await expect(page.getByText("и забери печать за Пенаконию.")).toBeVisible();
   expect(errors).toEqual([]);
   await page.screenshot({
@@ -117,10 +121,12 @@ test("five failures use five attempts; the clock pauses for messages and between
     await page.locator(".mine-cell").first().click();
     const game = await saved(page);
     await page.locator(".mine-cell").nth(game.board.mines[0]).click();
+    await expect(page.locator(".live-commentary")).toHaveCount(0);
     const failed = await saved(page);
     expect(failed.failedAttempts).toBe(attempt);
     expect(failed.runningSince).toBeNull();
     await page.reload();
+    await expect(page.locator(".live-commentary")).toHaveCount(0);
     await flushChat(page);
     await page.clock.fastForward(120000);
     expect((await saved(page)).remaining).toBe(failed.remaining);
@@ -182,6 +188,7 @@ test("chat is untimed, messages type in sequence, game timeout gives a single bo
   await expect(page.locator(".mine-cell.mine")).toHaveCount(0);
   expect((await saved(page)).bonusGranted).toBe(true);
   expect((await saved(page)).runningSince).toBeNull();
+  await expect(page.locator(".live-commentary")).toHaveCount(0);
   await expect(page.locator(".mine-cell").first()).toBeDisabled();
   await flushChat(page);
   expect((await saved(page)).remaining).toBe(60000);
@@ -276,7 +283,7 @@ test("entry cover is clean and live commentary changes without blocking the boar
   });
   await expect(page.locator(".mission-bar")).toHaveCount(0);
   await enterBoard(page, 1);
-  const comment = page.locator(".commentary-cloud p");
+  const comment = page.locator(".commentary-caption p");
   const initial = await comment.textContent();
   await page.clock.fastForward(16000);
   await expect(comment).not.toHaveText(initial!);
@@ -285,6 +292,165 @@ test("entry cover is clean and live commentary changes without blocking the boar
   await page.screenshot({
     path: info.outputPath("commentator.png"),
     fullPage: true,
+    animations: "disabled",
+  });
+});
+
+// Sizes are the page area left after address/status/navigation bars, not the phone's screen.
+const smallViewports = [
+  { width: 320, height: 480 },
+  { width: 360, height: 560 },
+  { width: 393, height: 650 },
+  { width: 412, height: 735 },
+];
+async function expectUsableField(page: Page) {
+  // Let ResizeObserver and scroll positioning settle after browser-bar changes.
+  await expect
+    .poll(async () =>
+      page.evaluate(() => {
+        const grid = document
+          .querySelector(".mine-grid")!
+          .getBoundingClientRect();
+        const frame = document
+          .querySelector(".board-frame")!
+          .getBoundingClientRect();
+        const viewport = document
+          .querySelector(".chat-viewport")!
+          .getBoundingClientRect();
+        const caption = document
+          .querySelector(".live-commentary")!
+          .getBoundingClientRect();
+        return (
+          grid.bottom <= frame.bottom + 1 &&
+          grid.y >= frame.y - 1 &&
+          grid.y >= viewport.y - 1 &&
+          grid.bottom <= Math.min(viewport.bottom, caption.y) + 1 &&
+          caption.bottom <= window.innerHeight + 1
+        );
+      }),
+    )
+    .toBe(true);
+  const geometry = await page.evaluate(() => {
+    const rect = (selector: string) =>
+      document.querySelector(selector)!.getBoundingClientRect().toJSON();
+    return {
+      grid: rect(".mine-grid"),
+      modes: rect(".mode-switch"),
+      viewport: rect(".chat-viewport"),
+      caption: rect(".live-commentary"),
+      last: rect(".mine-cell:last-child"),
+      width: document.documentElement.scrollWidth,
+      height: window.innerHeight,
+      screenWidth: window.innerWidth,
+      bodyHeight: document.documentElement.scrollHeight,
+    };
+  });
+  expect(geometry.width).toBe(geometry.screenWidth);
+  expect(geometry.bodyHeight).toBeLessThanOrEqual(geometry.height + 1);
+  expect(geometry.grid.y).toBeGreaterThanOrEqual(geometry.viewport.y - 1);
+  expect(geometry.grid.bottom).toBeLessThanOrEqual(geometry.caption.y + 1);
+  expect(geometry.caption.bottom).toBeLessThanOrEqual(geometry.height + 1);
+  expect(geometry.modes.y).toBeGreaterThanOrEqual(geometry.viewport.y - 1);
+  expect(geometry.last.width).toBeGreaterThanOrEqual(25);
+  expect(Math.abs(geometry.last.width - geometry.last.height)).toBeLessThan(2);
+  const last = page.locator(".mine-cell").last();
+  await last.click({ trial: true });
+}
+
+for (const viewport of smallViewports) {
+  test(`browser chrome leaves ${viewport.width}x${viewport.height}: all levels fit and resize`, async ({
+    page,
+  }, info) => {
+    // One responsive matrix per browser engine; the standard mobile tests also exercise touch.
+    test.skip(info.project.name !== "mobile");
+    await page.setViewportSize(viewport);
+    await enterBoard(page, 2);
+    await expectUsableField(page);
+    await solve(page); // Hard → 8x8 encore. Test the densest board as well.
+    expect((await saved(page)).phase).toBe("encore");
+    await page.locator(".reply-panel button").first().click();
+    await flushChat(page);
+    await expect(page.locator(".mine-cell")).toHaveCount(64);
+    await expectUsableField(page);
+    const text = page.locator(".commentary-caption p");
+    await page.clock.fastForward(16000); // A longer waiting caption must not cover the field.
+    await expectUsableField(page);
+    expect(
+      await text.evaluate((el) => el.scrollHeight <= el.clientHeight + 1),
+    ).toBe(true);
+    await page.screenshot({
+      path: info.outputPath(`compact-${viewport.width}.png`),
+      animations: "disabled",
+    });
+    const before = await saved(page);
+    await page.setViewportSize({
+      width: viewport.width,
+      height: viewport.height + 85,
+    });
+    await expectUsableField(page);
+    await page.setViewportSize(viewport);
+    await expectUsableField(page);
+    expect((await saved(page)).board).toEqual(before.board);
+    // Even on the smallest screen a bottom corner is a real touch target.
+    await page.getByRole("button", { name: "Флажок", exact: false }).click();
+    await page.locator(".mine-cell").last().tap();
+    expect((await saved(page)).board.flags).toEqual([63]);
+  });
+}
+
+test("reduced motion disables streamer effects, and help remains usable", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 360, height: 560 });
+  await enterBoard(page, 1);
+  await expectUsableField(page);
+  expect(
+    await page
+      .locator(".stream-camera")
+      .evaluate((el) => getComputedStyle(el).animationName),
+  ).toBe("none");
+  await page.getByText("Как играть?", { exact: true }).click();
+  await expect(page.locator(".game-help")).toHaveAttribute("open", "");
+  await page.getByText("Как играть?", { exact: true }).click();
+  await expectUsableField(page);
+});
+
+test("long captions fit without moving the cells; bonus HUD also fits", async ({
+  page,
+}, info) => {
+  test.skip(info.project.name !== "mobile");
+  await page.setViewportSize({ width: 320, height: 480 });
+  await enterBoard(page, 2);
+  const longest = Object.values(reactionLines)
+    .flat()
+    .sort((a, b) => b.length - a.length)
+    .slice(0, 3);
+  let lastGridHeight: number | undefined;
+  for (const text of longest) {
+    const state = await saved(page);
+    state.commentary.text = text;
+    await page.evaluate(
+      ({ key, state }) => sessionStorage.setItem(key, JSON.stringify(state)),
+      { key: STORAGE_KEY, state },
+    );
+    await page.reload();
+    await expectUsableField(page);
+    const caption = await page.locator(".commentary-caption p").boundingBox();
+    const cameraPanel = await page.locator(".live-commentary").boundingBox();
+    expect(caption!.y + caption!.height).toBeLessThanOrEqual(
+      cameraPanel!.y + cameraPanel!.height - 5,
+    );
+    const height = (await page.locator(".mine-grid").boundingBox())!.height;
+    if (lastGridHeight !== undefined) expect(height).toBe(lastGridHeight);
+    lastGridHeight = height;
+  }
+  await page.clock.fastForward(300001);
+  await expect(page.locator(".live-commentary")).toHaveCount(0);
+  await flushChat(page);
+  await expectUsableField(page);
+  await page.screenshot({
+    path: info.outputPath("small-bonus.png"),
     animations: "disabled",
   });
 });

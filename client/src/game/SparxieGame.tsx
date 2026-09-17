@@ -1,18 +1,26 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import QRCode from "qrcode";
 import { dialogue } from "./dialogue";
 import {
   createGame,
+  attemptLimit,
+  BONUS_MS,
   DURATION_MS,
   isActive,
-  MAX_ATTEMPTS,
   remainingMs,
   transition,
   type Action,
   type Game,
   type Message,
 } from "./game";
-import { adjacentMines, MINE_COUNT, SIZE } from "./minesweeper";
+import { adjacentMines } from "./minesweeper";
+import { difficulties } from "./difficulty";
 import { parseGame, STORAGE_KEY } from "./storage";
 import "./game.css";
 
@@ -95,7 +103,15 @@ function Avatar({ large = false }: { large?: boolean }) {
   );
 }
 
-function MessageList({ messages }: { messages: Message[] }) {
+function MessageList({
+  messages,
+  board,
+  boardMessageIndex,
+}: {
+  messages: Message[];
+  board?: ReactNode;
+  boardMessageIndex: number | null;
+}) {
   return (
     <div
       className="message-history"
@@ -104,7 +120,7 @@ function MessageList({ messages }: { messages: Message[] }) {
       aria-live="polite"
       aria-relevant="additions"
     >
-      {messages.map((message) =>
+      {messages.flatMap((message, index) => [
         message.author === "system" ? (
           <p className="system-message" key={message.id}>
             {message.text}
@@ -120,7 +136,30 @@ function MessageList({ messages }: { messages: Message[] }) {
             </div>
           </div>
         ),
-      )}
+        index + 1 === boardMessageIndex ? (
+          <div key="game-board">{board}</div>
+        ) : null,
+      ])}
+    </div>
+  );
+}
+
+function TypingIndicator() {
+  return (
+    <div
+      className="chat-message sparxie typing-message"
+      role="status"
+      aria-label="Искра печатает"
+    >
+      <Avatar />
+      <div>
+        <span className="message-author">Искра печатает</span>
+        <div className="message-bubble typing-dots" aria-hidden="true">
+          <i />
+          <i />
+          <i />
+        </div>
+      </div>
     </div>
   );
 }
@@ -133,8 +172,9 @@ function BoardView({
   dispatch: (action: Action) => void;
 }) {
   const [flagMode, setFlagMode] = useState(false);
-  const locked = game.phase !== "playing";
-  useEffect(() => setFlagMode(false), [game.failedAttempts]);
+  const locked = !isActive(game);
+  const { size, mineCount } = game.board;
+  useEffect(() => setFlagMode(false), [game.failedAttempts, game.difficulty]);
   return (
     <section className="mine-panel" aria-label="Панель обезвреживания">
       <div className="panel-title">
@@ -148,10 +188,11 @@ function BoardView({
       </div>
       <div className="board-meta">
         <span>
-          {MINE_COUNT} мины · поле {SIZE} × {SIZE}
+          {difficulties[game.difficulty].label} · {size} × {size} · мин:{" "}
+          {mineCount}
         </span>
         <span>
-          Открыто {game.board.revealed.length}/{SIZE * SIZE - MINE_COUNT}
+          Открыто {game.board.revealed.length}/{size * size - mineCount}
         </span>
       </div>
       <div className="mode-switch" role="group" aria-label="Режим нажатия">
@@ -167,15 +208,24 @@ function BoardView({
           aria-pressed={flagMode}
           onClick={() => setFlagMode(true)}
         >
-          ⚑ Флажок · {game.board.flags.length}/{MINE_COUNT}
+          ⚑ Флажок · {game.board.flags.length}/{mineCount}
         </button>
       </div>
-      <div className="mine-grid" role="group" aria-label="Поле сапёра">
-        {Array.from({ length: SIZE * SIZE }, (_, cell) => {
+      <div
+        className="mine-grid"
+        role="group"
+        aria-label="Поле сапёра"
+        style={{ gridTemplateColumns: `repeat(${size}, 1fr)` }}
+      >
+        {Array.from({ length: size * size }, (_, cell) => {
           const open = game.board.revealed.includes(cell);
           const flagged = game.board.flags.includes(cell);
           const exploded = game.board.exploded === cell;
-          const mine = locked && game.board.mines.includes(cell);
+          const mine =
+            (game.phase === "retry" ||
+              game.phase === "lost" ||
+              game.phase === "won") &&
+            game.board.mines.includes(cell);
           const count = open ? adjacentMines(game.board, cell) : 0;
           const description = exploded
             ? "взорванная мина"
@@ -192,7 +242,7 @@ function BoardView({
               type="button"
               className={`mine-cell${open ? " open" : ""}${flagged ? " flagged" : ""}${mine ? " mine" : ""}${exploded ? " exploded" : ""}`}
               data-count={count}
-              aria-label={`Ряд ${Math.floor(cell / SIZE) + 1}, столбец ${(cell % SIZE) + 1}: ${description}`}
+              aria-label={`Ряд ${Math.floor(cell / size) + 1}, столбец ${(cell % size) + 1}: ${description}`}
               disabled={locked || open}
               onClick={() =>
                 dispatch({ type: flagMode ? "flag" : "reveal", cell })
@@ -232,7 +282,8 @@ function BoardView({
         </p>
         <p>
           Попадание на мину тратит одну попытку. После ошибки начни новое поле.
-          Время общее, включая переписку: пять минут на всю историю.
+          На игру пять минут: во время переписки и между попытками таймер стоит.
+          Если не успеешь, Искра один раз добавит минуту и попытку.
         </p>
       </details>
     </section>
@@ -317,14 +368,20 @@ function StaffPage() {
       <div className="staff-rules">
         <h2>На площадке</h2>
         <p>
-          Отправь гостя к реквизиту с QR. Отсчёт начнётся после кнопки «Войти в
-          эфир», а обновление страницы продолжит ту же партию. Каждая вкладка
-          играет отдельно; закрытие вкладки завершает её сессию.
+          Отправь гостя к реквизиту с QR. Переписка без таймера, пять минут
+          начнутся при открытии первого сапёра и идут только на активном поле.
+          Между попытками и во время реплик таймер стоит. По окончании времени
+          Искра один раз добавит минуту и попытку. Обновление страницы продолжит
+          ту же партию. Каждая вкладка играет отдельно; закрытие вкладки
+          завершает её сессию.
         </p>
         <p>
           После финала гость показывает экран и получает печать. Если время или
           попытки закончились, бомба в истории взрывается конфетти. Следующую
-          игру можно начать с экрана результата.
+          игру можно начать с экрана результата. Сложность гость выбирает в
+          диалоге: 5 × 5 / 4 мины, 6 × 6 / 7 мин или 7 × 7 / 10 мин. При победе
+          с первой попытки быстрее минуты Искра один раз повышает сложность и
+          требует реванш. Время и попытки общие на оба поля.
         </p>
         <p>Телефон не снимает гостя: «эфир» и его зрители — часть сюжета.</p>
       </div>
@@ -332,34 +389,86 @@ function StaffPage() {
   );
 }
 
+function StreamInvitation({ onJoin }: { onJoin: () => void }) {
+  return (
+    <main className="stream-entry">
+      <header className="entry-brand">
+        <span>ФОНТЕЙНКА</span>
+        <span className="entry-cross">×</span>
+        <span>CONstanta</span>
+      </header>
+      <div className="entry-stage" aria-hidden="true">
+        <div className="entry-glow" />
+        <div className="entry-orbit" />
+        <img
+          className="entry-portrait"
+          src={`${import.meta.env.BASE_URL}images/sparxie-portrait.png`}
+          alt=""
+          fetchPriority="high"
+        />
+        <span className="entry-star entry-star-one">✦</span>
+        <span className="entry-star entry-star-two">✦</span>
+      </div>
+      <section className="entry-content" aria-labelledby="entry-title">
+        <span className="entry-live">
+          <i /> LIVE <span>ПЕНАКОНИЯ</span>
+        </span>
+        <h1 id="entry-title">
+          Искра
+          <br />
+          <em>в эфире.</em>
+          <span className="entry-heart" aria-hidden="true">
+            ♥
+          </span>
+        </h1>
+        <p>Тебя как раз не хватало.</p>
+        <button className="entry-join" onClick={onJoin}>
+          <span className="entry-play" aria-hidden="true">
+            ▶
+          </span>
+          Войти на стрим
+          <span className="entry-arrow" aria-hidden="true">
+            ↗
+          </span>
+        </button>
+      </section>
+      <footer className="entry-footer">
+        <span>ЛЕТНИЙ КОЛЛАБ</span>
+        <span aria-hidden="true">✦</span>
+        <span>HONKAI: STAR RAIL</span>
+      </footer>
+    </main>
+  );
+}
+
 function GuestPage() {
   const { game, now, dispatch, restart, storageError } = useGame();
   const viewport = useRef<HTMLDivElement>(null);
-  const previousPhase = useRef<Game["phase"]>("welcome");
+  const wasActive = useRef(false);
   const time = remainingMs(game, now);
   const active = isActive(game);
+  const attempts = attemptLimit(game);
   const finished = game.phase === "won" || game.phase === "lost";
-  const hasBoard =
-    game.phase === "playing" ||
-    game.phase === "retry" ||
-    (finished && game.board.mines.length > 0);
+  const ready = game.pending.length === 0;
+  const typing = !ready && game.typingAt !== null && now >= game.typingAt;
+  const hasBoard = game.boardMessageIndex !== null;
 
   useEffect(() => {
     const container = viewport.current;
     if (!container) return;
-    if (game.phase === "playing" && previousPhase.current !== "playing") {
+    if (active && !wasActive.current) {
       container
         .querySelector(".mine-panel")
         ?.scrollIntoView({ block: "start" });
-    } else if (
-      game.phase === "retry" ||
-      finished ||
-      game.phase === "dialogue"
-    ) {
+    } else if (!active) {
       container.scrollTop = container.scrollHeight;
     }
-    previousPhase.current = game.phase;
-  }, [game.messages.length, game.phase, finished]);
+    wasActive.current = active;
+  }, [game.messages.length, game.phase, active, typing, ready]);
+
+  if (game.phase === "welcome") {
+    return <StreamInvitation onJoin={() => dispatch({ type: "start" })} />;
+  }
 
   return (
     <main
@@ -392,7 +501,7 @@ function GuestPage() {
         </div>
         <div className="episode-info">
           <span>
-            05:00<small>до финала</small>
+            05:00<small>на игру</small>
           </span>
           <span>
             05<small>попыток</small>
@@ -414,9 +523,7 @@ function GuestPage() {
             <h2>
               Искра <span aria-label="Проверенная ведущая">✦</span>
             </h2>
-            <p>
-              {finished ? "Эфир завершён" : "Сюжетный эфир · летний коллаб"}
-            </p>
+            <p>{finished ? "Эфир завершён" : "Летний коллаб · Пенакония"}</p>
           </div>
           <span className={`live-badge${finished ? " offline" : ""}`}>
             <i />
@@ -424,39 +531,59 @@ function GuestPage() {
           </span>
         </header>
 
-        <div
-          className={`mission-bar${active && time <= 60000 ? " urgent" : ""}`}
-        >
-          <div>
-            <span className="eyebrow">
-              {game.phase === "won"
-                ? "ОБЕЗВРЕЖЕНО"
-                : game.phase === "lost"
-                  ? "ФИНАЛ ЭФИРА"
-                  : "ДО ВЗРЫВА"}
-            </span>
-            <strong aria-label={`Осталось ${timeLabel(time)}`}>
-              {timeLabel(time)}
-            </strong>
-          </div>
-          <div className="attempts">
-            <span className="eyebrow">ПОПЫТКИ</span>
-            <span
-              className="attempt-dots"
-              aria-label={`Осталось попыток: ${MAX_ATTEMPTS - game.failedAttempts}`}
+        {game.startedAt !== null && (
+          <>
+            <div
+              className={`mission-bar${active && time <= 60000 ? " urgent" : ""}`}
             >
-              {Array.from({ length: MAX_ATTEMPTS }, (_, i) => (
-                <i key={i} className={i < game.failedAttempts ? "spent" : ""} />
-              ))}
-              <b>
-                {MAX_ATTEMPTS - game.failedAttempts}/{MAX_ATTEMPTS}
-              </b>
-            </span>
-          </div>
-        </div>
-        <div className="timer-track" aria-hidden="true">
-          <span style={{ width: `${(time / DURATION_MS) * 100}%` }} />
-        </div>
+              <div>
+                <span className="eyebrow">
+                  {game.phase === "won"
+                    ? "ОБЕЗВРЕЖЕНО"
+                    : game.phase === "lost"
+                      ? "ФИНАЛ ЭФИРА"
+                      : !active
+                        ? "ПАУЗА"
+                        : game.bonusGranted
+                          ? "ШАНС ОТ ИСКРЫ"
+                          : "ДО ВЗРЫВА"}
+                </span>
+                <strong aria-label={`Осталось ${timeLabel(time)}`}>
+                  {timeLabel(time)}
+                </strong>
+              </div>
+              <div className="attempts">
+                <span className="eyebrow">ПОПЫТКИ</span>
+                <span
+                  className="attempt-dots"
+                  aria-label={`Осталось попыток: ${attempts - game.failedAttempts}`}
+                >
+                  {Array.from({ length: attempts }, (_, i) => (
+                    <i
+                      key={i}
+                      className={i < game.failedAttempts ? "spent" : ""}
+                    />
+                  ))}
+                  <b>
+                    {attempts - game.failedAttempts}/{attempts}
+                  </b>
+                </span>
+              </div>
+            </div>
+            <div className="timer-track" aria-hidden="true">
+              <span
+                style={{
+                  width: `${(time / (game.bonusGranted ? BONUS_MS : DURATION_MS)) * 100}%`,
+                }}
+              />
+            </div>
+          </>
+        )}
+        {game.bonusGranted && !finished && (
+          <p className="bonus-notice" role="status">
+            ♥ Искра дарит +1 минуту и +1 попытку.
+          </p>
+        )}
 
         {storageError && (
           <p className="storage-warning" role="status">
@@ -465,115 +592,68 @@ function GuestPage() {
           </p>
         )}
         <div className="chat-viewport" ref={viewport}>
-          {game.phase === "welcome" ? (
-            <div className="welcome-card">
-              <div className="welcome-icon">♥</div>
-              <p className="eyebrow">ВАМ ПРИШЛО ПРИГЛАШЕНИЕ</p>
-              <h2>
-                Первопроходец,
-                <br />
-                ты как раз вовремя.
-              </h2>
-              <p>
-                На съёмочной площадке нашли бомбу.
-                <br />
-                На бомбе — QR. За QR — Искра.
-                <br />
-                Совпадение? Ей бы понравилось.
-              </p>
-              <div className="welcome-rules">
-                <span>01</span>
-                <p>Поговори с Искрой. Выбирай ответы — она всё запоминает.</p>
-                <span>02</span>
-                <p>
-                  Пройди маленького «Сапёра» прямо в чате. У тебя пять попыток.
-                </p>
-                <span>03</span>
-                <p>
-                  Уложись в пять минут вместе с перепиской. Покажи финал
-                  стендовику.
-                </p>
-              </div>
-              <button
-                className="primary-button"
-                onClick={() => dispatch({ type: "start" })}
-              >
-                Войти в эфир <span>↗</span>
-              </button>
-              <small>
-                Таймер начнётся после входа.
-                <br />
-                Эфир — часть игры, камера не включается.
-              </small>
-            </div>
-          ) : (
-            <>
-              <p className="chat-date">СЕГОДНЯ · ПРЯМО СО СЪЁМОЧНОЙ ПЛОЩАДКИ</p>
-              <MessageList
-                messages={
-                  game.boardMessageIndex === null
-                    ? game.messages
-                    : game.messages.slice(0, game.boardMessageIndex)
-                }
-              />
-              {hasBoard && <BoardView game={game} dispatch={dispatch} />}
-              {game.boardMessageIndex !== null && (
-                <MessageList
-                  messages={game.messages.slice(game.boardMessageIndex)}
-                />
-              )}
-              {game.phase === "retry" && (
-                <div className="retry-card">
-                  <p>Мина найдена. Совсем не тем способом.</p>
-                  <button
-                    className="primary-button"
-                    onClick={() => dispatch({ type: "retry" })}
-                  >
-                    Попытка {game.failedAttempts + 1} из {MAX_ATTEMPTS}{" "}
-                    <span>↻</span>
-                  </button>
-                  <small>Таймер продолжает идти.</small>
-                </div>
-              )}
-              {finished && (
-                <section
-                  className={`result-card ${game.phase}`}
-                  aria-label="Результат игры"
+          <>
+            <p className="chat-date">СЕГОДНЯ · ПРЯМО СО СЪЁМОЧНОЙ ПЛОЩАДКИ</p>
+            <MessageList
+              messages={game.messages}
+              boardMessageIndex={game.boardMessageIndex}
+              board={
+                hasBoard ? (
+                  <BoardView game={game} dispatch={dispatch} />
+                ) : undefined
+              }
+            />
+            {typing && <TypingIndicator />}
+            {game.phase === "retry" && ready && (
+              <div className="retry-card">
+                <p>Мина найдена. Совсем не тем способом.</p>
+                <button
+                  className="primary-button"
+                  onClick={() => dispatch({ type: "retry" })}
                 >
-                  <div className="result-symbol" aria-hidden="true">
-                    {game.phase === "won" ? "✦" : "✹"}
-                  </div>
-                  <p className="eyebrow">ЭФИР ЗАВЕРШЁН</p>
-                  <h2>
-                    {game.phase === "won"
-                      ? "Площадка спасена!"
-                      : "Взрывной контент."}
-                  </h2>
-                  <p>
-                    {game.phase === "won"
-                      ? "Ты обезвредил бомбу и лишил Искру спецэффектов. Зато обеспечил ей хороший финал."
-                      : game.lossReason === "time"
-                        ? "Пять минут прошли — бомба взорвалась конфетти. Искра уже придумывает заголовок."
-                        : "Все пять попыток потрачены. Бомба взорвалась конфетти, а ты вошёл в историю этого эфира."}
-                  </p>
-                  <div className="stamp-note">
-                    Покажи этот экран стендовику
-                    <br />
-                    <strong>и забери печать за Пенаконию.</strong>
-                  </div>
-                  <span className="round-number">
-                    Эфир № {game.id.slice(-6).toUpperCase()}
-                  </span>
-                  <button className="secondary-button" onClick={restart}>
-                    Начать новую игру
-                  </button>
-                </section>
-              )}
-            </>
-          )}
+                  Попытка {game.failedAttempts + 1} из {attempts} <span>↻</span>
+                </button>
+                <small>Время на паузе. Искра ждёт твоего возвращения.</small>
+              </div>
+            )}
+            {finished && ready && (
+              <section
+                className={`result-card ${game.phase}`}
+                aria-label="Результат игры"
+              >
+                <div className="result-symbol" aria-hidden="true">
+                  {game.phase === "won" ? "✦" : "✹"}
+                </div>
+                <p className="eyebrow">ЭФИР ЗАВЕРШЁН</p>
+                <h2>
+                  {game.phase === "won"
+                    ? "Площадка спасена!"
+                    : "Взрывной контент."}
+                </h2>
+                <p>
+                  {game.phase === "won"
+                    ? "Ты обезвредил бомбу и лишил Искру спецэффектов. Зато обеспечил ей хороший финал."
+                    : game.lossReason === "time"
+                      ? "Даже дополнительная минута прошла — бомба взорвалась конфетти. Искра уже придумывает заголовок."
+                      : "Все попытки потрачены. Бомба взорвалась конфетти, а ты вошёл в историю этого эфира."}
+                </p>
+                <div className="stamp-note">
+                  Покажи этот экран стендовику
+                  <br />
+                  <strong>и забери печать за Пенаконию.</strong>
+                </div>
+                <span className="round-number">
+                  Эфир № {game.id.slice(-6).toUpperCase()}
+                </span>
+                <button className="secondary-button" onClick={restart}>
+                  Начать новую игру
+                </button>
+              </section>
+            )}
+          </>
         </div>
 
-        {game.phase === "dialogue" && (
+        {(game.phase === "dialogue" || game.phase === "encore") && ready && (
           <div className="reply-panel">
             <p className="eyebrow">ПЕРВОПРОХОДЕЦ · ТВОЙ ОТВЕТ</p>
             <div key={game.node}>
@@ -591,10 +671,21 @@ function GuestPage() {
             </div>
           </div>
         )}
-        {game.phase === "playing" && (
-          <div className="playing-footer">
-            <span className="live-dot" /> Искра наблюдает за каждым ходом.
-          </div>
+        {(active || game.phase === "retry") && game.commentary.text && (
+          <aside className="live-commentary" aria-label="Комментарии Искры">
+            <Avatar />
+            <div
+              className="commentary-cloud"
+              key={game.commentary.serial}
+              role="status"
+              aria-live="polite"
+            >
+              <span className="commentary-name">
+                Искра <span>· смотрит твою игру</span>
+              </span>
+              <p>{game.commentary.text}</p>
+            </div>
+          </aside>
         )}
       </section>
     </main>

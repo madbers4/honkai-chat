@@ -1,4 +1,4 @@
-name: Deploy to Yandex Cloud VM
+name: Deploy static festival game
 
 on:
   push:
@@ -6,7 +6,11 @@ on:
 
 env:
   DEPLOY_PATH: /opt/honkai-chat
-  NODE_VERSION: '20'
+  NODE_VERSION: "20"
+
+concurrency:
+  group: production
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -21,15 +25,13 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Install dependencies
-        run: |
-          rm -rf node_modules package-lock.json
-          npm install
+        run: npm ci
 
-      - name: Build all workspaces
+      - name: Test game rules
+        run: npm test
+
+      - name: Build static site
         run: npm run build
-
-      - name: Copy scenario to server dist
-        run: cp -r server/src/scenario server/dist/scenario
 
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
@@ -39,30 +41,21 @@ jobs:
       - name: Add host to known_hosts
         run: ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Rsync files to VM
+      - name: Upload static site
         run: |
+          ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} 'mkdir -p /opt/honkai-chat/client/dist'
           rsync -avz --delete \
-            --include='package.json' \
-            --include='package-lock.json' \
-            --include='shared/' \
-            --include='shared/***' \
-            --include='server/' \
-            --include='server/package.json' \
-            --include='server/dist/' \
-            --include='server/dist/***' \
-            --include='client/' \
-            --include='client/dist/' \
-            --include='client/dist/***' \
-            --exclude='*' \
-            ./ ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:${{ env.DEPLOY_PATH }}/
+            client/dist/ ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:${{ env.DEPLOY_PATH }}/client/dist/
 
-      - name: Install production deps and restart
+      - name: Serve static files on the existing port
         run: |
           ssh ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'EOF'
+            set -e
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
             cd /opt/honkai-chat
-            npm install --omit=dev
-            pm2 restart honkai-chat || pm2 start server/dist/index.js --name honkai-chat
+            pm2 delete honkai-chat || true
+            pm2 serve /opt/honkai-chat/client/dist 3001 --spa --name honkai-chat
             pm2 save
+            curl --fail --retry 5 --retry-connrefused --retry-delay 2 http://127.0.0.1:3001/ >/dev/null
           EOF

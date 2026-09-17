@@ -3,7 +3,6 @@ import assert from "node:assert/strict";
 import { dialogue } from "../client/src/game/dialogue.ts";
 import {
   createGame,
-  DURATION_MS,
   BONUS_MS,
   FAST_WIN_MS,
   attemptLimit,
@@ -14,6 +13,7 @@ import {
 } from "../client/src/game/game.ts";
 import {
   difficulties,
+  difficultyDuration,
   type Difficulty,
 } from "../client/src/game/difficulty.ts";
 import {
@@ -25,6 +25,8 @@ import {
 } from "../client/src/game/minesweeper.ts";
 import { parseGame } from "../client/src/game/storage.ts";
 import { reactionLines } from "../client/src/game/commentary.ts";
+
+const DURATION_MS = difficultyDuration("easy");
 
 function session() {
   let now = 1_000_000;
@@ -222,7 +224,7 @@ test("bonus permits exactly a sixth attempt and no seventh", () => {
   }
 });
 
-test("fast first wins raise each selected difficulty exactly once, preserving time and attempts", () => {
+test("fast first wins raise each selected difficulty exactly once, extending the budget without resetting elapsed time or attempts", () => {
   for (let level = 0; level < 3; level++) {
     const s = session();
     s.begin(level);
@@ -231,14 +233,23 @@ test("fast first wins raise each selected difficulty exactly once, preserving ti
     assert.equal(s.game.phase, "encore");
     assert.equal(s.game.board.size, size + 1);
     assert.equal(s.game.encoreGranted, true);
-    assert.equal(s.game.remaining, DURATION_MS - 1000);
+    assert.equal(
+      s.game.remaining,
+      difficultyDuration(s.game.difficulty) - 1000,
+    );
     s.act({ type: "tick" }, 600000);
     s.flush();
-    assert.equal(s.game.remaining, DURATION_MS - 1000);
+    assert.equal(
+      s.game.remaining,
+      difficultyDuration(s.game.difficulty) - 1000,
+    );
     s.choose();
     s.solve();
     assert.equal(s.game.phase, "won");
-    assert.equal(s.game.remaining, DURATION_MS - 2000);
+    assert.equal(
+      s.game.remaining,
+      difficultyDuration(s.game.difficulty) - 2000,
+    );
     assert.equal(s.game.failedAttempts, 0);
     s.flush();
     assert.match(s.game.messages.at(-1)!.text, /печать/);
@@ -326,7 +337,7 @@ test("commentary responds to inactivity, actual moves and flags without spending
 test("reaction banks vary without repetition; urgency supersedes chatter and never reveals hidden mines", () => {
   assert.ok(Object.values(reactionLines).flat().length >= 160);
   const s = session();
-  s.begin();
+  s.begin(2);
   const heard: string[] = [];
   for (let i = 0; i < 6; i++) {
     s.act({ type: "tick" }, 16000);
@@ -334,7 +345,7 @@ test("reaction banks vary without repetition; urgency supersedes chatter and nev
     heard.push(s.game.commentary.text);
   }
   assert.equal(new Set(heard).size, 6);
-  s.act({ type: "tick" }, DURATION_MS - 96_000 - 10_000);
+  s.act({ type: "tick" }, difficultyDuration("hard") - 96_000 - 10_000);
   assert.equal(s.game.commentary.kind, "time15");
   s.act({ type: "tick" }, 250);
   assert.equal(s.game.commentary.kind, "time15");
@@ -349,4 +360,46 @@ test("reaction banks vary without repetition; urgency supersedes chatter and nev
     transition(base, action, when).commentary.text,
     transition(alternative, action, when).commentary.text,
   );
+});
+
+test("difficulty sets 3/4/5-minute budgets and timeout occurs at each actual boundary", () => {
+  for (const [level, minutes] of [3, 4, 5].entries()) {
+    const s = session();
+    s.begin(level);
+    assert.equal(s.game.remaining, minutes * 60000);
+    assert.match(s.game.messages.at(-1)!.text, new RegExp(`${minutes} минут`));
+    s.act({ type: "tick" }, minutes * 60000 - 1);
+    assert.equal(s.game.bonusGranted, false);
+    assert.equal(remainingMs(s.game, s.now), 1);
+    s.act({ type: "tick" }, 1);
+    assert.equal(s.game.bonusGranted, true);
+    assert.equal(s.game.remaining, BONUS_MS);
+  }
+});
+
+test("old five-minute saves migrate once with elapsed time, board and bonus preserved", () => {
+  const s = session();
+  s.begin(1);
+  s.hit();
+  s.flush();
+  const legacy = { ...s.game, version: 3, remaining: 300000 - 200 };
+  const migrated = parseGame(JSON.stringify(legacy))!;
+  assert.equal(migrated.version, 4);
+  assert.equal(migrated.remaining, 240000 - 200);
+  assert.deepEqual(migrated.board, legacy.board);
+  assert.equal(migrated.failedAttempts, legacy.failedAttempts);
+  assert.deepEqual(parseGame(JSON.stringify(migrated)), migrated);
+  const active = {
+    ...legacy,
+    phase: "playing",
+    runningSince: s.now,
+    board: emptyBoard("normal"),
+  };
+  const restored = parseGame(JSON.stringify(active))!;
+  assert.equal(remainingMs(restored, s.now + 10000), 240000 - 10200);
+  const bonus = parseGame(
+    JSON.stringify({ ...legacy, bonusGranted: true, remaining: 50000 }),
+  )!;
+  assert.equal(bonus.remaining, 50000);
+  assert.equal(bonus.bonusGranted, true);
 });

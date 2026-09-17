@@ -1,7 +1,11 @@
 import { reactionLines } from "./commentary";
 import { dialogue } from "./dialogue";
-import { BONUS_MS, DURATION_MS, MAX_ATTEMPTS, type Game } from "./game";
-import { difficulties, type Difficulty } from "./difficulty";
+import { BONUS_MS, MAX_ATTEMPTS, type Game } from "./game";
+import {
+  difficulties,
+  difficultyDuration,
+  type Difficulty,
+} from "./difficulty";
 
 export const STORAGE_KEY = "constanta.sparxie.game.v3";
 const record = (value: unknown): value is Record<string, unknown> =>
@@ -20,7 +24,7 @@ export function parseGame(raw: string | null): Game | null {
     const value: unknown = JSON.parse(raw);
     if (
       !record(value) ||
-      value.version !== 3 ||
+      ![3, 4].includes(value.version as number) ||
       typeof value.id !== "string" ||
       !finite(value.seed) ||
       typeof value.bonusGranted !== "boolean"
@@ -32,7 +36,10 @@ export function parseGame(raw: string | null): Game | null {
       typeof value.encoreGranted !== "boolean"
     )
       return null;
-    const { size, mineCount } = difficulties[value.difficulty as Difficulty];
+    const { size, mineCount, durationMs } =
+      difficulties[value.difficulty as Difficulty];
+    const legacy = value.version === 3;
+    const budget = legacy ? 300000 : durationMs;
     if (
       typeof value.phase !== "string" ||
       ![
@@ -66,7 +73,7 @@ export function parseGame(raw: string | null): Game | null {
     if (
       !finite(value.remaining) ||
       value.remaining < 0 ||
-      value.remaining > (value.bonusGranted ? BONUS_MS : DURATION_MS)
+      value.remaining > (value.bonusGranted ? BONUS_MS : budget)
     )
       return null;
     if (
@@ -95,7 +102,7 @@ export function parseGame(raw: string | null): Game | null {
         value.startedAt !== null ||
         value.runningSince !== null ||
         value.bonusGranted ||
-        value.remaining !== DURATION_MS
+        value.remaining !== budget
       )
         return null;
     }
@@ -195,6 +202,15 @@ export function parseGame(raw: string | null): Game | null {
         (value.boardMessageIndex as number) > value.messages.length)
     )
       return null;
+    if (legacy) {
+      value.version = 4;
+      if (!value.bonusGranted)
+        value.remaining = Math.max(
+          0,
+          difficultyDuration(value.difficulty as Difficulty) -
+            (300000 - value.remaining),
+        );
+    }
     return value as unknown as Game;
   } catch {
     return null;

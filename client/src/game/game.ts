@@ -1,5 +1,11 @@
 import { emptyCommentary, observe, type Commentary } from "./commentary";
-import { difficulties, nextDifficulty, type Difficulty } from "./difficulty";
+import {
+  difficulties,
+  difficultyDuration,
+  difficultyTimeLabel,
+  nextDifficulty,
+  type Difficulty,
+} from "./difficulty";
 import {
   attitudeTaunts,
   dialogue,
@@ -14,7 +20,6 @@ import {
   type Board,
 } from "./minesweeper";
 
-export const DURATION_MS = 5 * 60 * 1000;
 export const BONUS_MS = 60 * 1000;
 export const MAX_ATTEMPTS = 5;
 export const FAST_WIN_MS = 60 * 1000;
@@ -27,7 +32,7 @@ export interface Message {
   text: string;
 }
 export interface Game {
-  version: 3;
+  version: 4;
   commentary: Commentary;
   id: string;
   seed: number;
@@ -61,7 +66,7 @@ export type Action =
 
 export function createGame(id: string, seed: number): Game {
   return {
-    version: 3,
+    version: 4,
     commentary: emptyCommentary(),
     id,
     seed,
@@ -72,7 +77,7 @@ export function createGame(id: string, seed: number): Game {
     encoreGranted: false,
     startedAt: null,
     runningSince: null,
-    remaining: DURATION_MS,
+    remaining: difficultyDuration("easy"),
     finishedAt: null,
     failedAttempts: 0,
     bonusGranted: false,
@@ -210,13 +215,15 @@ function advance(current: Game, action: Action, now: number): Game {
         {
           ...next,
           phase: "playing",
+          remaining:
+            game.phase === "encore" ? next.remaining : level.durationMs,
           board: emptyBoard(next.difficulty),
           boardMessageIndex: null,
         },
         now,
         game.phase === "encore"
           ? `Это не жульничество, это продление сезона! «${level.label}»: ${level.size} × ${level.size}, мин — ${level.mineCount}. После этого поля точно отпущу. Обещаю. Слышишь, чат?`
-          : `«${level.label}» принят! Поле ${level.size} × ${level.size}, мин — ${level.mineCount}. Панель открыта, пять минут пошли. Любоваться мной будешь после победы.`,
+          : `«${level.label}» принят! Поле ${level.size} × ${level.size}, мин — ${level.mineCount}. Панель открыта, ${difficultyTimeLabel(next.difficulty)} пошли. Любоваться мной будешь после победы.`,
       );
     }
     return queue(
@@ -294,7 +301,7 @@ function advance(current: Game, action: Action, now: number): Game {
       !game.encoreGranted &&
       !game.bonusGranted &&
       game.failedAttempts === 0 &&
-      DURATION_MS - paused.remaining < FAST_WIN_MS
+      difficultyDuration(game.difficulty) - paused.remaining < FAST_WIN_MS
     ) {
       const difficulty = nextDifficulty[game.difficulty];
       const level = difficulties[difficulty];
@@ -304,6 +311,10 @@ function advance(current: Game, action: Action, now: number): Game {
           phase: "encore",
           node: "encore",
           difficulty,
+          remaining:
+            paused.remaining +
+            level.durationMs -
+            difficultyDuration(game.difficulty),
           encoreGranted: true,
           board: emptyBoard(difficulty),
           boardMessageIndex: null,
@@ -311,7 +322,7 @@ function advance(current: Game, action: Action, now: number): Game {
         now,
         "Стой. СТОЙ. С первой попытки?! Даже минуты не прошло! Чат, я ещё превью не выбрала!",
         `Так. Я совершенно спокойна. Просто это был… пробный выпуск! Повышаю сложность: «${level.label}», ${level.size} × ${level.size}, мин — ${level.mineCount}. Ещё одно поле. ОДНО.`,
-        "Время и попытки остаются. Сейчас отдышусь — и продолжим. Не смей писать, что у ведущей паника.",
+        "Добавляю минуту за новый уровень. Потраченное время не обнуляется, попытки остаются. Сейчас отдышусь — и продолжим. Не смей писать, что у ведущей паника.",
       );
     }
     return queue(

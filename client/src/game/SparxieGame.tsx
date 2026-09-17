@@ -12,7 +12,6 @@ import {
   createGame,
   attemptLimit,
   BONUS_MS,
-  DURATION_MS,
   isActive,
   remainingMs,
   transition,
@@ -21,7 +20,11 @@ import {
   type Message,
 } from "./game";
 import { adjacentMines } from "./minesweeper";
-import { difficulties } from "./difficulty";
+import {
+  difficulties,
+  difficultyDuration,
+  difficultyTimeLabel,
+} from "./difficulty";
 import { parseGame, STORAGE_KEY } from "./storage";
 import { LiveCommentary } from "./LiveCommentary";
 import "./game.css";
@@ -177,37 +180,92 @@ function BoardView({
 }) {
   const [flagMode, setFlagMode] = useState(false);
   const frame = useRef<HTMLDivElement>(null);
+  const panel = useRef<HTMLElement>(null);
   const help = useRef<HTMLDetailsElement>(null);
-  const [square, setSquare] = useState<number | undefined>();
+  const [layout, setLayout] = useState<{ square?: number; showTips: boolean }>({
+    showTips: false,
+  });
+  const tipsHeight = 60;
   const locked = !isActive(game);
   const { size, mineCount } = game.board;
   useEffect(() => setFlagMode(false), [game.failedAttempts, game.difficulty]);
   useLayoutEffect(() => {
-    if (locked || !frame.current) {
-      setSquare(undefined);
+    if (locked || !frame.current || !panel.current) {
+      setLayout({ showTips: true });
       return;
     }
     const element = frame.current;
+    const card = panel.current;
+    const viewport = card.closest<HTMLElement>(".chat-viewport")!;
+    const outerHeight = (element: Element) => {
+      const css = getComputedStyle(element);
+      return (
+        element.getBoundingClientRect().height +
+        parseFloat(css.marginTop) +
+        parseFloat(css.marginBottom)
+      );
+    };
+    const verticalInsets = (element: Element) => {
+      const css = getComputedStyle(element);
+      return [
+        css.paddingTop,
+        css.paddingBottom,
+        css.borderTopWidth,
+        css.borderBottomWidth,
+      ].reduce((sum, value) => sum + parseFloat(value), 0);
+    };
     const fit = () => {
+      const available =
+        viewport.clientHeight -
+        verticalInsets(viewport) -
+        verticalInsets(card) -
+        outerHeight(card.querySelector(".board-meta")!) -
+        outerHeight(card.querySelector(".mode-switch")!) -
+        3;
+      const preferred = Math.min(element.clientWidth, 360);
+      const showTips = available >= preferred + tipsHeight;
       const minimum = size * 26 + (size - 1) * 3;
-      setSquare(
-        Math.max(
-          minimum,
-          Math.floor(Math.min(element.clientWidth, element.clientHeight, 360)),
+      const square = Math.max(
+        minimum,
+        Math.floor(
+          Math.min(preferred, available - (showTips ? tipsHeight : 0)),
         ),
+      );
+      setLayout((previous) =>
+        previous.square === square && previous.showTips === showTips
+          ? previous
+          : { square, showTips },
       );
     };
     fit();
-    const observer = new ResizeObserver(fit);
+    let width = element.clientWidth;
+    const observer = new ResizeObserver((entries) => {
+      if (
+        entries.some((entry) => entry.target === viewport) ||
+        element.clientWidth !== width
+      ) {
+        width = element.clientWidth;
+        fit();
+      }
+    });
+    observer.observe(viewport);
     observer.observe(element);
     return () => observer.disconnect();
   }, [locked, size]);
+  useLayoutEffect(() => {
+    // A resize can grow the board after the viewport has already scrolled.
+    if (!locked) panel.current?.scrollIntoView({ block: "start" });
+  }, [locked, layout.square, layout.showTips]);
   // Свернуть подсказку перед следующим раундом, сохранив режим флажков при бонусе.
   useEffect(() => {
     if (!locked && help.current) help.current.open = false;
   }, [locked]);
   return (
-    <section className="mine-panel" aria-label="Панель обезвреживания">
+    <section
+      className="mine-panel"
+      aria-label="Панель обезвреживания"
+      ref={panel}
+    >
       <div className="panel-title">
         <span className="panel-icon" aria-hidden="true">
           ✳
@@ -248,8 +306,8 @@ function BoardView({
           aria-label="Поле сапёра"
           style={{
             gridTemplateColumns: `repeat(${size}, 1fr)`,
-            width: square,
-            height: square,
+            width: layout.square,
+            height: layout.square,
           }}
         >
           {Array.from({ length: size * size }, (_, cell) => {
@@ -301,6 +359,22 @@ function BoardView({
           })}
         </div>
       </div>
+      <div
+        className="board-tips"
+        hidden={!locked && !layout.showTips}
+        style={{ height: tipsHeight }}
+      >
+        <p className="board-hint">
+          {flagMode
+            ? "Подозреваешь мину — поставь флажок. Повторное нажатие снимет его."
+            : "Цифры — мины рядом, включая диагонали. Открой все безопасные клетки."}
+        </p>
+        <p className="safe-first">
+          {game.board.mines.length
+            ? "Флажки сами по себе не дают победу."
+            : "Первый ход безопасный."}
+        </p>
+      </div>
       <details className="game-help" ref={help}>
         <summary aria-label="Как играть?">
           <span>Как играть?</span>
@@ -319,8 +393,9 @@ function BoardView({
         </p>
         <p>
           Попадание на мину тратит одну попытку. После ошибки начни новое поле.
-          На игру пять минут: во время переписки и между попытками таймер стоит.
-          Если не успеешь, Искра один раз добавит минуту и попытку.
+          На этом уровне {difficultyTimeLabel(game.difficulty)}: во время
+          переписки и между попытками таймер стоит. Если не успеешь, Искра один
+          раз добавит минуту и попытку.
         </p>
       </details>
     </section>
@@ -392,7 +467,7 @@ function StaffPage() {
             Лучше открой чат.
           </h2>
           <img src={qr} alt="QR-код входа в игру с Искрой" />
-          <p>5 минут · 5 попыток · одна очень довольная Искра</p>
+          <p>3–5 минут · 5 попыток · одна очень довольная Искра</p>
           <a
             href={qr}
             download="constanta-sparxie-qr.png"
@@ -405,8 +480,9 @@ function StaffPage() {
       <div className="staff-rules">
         <h2>На площадке</h2>
         <p>
-          Отправь гостя к реквизиту с QR. Переписка без таймера, пять минут
-          начнутся при открытии первого сапёра и идут только на активном поле.
+          Отправь гостя к реквизиту с QR. Переписка без таймера. На лёгком
+          уровне — три минуты, на среднем — четыре, на сложном — пять. Отсчёт
+          начинается при открытии первого сапёра и идёт только на активном поле.
           Между попытками и во время реплик таймер стоит. По окончании времени
           Искра один раз добавит минуту и попытку. Обновление страницы продолжит
           ту же партию. Каждая вкладка играет отдельно; закрытие вкладки
@@ -418,7 +494,8 @@ function StaffPage() {
           игру можно начать с экрана результата. Сложность гость выбирает в
           диалоге: 5 × 5 / 4 мины, 6 × 6 / 7 мин или 7 × 7 / 10 мин. При победе
           с первой попытки быстрее минуты Искра один раз повышает сложность и
-          требует реванш. Время и попытки общие на оба поля.
+          требует реванш. За новый уровень добавляется минута; потраченное время
+          и попытки сохраняются.
         </p>
         <p>Телефон не снимает гостя: «эфир» и его зрители — часть сюжета.</p>
       </div>
@@ -494,10 +571,6 @@ function GuestPage() {
     const container = viewport.current;
     if (!container) return;
     const fit = () => {
-      container.style.setProperty(
-        "--play-height",
-        `${container.clientHeight}px`,
-      );
       if (active)
         container
           .querySelector(".mine-panel")
@@ -557,7 +630,8 @@ function GuestPage() {
         </div>
         <div className="episode-info">
           <span>
-            05:00<small>на игру</small>
+            {timeLabel(difficultyDuration(game.difficulty))}
+            <small>на этот уровень</small>
           </span>
           <span>
             05<small>попыток</small>
@@ -629,7 +703,7 @@ function GuestPage() {
             <div className="timer-track" aria-hidden="true">
               <span
                 style={{
-                  width: `${(time / (game.bonusGranted ? BONUS_MS : DURATION_MS)) * 100}%`,
+                  width: `${(time / (game.bonusGranted ? BONUS_MS : difficultyDuration(game.difficulty))) * 100}%`,
                 }}
               />
             </div>

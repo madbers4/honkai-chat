@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { difficultyDuration } from "../../client/src/game/difficulty";
 import { reactionLines } from "../../client/src/game/commentary";
 import { PNG } from "pngjs";
 import jsQR from "jsqr";
@@ -183,7 +184,9 @@ test("chat is untimed, messages type in sequence, game timeout gives a single bo
   }
   await page.locator(".mine-cell").first().click();
   const boardBeforeBonus = (await saved(page)).board;
-  await page.clock.fastForward(300001);
+  await page.clock.fastForward(
+    difficultyDuration((await saved(page)).difficulty) + 1,
+  );
   expect((await saved(page)).board).toEqual(boardBeforeBonus);
   await expect(page.locator(".mine-cell.mine")).toHaveCount(0);
   expect((await saved(page)).bonusGranted).toBe(true);
@@ -445,12 +448,103 @@ test("long captions fit without moving the cells; bonus HUD also fits", async ({
     if (lastGridHeight !== undefined) expect(height).toBe(lastGridHeight);
     lastGridHeight = height;
   }
-  await page.clock.fastForward(300001);
+  await page.clock.fastForward(
+    difficultyDuration((await saved(page)).difficulty) + 1,
+  );
   await expect(page.locator(".live-commentary")).toHaveCount(0);
   await flushChat(page);
   await expectUsableField(page);
   await page.screenshot({
     path: info.outputPath("small-bonus.png"),
+    animations: "disabled",
+  });
+});
+
+test("each selected difficulty has its own visible timer and the encore adds only one minute", async ({
+  page,
+}, info) => {
+  test.skip(info.project.name !== "mobile");
+  for (const [level, minutes] of [3, 4, 5].entries()) {
+    await page.goto("/");
+    await page.evaluate((key) => sessionStorage.removeItem(key), STORAGE_KEY);
+    await enterBoard(page, level);
+    const game = await saved(page);
+    expect(game.remaining).toBe(minutes * 60000);
+    await expect(page.locator(".mission-bar strong")).toHaveText(
+      `0${minutes}:00`,
+    );
+    const fraction = await page
+      .locator(".timer-track span")
+      .evaluate(
+        (el) =>
+          el.getBoundingClientRect().width /
+          el.parentElement!.getBoundingClientRect().width,
+      );
+    expect(fraction).toBeGreaterThan(0.99);
+    await page.clock.fastForward(10000);
+    await page.reload();
+    await expect(page.locator(".mission-bar strong")).toHaveText(
+      new RegExp(`0${minutes - 1}:4[89]|0${minutes - 1}:50`),
+    );
+    await solve(page);
+    const next = await saved(page);
+    expect(next.phase).toBe("encore");
+    expect(next.remaining).toBeGreaterThan((minutes + 1) * 60000 - 20000);
+    expect(next.remaining).toBeLessThan((minutes + 1) * 60000 - 9000);
+  }
+});
+
+test("tall phones show hints without blank space or overlapping help; messages keep their padding after a board", async ({
+  page,
+}, info) => {
+  test.skip(info.project.name !== "mobile");
+  await page.setViewportSize({ width: 412, height: 915 });
+  await enterBoard(page, 1);
+  await expect(page.locator(".board-tips")).toBeVisible();
+  const geometry = await page.evaluate(() => {
+    const box = (s: string) =>
+      document.querySelector(s)!.getBoundingClientRect().toJSON();
+    return {
+      grid: box(".mine-grid"),
+      modes: box(".mode-switch"),
+      help: box(".game-help summary"),
+      tips: box(".board-tips"),
+      panel: box(".mine-panel"),
+    };
+  });
+  expect(geometry.grid.y - geometry.modes.bottom).toBeLessThan(12);
+  expect(geometry.help.bottom).toBeLessThanOrEqual(geometry.modes.y);
+  expect(geometry.tips.y - geometry.grid.bottom).toBeLessThan(5);
+  expect(geometry.panel.bottom - geometry.tips.bottom).toBeLessThan(15);
+  await page.screenshot({
+    path: info.outputPath("tall-phone-hints.png"),
+    animations: "disabled",
+  });
+  await page.clock.fastForward(240001);
+  await flushChat(page);
+  // Once the gifted minute starts the message below the field remains part of the history.
+  await page
+    .locator(".message-history > .chat-message")
+    .last()
+    .scrollIntoViewIfNeeded();
+  const spacing = await page.evaluate(() => {
+    const board = document
+      .querySelector(".mine-panel")!
+      .getBoundingClientRect();
+    const message = document
+      .querySelector(".board-slot + .chat-message")!
+      .getBoundingClientRect();
+    return {
+      vertical: message.y - board.bottom,
+      left: message.x,
+      right: innerWidth - message.right,
+    };
+  });
+  expect(spacing.vertical).toBeGreaterThanOrEqual(18);
+  expect(spacing.left).toBeGreaterThanOrEqual(12);
+  expect(spacing.right).toBeGreaterThanOrEqual(12);
+  await page.screenshot({
+    path: info.outputPath("message-after-field.png"),
     animations: "disabled",
   });
 });

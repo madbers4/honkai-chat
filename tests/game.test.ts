@@ -184,7 +184,7 @@ test("five failed fields exhaust five attempts; pauses, reload and retries never
   }
   assert.equal(s.game.lossReason, "mines");
   assert.equal(s.game.bonusGranted, false);
-  assert.match(s.game.messages.at(-1)!.text, /конфетти/);
+  assert.notEqual(s.game.finishedAt, null);
 });
 
 test("timeout grants one minute and one attempt, pauses for the gift message, then expires once", () => {

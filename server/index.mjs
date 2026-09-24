@@ -1,4 +1,4 @@
-import { createReadStream } from 'node:fs';
+import { createReadStream, realpathSync } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,7 +8,7 @@ const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.wav': 'audio/wav' };
 
 /** The existing static story stays at /; the multiplayer app has an isolated namespace. */
-export async function startFestivalServer({ port = Number(process.env.PORT) || 3001, host = '0.0.0.0', clientDir = path.join(ROOT, 'client/dist'), robotDir = path.join(ROOT, 'games/robots/dist'), autoTick = true, log = false } = {}) {
+export async function startFestivalServer({ port = process.env.PORT ? Number(process.env.PORT) : 3001, host = '0.0.0.0', clientDir = path.join(ROOT, 'client/dist'), robotDir = path.join(ROOT, 'games/robots/dist'), autoTick = true, log = false } = {}) {
   const staticRoot = path.resolve(clientDir);
   async function fallback(request, response) {
     try {
@@ -33,7 +33,7 @@ export async function startFestivalServer({ port = Number(process.env.PORT) || 3
   return startServer({ port, host, staticDir: robotDir, publicDir: robotDir, basePath: '/robots', fallback, autoTick, log, publicUrl: null });
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {
   startFestivalServer({ log: true }).then(app => {
     for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, async () => { await app.close(); process.exit(0); });
   }).catch(error => { console.error(error.message); process.exitCode = 1; });

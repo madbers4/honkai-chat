@@ -35,7 +35,7 @@ jobs:
           cp -r client/dist release/client/
           cp games/robots/package.json release/games/robots/
           cp -r games/robots/dist games/robots/server games/robots/shared release/games/robots/
-          cp scripts/smoke-host.mjs scripts/activate-release.sh release/scripts/
+          cp scripts/smoke-host.mjs scripts/preflight-release.mjs scripts/activate-release.sh release/scripts/
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:

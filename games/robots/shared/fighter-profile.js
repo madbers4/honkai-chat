@@ -1,4 +1,9 @@
 export const CHARACTER_LIMIT = 60;
+export const ROBOT_NAME_LIMIT = 20;
+
+export function cleanRobotName(value, fallback = 'Автоматон') {
+  return [...cleanCharacter(value)].slice(0, ROBOT_NAME_LIMIT).join('').trim() || fallback;
+}
 
 /** Optional plain-text roleplay metadata, shared by server and browser. */
 export function cleanCharacter(value) {

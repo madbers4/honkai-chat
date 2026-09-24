@@ -15,6 +15,8 @@ import { recoilChoreography } from './recoil-choreography.js';
 import { createMechanicalTurn, turnStartup } from './mechanical-turn.js';
 import { specialChoreography, electricalReaction } from './special-choreography.js';
 import { choreographOverload, choreographOverloadHit } from './overload-choreography.js';
+import { createRobotCustomization } from './robot-customization.js';
+import { choreographFaceoff } from './faceoff-choreography.js';
 
 // The user's Automaton Beetle, repaired and rigid-skinned in prepare-model.py.
 // The four articulated leg chains use CCD toward planted feet / attack targets;
@@ -161,6 +163,10 @@ export function createRobot({ skin = 'amber' } = {}) {
   reactorLamp.name = 'OriginalReactor_Spill'; reactorLamp.castShadow = false;
   reactorLamp.position.copy(coreLocal);
   chassis.add(reactorLamp);
+  const customization = createRobotCustomization({
+    armorMaterials: ownMaterials.filter(material => !lensMaterials.includes(material)),
+    turret, turretSurface: damageSources.head.points, statusMount: muzzleLocal,
+  });
   const coreSource = signalMeshes.reactor;
   const coreGeometry = coreSource.geometry.clone();
   const coreBoneIndex = coreSource.skeleton.bones.indexOf(chassis);
@@ -344,9 +350,12 @@ export function createRobot({ skin = 'amber' } = {}) {
 
   function update(player = {}, dt = 1 / 60, time = 0) {
     if (disposed) return;
+    customization.set(player.customization);
+    customization.update(player, time);
     const poseKey = [player.action, player.variant, player.actionTime, player.hp, player.guard, player.energy,
       player.facing, player.y, player.grabTarget, player.grabbedBy, player.grabHoldTime, player.grabReleaseTime,
-      player.grabStrikeTime, player.grabThrowTime, player.destructionTime, player.visualReducedMotion, player.visualSeekToken].join('|');
+      player.grabStrikeTime, player.grabThrowTime, player.destructionTime, player.visualReducedMotion, player.visualSeekToken,
+      customization.key()].join('|');
     if (player.visualPaused && dt <= 0) {
       if (poseKey !== pausedPoseKey) {
         pausedPoseKey = poseKey;
@@ -386,6 +395,7 @@ export function createRobot({ skin = 'amber' } = {}) {
       box.getCenter(shadowCenter); group.worldToLocal(shadowCenter);
       Object.assign(contactShadow, { x: shadowCenter.x, z: shadowCenter.z, width: box.max.x - box.min.x, depth: box.max.z - box.min.z, height: Math.max(0, box.min.y) });
       headLamp.intensity = reactorLamp.intensity = 0;
+      customization.update(player, time);
       lastAction = action; lastVariant = player.variant || '';
       previousElapsed = Number(player.actionTime) || 0;
       return;
@@ -533,7 +543,11 @@ export function createRobot({ skin = 'amber' } = {}) {
       for (const leg of legs) if (leg.side === 'FR' || leg.side === 'RL') leg.desired.x *= 1 + damageMotion * .025;
     }
 
-    if (action === 'crouch' || action === 'block') {
+    if (action === 'faceoff') {
+      const acting = choreographFaceoff(variant, elapsed, duration, legs, { reducedMotion });
+      bob = acting.bob; lean += acting.lean; roll += acting.roll; twist += acting.twist;
+      thrust += acting.thrust; headPitch = acting.headPitch; headYaw = acting.headYaw; headRoll = acting.headRoll;
+    } else if (action === 'crouch' || action === 'block') {
       bob -= action === 'block' ? .15 : .28;
       lean -= .06;
       headPitch += .11;
@@ -924,7 +938,7 @@ export function createRobot({ skin = 'amber' } = {}) {
     // Scaling the decay with the amplitude preserves the old brief lifetime.
     hitFlare = Math.max(0, hitFlare - dt * (ordinaryHit ? 1.96 : 7));
     for (const channel of ['health', 'status', 'reactor']) for (const material of signalMaterials[channel]) {
-      material.emissive.setHex(presentation[`${channel}Color`]);
+      material.emissive.setHex(channel === 'reactor' ? customization.coreColor(presentation.reactorColor) : presentation[`${channel}Color`]);
       material.color.copy(material.emissive).multiplyScalar(.14);
       material.emissiveIntensity = presentation[`${channel}Intensity`];
     }
@@ -933,7 +947,7 @@ export function createRobot({ skin = 'amber' } = {}) {
     }
     headLamp.color.setHex(presentation.healthColor);
     headLamp.intensity = presentation.destroyed ? 0 : presentation.healthIntensity * 11;
-    reactorLamp.color.setHex(presentation.reactorColor);
+    reactorLamp.color.setHex(customization.coreColor(presentation.reactorColor));
     reactorLamp.intensity = presentation.destroyed ? 0 : presentation.reactorIntensity * 10;
     if (action === 'ultimate' || variant === 'overloadHit' || variant === 'overloadRecovery') {
       reactorLamp.intensity += charge * (reducedMotion ? 5 : 13);
@@ -967,6 +981,7 @@ export function createRobot({ skin = 'amber' } = {}) {
   function dispose() {
     if (disposed) return;
     disposed = true;
+    customization.dispose();
     ownMaterials.forEach((m) => m.dispose());
     glowGeometry.dispose(); glowMaterial.dispose();
     ringGeometry.dispose(); ringMaterial.dispose();

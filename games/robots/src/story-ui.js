@@ -56,6 +56,7 @@ export function createStoryUI() {
 
   return {
     profile: () => ({character}),
+    setCharacter(value) { character = cleanCharacter(value); refreshCharacter(); },
     update(next, playerId) {
       const training = next.mode==='training';
       const profiles = next.players.map(p=>`${p.name}${p.character ? ` — ${p.character}` : ''}`);

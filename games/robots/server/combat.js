@@ -4,6 +4,7 @@ import {
   canAttemptAirDash, canAttemptBurst, canAttemptFeint, clamp, HEAVY_RULES,
 } from '../shared/constants.js';
 import { cleanCharacter } from '../shared/fighter-profile.js';
+import { normalizeCustomization } from '../shared/robot-customization.js';
 import { isGroundHeavy, offenseLocked, isDefensiveAction, grantHeavyAdvantage, applySlamBounce } from '../shared/heavy-advantage.js';
 import { healthFraction } from '../shared/health.js';
 
@@ -15,9 +16,10 @@ const GRAB_ATTACK = Object.freeze({
   range: V3_RULES.grabRange, damage: V3_RULES.grabDamage, guardDamage: 0, knockback: 6.5, stun: V3_RULES.throwStun,
 });
 
-function makePlayer(id, name, bot = false, character = '') {
+function makePlayer(id, name, bot = false, character = '', customization) {
   return {
     id, name, character: cleanCharacter(character), bot, connected: true, ready: bot,
+    customization: normalizeCustomization(customization),
     x: id === 'p1' ? -2.7 : 2.7, y: 0, vx: 0, vy: 0, facing: id === 'p1' ? 1 : -1,
     hp: MAX_HP, maxHp: MAX_HP, energy: 40, guard: 100, wins: 0, action: 'idle', actionTime: 0,
     actionDuration: 0, variant: '', combo: 0, cooldowns: { dash: 0, special: 0, ultimate: 0, burst: 0 },
@@ -63,9 +65,9 @@ export class CombatRoom {
     this.nextProjectileId = 1;
   }
 
-  addPlayer(name = 'Первопроходец', { bot = false, character = '' } = {}) {
+  addPlayer(name = 'Первопроходец', { bot = false, character = '', customization } = {}) {
     if (this.players.length >= 2) return null;
-    const player = makePlayer(`p${this.players.length + 1}`, name, bot, character);
+    const player = makePlayer(`p${this.players.length + 1}`, name, bot, character, customization);
     this.players.push(player);
     return player;
   }
@@ -134,7 +136,7 @@ export class CombatRoom {
     this.finishMotion = null;
     this.lastHit = null;
     for (const player of this.players) {
-      const fresh = makePlayer(player.id, player.name, player.bot, player.character);
+      const fresh = makePlayer(player.id, player.name, player.bot, player.character, player.customization);
       // Sequence numbers remain monotonic through round and match transitions.
       Object.assign(player, fresh, {
         wins: player.wins, connected: player.connected, ready: true, lastSeq: player.lastSeq,
@@ -1018,11 +1020,12 @@ export class CombatRoom {
 
   snapshot() {
     return {
-      room: this.id, mode: this.mode, phase: this.phase, pausedFrom: this.pausedFrom, time: roundNumber(this.time),
+      room: this.id, mode: this.mode, phase: this.phase, pausedFrom: this.pausedFrom, time: roundNumber(this.time), elapsed: roundNumber(this.elapsed),
       round: this.round, countdown: roundNumber(this.countdown), roundWinner: this.roundWinner,
       finish: this.finish ? { ...this.finish, time: roundNumber(this.finish.time), elapsed: roundNumber(this.finish.elapsed), canTrigger: this.phase === 'finishing' && this.finish.stage === 'offer' } : null,
       players: this.players.map(player => ({
         id: player.id, name: player.name, character: player.character, connected: player.connected, ready: player.ready,
+        customization: { ...player.customization },
         x: roundNumber(player.x), y: roundNumber(player.y), vx: roundNumber(player.vx), vy: roundNumber(player.vy), facing: player.facing,
         hp: roundNumber(player.hp), maxHp: player.maxHp, energy: roundNumber(player.energy), guard: roundNumber(player.guard), wins: player.wins,
         action: player.action, variant: player.variant, actionTime: roundNumber(player.actionTime), actionDuration: player.actionDuration,

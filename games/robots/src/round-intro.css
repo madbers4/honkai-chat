@@ -1,0 +1,28 @@
+.round-intro{position:absolute;inset:0;z-index:7;pointer-events:none;overflow:hidden;color:#f3e9d4;font-family:inherit;background:linear-gradient(#08151bad,transparent 23%,transparent 74%,#08151bc2)}
+.round-intro[hidden]{display:none}
+.round-intro-top{position:absolute;left:5%;right:5%;top:20px;display:grid;grid-template-columns:minmax(0,1fr) minmax(150px,.9fr) minmax(0,1fr);gap:20px;align-items:start}
+.round-intro-card{border-top:2px solid #b49560;display:flex;flex-direction:column;gap:6px;padding:9px 12px 8px;background:linear-gradient(100deg,#101b25e6,#101b251a);text-shadow:0 2px 8px #000}
+.round-intro-card-1{text-align:right;border-color:#6dafb9;background:linear-gradient(-100deg,#101b25e6,#101b251a)}
+.round-intro-role{font-size:8px;letter-spacing:2px;color:#b7b9b5}
+.round-intro-name{font-size:23px;line-height:1.08;font-weight:850;overflow-wrap:anywhere}
+.round-intro-card.speaking{border-color:#ffda8a;box-shadow:inset 2px 0 #dfb767}
+.round-intro-card-1.speaking{border-color:#99e7ed;box-shadow:inset -2px 0 #78d5df}
+.round-intro-card.speaking .round-intro-role{color:#f8d79e}
+.round-intro-card-1.speaking .round-intro-role{color:#a0e2e8}
+.round-intro-badge{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;text-shadow:0 2px 9px #000}
+.round-intro-number{font-size:23px;letter-spacing:3px;color:#ebc889;line-height:1.1}
+.round-intro-title{font-size:10px;letter-spacing:.65px;line-height:1.25;max-width:270px;color:#d2c8b6;text-wrap:balance}
+.round-intro-bottom{position:absolute;bottom:19px;left:17%;right:17%;display:grid;gap:7px}
+.round-intro-caption{padding:9px 16px 11px;text-align:center;background:linear-gradient(90deg,#0a1620cc,#0a1620f2,#0a1620cc);border-left:2px solid #d8bd85;border-right:2px solid #d8bd85;box-shadow:0 6px 24px #0005}
+.round-intro[data-speaker="1"] .round-intro-caption{border-color:#83cbd2}
+.round-intro-speaker{display:block;font-size:10px;line-height:1.2;font-weight:750;letter-spacing:1.5px;color:#f0ce96;overflow-wrap:anywhere}
+.round-intro[data-speaker="1"] .round-intro-speaker{color:#a5e1e6}
+.round-intro-line{margin:5px 0 0;font-size:23px;font-weight:650;line-height:1.2;text-wrap:balance}
+.round-intro-timeline{display:flex;gap:5px;height:2px}
+.round-intro-track{flex:1;background:#d8c29128;overflow:hidden}
+.round-intro-fill{display:block;height:100%;background:#d9b474;transform-origin:left}
+.round-intro-track:nth-child(2) .round-intro-fill{background:#8fcbd3}
+.round-intro-note{text-align:center;font-size:7px;letter-spacing:1.5px;color:#c4c7bf}
+.round-intro[data-paused="true"] .round-intro-fill{background:#a5b4ba}
+@media(max-height:500px){.round-intro-top{top:11px;left:4%;right:4%;gap:13px;grid-template-columns:minmax(0,1fr) minmax(125px,.85fr) minmax(0,1fr)}.round-intro-card{padding:6px 8px;gap:4px}.round-intro-role{font-size:7px;letter-spacing:1px}.round-intro-name{font-size:16px}.round-intro-number{font-size:18px;letter-spacing:2px}.round-intro-title{font-size:9px;line-height:1.2}.round-intro-badge{gap:4px}.round-intro-bottom{bottom:12px;left:17%;right:17%;gap:5px}.round-intro-caption{padding:6px 11px 8px}.round-intro-speaker{font-size:8px;letter-spacing:1px}.round-intro-line{font-size:16px;margin-top:4px}.round-intro-note{display:none;font-size:7px;letter-spacing:1px}.round-intro[data-paused="true"] .round-intro-note{display:block}}
+@media(max-width:600px){.round-intro-top{left:3%;right:3%;gap:8px;grid-template-columns:minmax(0,1fr) 110px minmax(0,1fr)}.round-intro-name{font-size:14px}.round-intro-number{font-size:15px}.round-intro-title{font-size:8px}.round-intro-bottom{left:9%;right:9%}.round-intro-line{font-size:15px}}

@@ -7,6 +7,11 @@ import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
 import { WebSocketServer, WebSocket } from 'ws';
 import { CombatRoom } from './combat.js';
+import { StorySession } from './story-session.js';
+import { RULE_CARDS } from '../shared/club-story.js';
+import { FACE_OFF_DURATION, buildFaceoff } from '../shared/faceoff-script.js';
+import { cleanRobotName, cleanCharacter } from '../shared/fighter-profile.js';
+import { normalizeCustomization } from '../shared/robot-customization.js';
 import { SIMULATION_HZ, SNAPSHOT_HZ } from '../shared/constants.js';
 import { lanUrls, normalizePublicUrl } from './network.js';
 
@@ -20,7 +25,6 @@ const MIME = {
 const MAX_ROOMS = 80;
 const RECONNECT_WINDOW_MS = 180_000;
 const codeAlphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-const cleanName = (name, fallback) => typeof name === 'string' ? [...name.replace(/[\u0000-\u001f\u007f<>]/g, '').trim()].slice(0, 20).join('') || fallback : fallback;
 const safeTokenEqual = (provided, stored) => typeof provided === 'string' && /^[a-f0-9]{48}$/.test(provided) && timingSafeEqual(Buffer.from(provided), Buffer.from(stored));
 
 function send(socket, packet) {
@@ -98,7 +102,7 @@ export async function startServer({
   server.on('upgrade', (request, socket, head) => {
     let pathname;
     try { pathname = new URL(request.url, 'http://local').pathname; } catch { socket.destroy(); return; }
-    if (closing || pathname !== `${prefix}/ws` || wss.clients.size >= 160) {
+    if (closing || pathname !== `${prefix}/ws` || wss.clients.size >= 256) {
       socket.write('HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n');
       socket.destroy();
       return;
@@ -107,8 +111,11 @@ export async function startServer({
   });
 
   function broadcast(room) {
-    const state = { type: 'state', state: room.game.snapshot() };
+    const refereeConnected = room.referee?.socket?.readyState === WebSocket.OPEN;
+    const snapshot = room.game.snapshot();
+    const state = { type: 'state', state: room.story ? room.story.decorate(snapshot, refereeConnected) : { ...snapshot, referee: { connected: refereeConnected } } };
     for (const session of room.sessions.values()) send(session.socket, state);
+    send(room.referee?.socket, state);
   }
 
   function uniqueCode() {
@@ -123,10 +130,21 @@ export async function startServer({
     session.disconnectedAt = null;
     socket.roomId = room.game.id;
     socket.playerId = session.playerId;
+    socket.role = 'fighter';
     room.lastActivity = Date.now();
     room.game.setConnected(session.playerId, true);
     if (previous && previous !== socket) previous.close(4001, 'Подключение открыто на другом устройстве.');
     send(socket, { type: 'welcome', room: room.game.id, playerId: session.playerId, token: session.token });
+    broadcast(room);
+  }
+
+  function bindReferee(socket, room, session) {
+    const previous = session.socket;
+    session.socket = socket; session.disconnectedAt = null;
+    socket.roomId = room.game.id; socket.role = 'referee';
+    if (previous && previous !== socket) previous.close(4001, 'Пульт рефери открыт на другом устройстве.');
+    send(socket, { type: 'refereeWelcome', room: room.game.id, token: session.token });
+    send(socket, { type: 'refereeState', favorite: session.favorite });
     broadcast(room);
   }
 
@@ -159,8 +177,9 @@ export async function startServer({
         if (rooms.size >= MAX_ROOMS) { error('Сервер заполнен. Попробуйте чуть позже.'); return; }
         const id = uniqueCode();
         const game = new CombatRoom({ id, mode: message.mode, random });
-        const player = game.addPlayer(cleanName(message.name, 'Первопроходец'), { character: message.character });
+        const player = game.addPlayer(cleanRobotName(message.name, 'Первопроходец'), { character: message.character, customization: message.customization });
         const room = { game, sessions: new Map(), createdAt: Date.now(), lastActivity: Date.now() };
+        if (message.storyMode === true) room.story = new StorySession(game, { ruleCount: RULE_CARDS.length, faceoffDuration: FACE_OFF_DURATION, buildFaceoff });
         const session = { playerId: player.id, token: randomBytes(24).toString('hex'), socket: null, disconnectedAt: null };
         room.sessions.set(player.id, session);
         if (game.mode === 'training') game.addPlayer('Учебный автоматон', { bot: true, character: 'Верит в заводскую гарантию' });
@@ -181,24 +200,76 @@ export async function startServer({
           return;
         }
         if (room.game.players.length >= 2 || room.game.mode === 'training') { error('В комнате уже два бойца.'); return; }
-        const player = room.game.addPlayer(cleanName(message.name, 'Соперник'), { character: message.character });
+        const player = room.game.addPlayer(cleanRobotName(message.name, 'Соперник'), { character: message.character, customization: message.customization });
         const session = { playerId: player.id, token: randomBytes(24).toString('hex'), socket: null, disconnectedAt: null };
         room.sessions.set(player.id, session);
         bindSocket(socket, room, session);
         return;
       }
+      if (message.type === 'watch') {
+        if (socket.roomId) { error('Вы уже в комнате.'); return; }
+        const code = typeof message.room === 'string' ? message.room.trim().toUpperCase() : '';
+        const room = rooms.get(code);
+        if (!room) { error('Комната не найдена. Проверьте код на телефоне бойца.'); return; }
+        let session = room.referee;
+        if (message.token) {
+          if (!session || !safeTokenEqual(message.token, session.token)) { error('Неверный ключ рефери. Откройте приглашение заново.'); return; }
+          if (session.disconnectedAt && Date.now() - session.disconnectedAt > RECONNECT_WINDOW_MS) { error('Время восстановления пульта истекло. Войдите по приглашению заново.'); return; }
+        } else {
+          if (session && (session.socket || !session.disconnectedAt || Date.now() - session.disconnectedAt < RECONNECT_WINDOW_MS)) { error('Микрофон уже у другого рефери. Для восстановления используйте его устройство.'); return; }
+          session = room.referee = { token: randomBytes(24).toString('hex'), socket: null, favorite: 'neutral', disconnectedAt: null };
+        }
+        bindReferee(socket, room, session);
+        return;
+      }
       const room = rooms.get(socket.roomId);
+      if (room && socket.role === 'referee' && room.referee?.socket === socket) {
+        if (message.type === 'refereeFavorite') {
+          if (['p1', 'p2', 'neutral'].includes(message.favorite)) room.referee.favorite = message.favorite;
+          send(socket, { type: 'refereeState', favorite: room.referee.favorite });
+          return;
+        }
+        if (message.type === 'storyAdvance') {
+          room.story?.advance({ actor: 'referee', sequenceId: message.sequenceId, ruleIndex: message.ruleIndex }, true);
+          broadcast(room); return;
+        }
+        send(socket, { type: 'notice', message: 'У рефери микрофон. Управление роботами остаётся у бойцов.' });
+        return;
+      }
       if (!room || room.sessions.get(socket.playerId)?.socket !== socket) { error('Сначала создайте комнату или присоединитесь.'); return; }
+      if (message.type === 'profile') {
+        if (!room.story?.canEdit(socket.playerId)) { send(socket, { type: 'notice', message: 'Паспорт уже сдан. В мастерской можно сначала снять готовность.' }); return; }
+        const player = room.game.player(socket.playerId);
+        if (Object.hasOwn(message, 'name')) player.name = cleanRobotName(message.name);
+        if (Object.hasOwn(message, 'character')) player.character = cleanCharacter(message.character);
+        if (Object.hasOwn(message, 'customization')) player.customization = normalizeCustomization(message.customization);
+        room.lastActivity = Date.now(); broadcast(room); return;
+      }
+      if (message.type === 'storyAdvance') {
+        room.story?.advance({ actor: socket.playerId, sequenceId: message.sequenceId, ruleIndex: message.ruleIndex }, room.referee?.socket?.readyState === WebSocket.OPEN);
+        room.lastActivity = Date.now(); broadcast(room); return;
+      }
       if (message.type === 'input') {
+        if (room.story && room.story.stage !== 'complete') return;
         room.game.input(socket.playerId, message);
         return;
       }
-      if (message.type === 'ready') { room.game.ready(socket.playerId); room.lastActivity = Date.now(); broadcast(room); return; }
-      if (message.type === 'rematch') { room.game.requestRematch(socket.playerId); room.lastActivity = Date.now(); broadcast(room); return; }
+      if (message.type === 'ready') {
+        if (room.story && room.story.stage !== 'complete') room.story.ready(socket.playerId, message.ready !== false);
+        else room.game.ready(socket.playerId);
+        room.lastActivity = Date.now(); broadcast(room); return;
+      }
+      if (message.type === 'rematch') { room.game.requestRematch(socket.playerId); room.story?.prepareRound(); room.lastActivity = Date.now(); broadcast(room); return; }
       error('Неизвестная команда.');
     });
     socket.on('close', () => {
       const room = rooms.get(socket.roomId);
+      if (socket.role === 'referee') {
+        if (room?.referee?.socket === socket) {
+          room.referee.socket = null; room.referee.disconnectedAt = Date.now(); broadcast(room);
+        }
+        return;
+      }
       const session = room?.sessions.get(socket.playerId);
       if (!session || session.socket !== socket) return;
       session.socket = null;
@@ -213,7 +284,9 @@ export async function startServer({
   function tick(dt = 1 / SIMULATION_HZ) {
     frame++;
     for (const room of rooms.values()) {
+      room.story?.step(dt);
       room.game.step(dt);
+      room.story?.prepareRound();
       if (frame % (SIMULATION_HZ / SNAPSHOT_HZ) === 0) broadcast(room);
     }
   }
@@ -240,6 +313,8 @@ export async function startServer({
           send(session.socket, { type: 'error', message: 'Комната закрыта из-за долгого отсутствия игрока. Создайте новую.' });
           session.socket?.close(4000, 'Комната закрыта.');
         }
+        send(room.referee?.socket, { type: 'error', message: 'Бойцы покинули клуб. Комната закрыта.' });
+        room.referee?.socket?.close(4000, 'Комната закрыта.');
         rooms.delete(code);
       }
     }

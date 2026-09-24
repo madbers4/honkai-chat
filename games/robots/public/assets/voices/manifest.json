@@ -1,0 +1,91 @@
+{
+  "source": "User supplied: звуки/",
+  "format": "Original MP3, byte-identical copies",
+  "durationProbe": "mutagen 1.48.1",
+  "clips": {
+    "explosion": {
+      "url": "/assets/voices/explosion.mp3",
+      "source": "Взрыв.mp3",
+      "duration": 10.512,
+      "bytes": 252909,
+      "sha256": "1bd3dacc65bfc6f7b821007673bc11cc3ebc688d212276b3563ca657de4fde38"
+    },
+    "jotaro-attack-1": {
+      "url": "/assets/voices/jotaro-attack-1.mp3",
+      "source": "Джот - Атака 1.mp3",
+      "duration": 8.76,
+      "bytes": 70317,
+      "sha256": "b431db10848aa8456bd50dbb1ffb6aff44e0ca6ea34be2094015b014af5499d1"
+    },
+    "jotaro-attack-2": {
+      "url": "/assets/voices/jotaro-attack-2.mp3",
+      "source": "Джот - Атака 2.mp3",
+      "duration": 8.784,
+      "bytes": 70509,
+      "sha256": "ed0f9f1b790ed825143114397a6a73f5910c271774ac65fc1e3a6af2ee4d0bc9"
+    },
+    "jotaro-attack-3": {
+      "url": "/assets/voices/jotaro-attack-3.mp3",
+      "source": "Джот - Атака 3.mp3",
+      "duration": 14.352,
+      "bytes": 115053,
+      "sha256": "568aaa985e415fcda99da6c7b797688560d7861db0661e6fe42946e4b2620145"
+    },
+    "jotaro-not-simple": {
+      "url": "/assets/voices/jotaro-not-simple.mp3",
+      "source": "Джот - Похоже ты и правда не прост.mp3",
+      "duration": 4.128,
+      "bytes": 33261,
+      "sha256": "82be3df7b13043862877e998895db1ee384829f8cff6c98ca26365326f55ef7e"
+    },
+    "jotaro-dio": {
+      "url": "/assets/voices/jotaro-dio.mp3",
+      "source": "Джот - Ублюдок, ДЫО.mp3",
+      "duration": 4.296,
+      "bytes": 34605,
+      "sha256": "17bad1ef01499370b836f7a5d5761b9150d6fa23036124c095e951a54e883741"
+    },
+    "duo-super": {
+      "url": "/assets/voices/duo-super.mp3",
+      "source": "Джот, Дио - Суператака.mp3",
+      "duration": 9.744,
+      "bytes": 78189,
+      "sha256": "cd2ae50f8082add84bb22ddd2af8cff499ffa4be7ea3f30a150d833897b8d4fa"
+    },
+    "dio-attack-1": {
+      "url": "/assets/voices/dio-attack-1.mp3",
+      "source": "Дио - Атака 1.mp3",
+      "duration": 5.88,
+      "bytes": 47277,
+      "sha256": "179145b679a588e75a6ecf37762aa0910e805955864b76bfb60cda9f81e36803"
+    },
+    "dio-attack-2": {
+      "url": "/assets/voices/dio-attack-2.mp3",
+      "source": "Дио - Атака 2.mp3",
+      "duration": 14.472,
+      "bytes": 116013,
+      "sha256": "d9c656f956a1a713e4ff04929bd85b1273c759e46256296d9cc7b092bcbdfa27"
+    },
+    "dio-angry": {
+      "url": "/assets/voices/dio-angry.mp3",
+      "source": "Дио - Похоже ты Зол, Джотаро.mp3",
+      "duration": 6,
+      "bytes": 48237,
+      "sha256": "27dddb35caca46711f62f11826d2c06ba8aa492a3b93e7e9d50ec572501d8a33"
+    },
+    "dio-hero": {
+      "url": "/assets/voices/dio-hero.mp3",
+      "source": "Дио - Ха, ну вперед, Герой.mp3",
+      "duration": 3.696,
+      "bytes": 29805,
+      "sha256": "97fd9f884d9f7674ed5995f9ce15aef4e01da8b4241c6fee670fdda435812382"
+    },
+    "greeting": {
+      "url": "/assets/voices/greeting.mp3",
+      "source": "Приветствие.mp3",
+      "duration": 11.448,
+      "bytes": 91821,
+      "sha256": "780ac5cb344f3a1c9cbe514b718b183a78bac98315de0047f4726cab66bb3361"
+    }
+  }
+}

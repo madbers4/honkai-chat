@@ -22,7 +22,8 @@ function pointsFor(players, anticipation = true) {
     // Broad chassis/feet envelope, including the incoming side of a throw.
     const x = p.x ?? 0, y = Math.max(0, p.y ?? 0);
     const leadX = anticipation ? clamp((p.vx ?? 0) * .12, -.7, .7) : 0;
-    const top = y + 2.75 + (anticipation ? Math.max(0, p.vy ?? 0) * .12 : 0);
+    const headroom = ['topHat', 'propeller', 'crown'].includes(p.customization?.accessory) ? 3.2 : 2.75;
+    const top = y + headroom + (anticipation ? Math.max(0, p.vy ?? 0) * .12 : 0);
     for (const px of [x - 1.45 + Math.min(0, leadX), x + 1.45 + Math.max(0, leadX)]) {
       for (const py of [Math.max(-.06, y - .08), top]) {
         for (const z of [-.85, .85]) points.push({ x: px, y: py, z });

@@ -7,6 +7,7 @@ import './story.css';
 import './ultimate.css';
 import { fontainkaSignature } from './brand-mark.js';
 import { createStoryUI } from './story-ui.js';
+import { createClubJourney } from './club-journey.js';
 import QRCode from 'qrcode';
 import { createArena } from './arena.js';
 import { createControls } from './input.js';
@@ -102,6 +103,10 @@ document.getElementById('app').innerHTML = `
 const savedName = localStorage.getItem('belobog-name');
 if (savedName) $('player-name').value = savedName;
 const storyUI = createStoryUI();
+const journey = createClubJourney($('app'), { send, leave, toast, muted: audio.muted,
+  toggleSound: () => { audio.unlock(); audio.toggle(); journey.setMuted(audio.muted); $('sound-btn').innerHTML = icon(audio.muted ? 'mute' : 'sound'); },
+  onName: (value, character) => { $('player-name').value = value; storyUI.setCharacter(character); },
+});
 const signalDot = (color, label) => `<span class="signal-chip"><i style="--signal:#${color.toString(16).padStart(6, '0')}"></i>${label}</span>`;
 const healthSignals = [[100,'БОЛЬШЕ 60%'],[55,'26–60%'],[18,'1–25%']].map(([hp,label]) => signalDot(robotPresentation({hp}).healthColor,label)).join('');
 document.querySelector('.keyboard-guide').insertAdjacentHTML('beforebegin', `
@@ -144,7 +149,7 @@ function showView(view) {
   currentView = view;
   for (const id of ['lobby','waiting','game']) $(id).hidden = id !== view;
   document.body.dataset.view = view;
-  $('topbar').hidden = view === 'game';
+  $('topbar').hidden = view === 'game' || view === 'story';
   if (view !== 'game') controls?.neutral();
 }
 function send(message) { if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message)); }
@@ -175,6 +180,7 @@ function connect(request) {
   socket.addEventListener('open', () => {
     if (socket !== currentSocket) return;
     connected = true; reconnectAttempt = 0; controls.resetSequence(); setConnection('СЕРВЕР НА СВЯЗИ', true);
+    journey.setConnected(true);
     if (pendingRequest) { send(pendingRequest); pendingRequest = null; }
     else if (room && token) send({ type:'join', room, token, name:name() });
   });
@@ -188,6 +194,7 @@ function connect(request) {
     }
     if (data.type === 'state') receiveState(data.state);
     if (data.type === 'pong') { ping = Math.max(0, Math.round(Date.now() - data.t)); setText('ping', `${ping} MS`); }
+    if (data.type === 'notice') toast(data.message);
     if (data.type === 'error') {
       leave();
       toast(data.message || 'Не удалось подключиться к комнате.');
@@ -196,6 +203,7 @@ function connect(request) {
   socket.addEventListener('close', event => {
     if (socket !== currentSocket) return;
     connected = false; controls.neutral(); setConnection('СВЯЗЬ ПРЕРВАНА', false);
+    journey.setConnected(false);
     if (event.code === 4001 || event.code === 4000) { leave(); toast(event.reason || 'Комната закрыта.'); return; }
     if (!quitting && room && token) {
       announce('ПЕРЕПОДКЛЮЧЕНИЕ', 'ВОССТАНАВЛИВАЕМ СВЯЗЬ С АРЕНОЙ');
@@ -207,12 +215,12 @@ function connect(request) {
 }
 async function enterRoom(training = false, code = null) {
   if (!assetsReady) { toast('Автоматоны ещё загружаются.'); return; }
-  audio.unlock(); audio.play('ui');
+  audio.unlock(); journey.unlock(); audio.play('ui');
   mode = training ? 'training' : 'pvp'; lastEvent = 0; lastPhase = null; state = null;
   combatUI.reset();
   $('create-btn').disabled = true; $('training-btn').disabled = true;
   if (matchMedia('(pointer: coarse)').matches) requestFullscreen();
-  connect(code ? {type:'join',room:code,name:name(),...storyUI.profile()} : {type:'create',name:name(),mode,...storyUI.profile()});
+  connect(code ? {type:'join',room:code,name:name(),...storyUI.profile(),...journey.profile()} : {type:'create',name:name(),mode,storyMode:true,...storyUI.profile(),...journey.profile()});
 }
 function leave() {
   audio.stop();
@@ -220,6 +228,7 @@ function leave() {
   room = null; token = null; playerId = null; state = null; lastPhase = null; lastEvent = 0;
   combatUI.reset();
   storyUI.reset();
+  journey.reset();
   delete document.body.dataset.phase; delete document.body.dataset.finish;
   joinedRoom = null;
   const cleanUrl = new URL(location.href); cleanUrl.searchParams.delete('room'); history.replaceState(null, '', cleanUrl);
@@ -242,6 +251,7 @@ function updateInvite() {
   let origin = serverInfo?.publicUrl || location.origin;
   if (!serverInfo?.publicUrl && /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && serverInfo?.urls?.length) origin = serverInfo.urls.find(url => /\/\/192\.168\./.test(url)) || serverInfo.urls.find(url => !/localhost|127\.0\.0\.1/.test(url)) || origin;
   inviteUrl = appPaths.invite(room, origin, serverInfo?.publicUrl);
+  journey.setInvite(inviteUrl);
   setText('room-code', room); $('invite-link').value = inviteUrl;
   QRCode.toCanvas($('invite-qr'), inviteUrl, { width: 120, margin: 1, color: { dark:'#172025', light:'#eee4d2' } }).catch(() => {});
   if (!/^(localhost|127\.0\.0\.1|192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(new URL(origin).hostname)) setText('network-hint', 'Ссылка работает с любого телефона, у которого есть доступ к этому серверу.');
@@ -253,6 +263,13 @@ function receiveState(next) {
   document.body.dataset.phase = state.phase;
   document.body.dataset.finish = state.finish?.stage || '';
   arena?.update(state, playerId, 0);
+  const inStory = journey.update(next, playerId);
+  arena?.setSuspended?.(journey.previewActive());
+  if (inStory) {
+    showView('story'); $('result').hidden = true; announce();
+    lastPhase = state.phase;
+    return;
+  }
   const players = state.players || [], me = players.find(p => p.id === playerId);
   if (state.phase === 'waiting') {
     showView('waiting'); $('result').hidden = true;
@@ -359,13 +376,13 @@ for (const id of ['help-btn','guide-btn','game-guide-btn']) $(id).addEventListen
 });
 document.querySelectorAll('[data-close]').forEach(btn => btn.addEventListener('click', () => $(btn.dataset.close).close()));
 document.querySelectorAll('dialog').forEach(dialog => dialog.addEventListener('click', e => { if (e.target === dialog) { const r=dialog.getBoundingClientRect(); if (e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom) dialog.close(); } }));
-$('sound-btn').addEventListener('click', () => { audio.unlock(); audio.toggle(); $('sound-btn').innerHTML = icon(audio.muted ? 'mute' : 'sound'); audio.play('ui'); });
+$('sound-btn').addEventListener('click', () => { audio.unlock(); journey.unlock(); audio.toggle(); journey.setMuted(audio.muted); $('sound-btn').innerHTML = icon(audio.muted ? 'mute' : 'sound'); audio.play('ui'); });
 for (const id of ['fullscreen-btn','rotate-fullscreen']) $(id).addEventListener('click', requestFullscreen);
 $('copy-btn').addEventListener('click', async () => {
   try { if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(inviteUrl); else { $('invite-link').focus(); $('invite-link').select(); if (!document.execCommand('copy')) throw Error(); } toast('Ссылка скопирована. Отправь её другу.'); }
   catch { $('invite-link').focus(); $('invite-link').select(); toast('Ссылка выделена — скопируй её вручную.'); }
 });
-document.addEventListener('pointerdown', () => audio.unlock(), { once: true });
+document.addEventListener('pointerdown', () => { audio.unlock(); journey.unlock(); }, { once: true });
 document.addEventListener('visibilitychange', () => { if (document.hidden) audio.stop(); });
 setInterval(() => { if (connected) send({type:'ping',t:Date.now()}); }, 2500);
 showView('lobby');

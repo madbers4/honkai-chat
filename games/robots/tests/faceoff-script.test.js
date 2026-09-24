@@ -1,0 +1,29 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import crypto from 'node:crypto';
+import { buildFaceoff, activeFaceoffBeat, FACE_OFF_DURATION, FACE_OFF_POSES, VOICE_CLIPS } from '../shared/faceoff-script.js';
+
+test('faceoff is a deterministic complete 24-second sequence with stable identities and legal audio slices', () => {
+  const players = [{ id: 'p1', name: 'Медный Сом' }, { id: 'p2', name: 'Герой <script>чайника</script>' }];
+  const beats = buildFaceoff(players, 'same-seed'); assert.deepEqual(beats, buildFaceoff(players, 'same-seed'));
+  assert.equal(new Set(beats.map(b => b.id)).size, beats.length); assert.equal(beats[0].at, 0);
+  assert.ok(beats.every(b => ['p1', 'p2', 'narrator'].includes(b.speaker) && FACE_OFF_POSES.includes(b.pose)));
+  for (const [i, beat] of beats.entries()) {
+    assert.ok(beat.duration > 0); assert.ok(Math.abs(beat.at + beat.duration - (beats[i + 1]?.at ?? FACE_OFF_DURATION)) < .0001);
+    if (beat.clip) assert.ok(beat.clipOffset + beat.clipDuration <= VOICE_CLIPS[beat.clip].duration);
+  }
+  for (let t = 0; t < FACE_OFF_DURATION; t += .1) assert.ok(activeFaceoffBeat(beats, t));
+  assert.equal(activeFaceoffBeat(beats, FACE_OFF_DURATION), null);
+  assert.ok(beats.some(b => b.ttsText?.includes(players[0].name))); assert.ok(beats.some(b => b.text.includes(players[1].name)));
+});
+
+test('all 12 original MP3 copies match their manifest checksum and measured duration', async () => {
+  const manifest = JSON.parse(await fs.readFile(new URL('../public/assets/voices/manifest.json', import.meta.url), 'utf8'));
+  assert.equal(Object.keys(manifest.clips).length, 12);
+  for (const [id, clip] of Object.entries(manifest.clips)) {
+    const bytes = await fs.readFile(new URL(`../public${clip.url}`, import.meta.url));
+    assert.equal(bytes.length, clip.bytes); assert.equal(crypto.createHash('sha256').update(bytes).digest('hex'), clip.sha256);
+    assert.equal(VOICE_CLIPS[id].duration, clip.duration); assert.ok(clip.duration > 0 && clip.duration < 16);
+  }
+});

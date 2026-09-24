@@ -8,6 +8,7 @@ import { createCombatEffects } from './effects.js';
 import { pairedRoot } from './paired-root.js';
 import { createSlamRootFollower } from './slam-choreography.js';
 import { createCameraChoreography } from './camera-choreography.js';
+import { computeFaceoffCamera, blendFaceoffCamera } from './faceoff-camera.js';
 import { createEmissionGlow } from './emission-glow.js';
 
 
@@ -212,6 +213,7 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
   let width = 1, height = 1, pixelRatio = 1;
   let hitstop = 0;
   let disposed = false;
+  let renderingSuspended = false;
   let frame = 0;
   let previousTime = performance.now();
   let sceneTime = 0;
@@ -223,6 +225,7 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
   let impactIntensity = 0;
   const cameraChoreography = createCameraChoreography();
   let cameraSeek = false;
+  let lastFaceoffFrame = null;
   const shadowGeometry = new THREE.PlaneGeometry(1, 1);
   const markerGeometry = new THREE.RingGeometry(0.57, 0.6, 40);
 
@@ -295,10 +298,10 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
     // RAF's presentation timestamp may precede performance.now() used during setup.
     const dt = clamp((now - previousTime) / 1000, 0, 0.055);
     previousTime = now;
-    if (document.hidden || width < 2 || height < 2) return;
+    if (document.hidden || renderingSuspended || width < 2 || height < 2) return;
     sceneTime += dt;
     hitstop = Math.max(0, hitstop - dt);
-    const paused = snapshot?.phase === 'paused';
+    const paused = snapshot?.phase === 'paused' || snapshot?.story?.paused;
     const animationDt = paused ? 0 : hitstop > 0 && !reducedMotion ? dt * 0.05 : dt;
     motionTime += animationDt;
     const players = snapshot?.players?.length ? snapshot.players : lobby;
@@ -333,7 +336,7 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
       visual.model.group.position.set(visual.x, visual.y, inLobby && player.id === 'lobby2' ? -0.35 : 0);
       const rendered = { ...(paused && !seek && visual.lastRendered ? visual.lastRendered : player), x: visual.x, y: visual.y,
         actionTime: paused && !seek ? visual.animationActionTime ?? player.actionTime ?? 0
-          : (player.actionTime ?? 0) + (inLobby ? motionTime : ['fight', 'finishing', 'roundOver', 'matchOver'].includes(snapshot?.phase) || player.action === 'recover' ? sinceSnapshot : 0),
+          : (player.actionTime ?? 0) + (inLobby ? motionTime : ['story', 'fight', 'finishing', 'roundOver', 'matchOver'].includes(snapshot?.phase) || player.action === 'recover' ? sinceSnapshot : 0),
         visualReducedMotion: reducedMotion, visualPaused: paused, visualSeekToken: snapshot?.visualSeekToken };
       if ((!paused || seek) && Number.isFinite(player.destructionTime)) rendered.destructionTime = player.destructionTime + (paused ? 0 : sinceSnapshot);
       rendered.visualQuality = quality;
@@ -430,10 +433,19 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
     const finishElapsed = snapshot?.finish?.elapsed ?? 0;
     const finishingFrame = reducedMotion || snapshot?.finish?.stage !== 'execute' ? 0
       : Math.sin(clamp(finishElapsed / 2.35, 0, 1) * Math.PI) * .62;
-    const cameraFrame = cameraChoreography.update(dt, renderPlayers, {
+    let cameraFrame = cameraChoreography.update(dt, renderPlayers, {
       aspect: camera.aspect, fov: camera.fov, inLobby, paused, seek: cameraSeek,
       reduced: reducedMotion, intro, charge: chargeFrame, finish: finishingFrame,
     });
+    if (snapshot?.story?.stage === 'faceoff') {
+      cameraFrame = computeFaceoffCamera({ story: snapshot.story, players: renderPlayers, aspect: camera.aspect, fov: camera.fov, reduced: reducedMotion });
+      lastFaceoffFrame = cameraFrame;
+    } else if (lastFaceoffFrame) {
+      const progress = snapshot?.story?.stage === 'roundIntro' ? snapshot.story.elapsed / 3
+        : snapshot?.phase === 'countdown' ? 1 - snapshot.countdown / 3 : 1;
+      cameraFrame = blendFaceoffCamera(lastFaceoffFrame, cameraFrame, progress);
+      if (progress >= 1) lastFaceoffFrame = null;
+    }
     cameraSeek = false;
     camera.position.set(cameraFrame.x, cameraFrame.y, cameraFrame.z);
     camera.lookAt(cameraFrame.tx, cameraFrame.ty, cameraFrame.tz);
@@ -447,8 +459,9 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
     update(state, playerId) {
       if (disposed) return;
       const reset = !state || (snapshot?.room && state.room !== snapshot.room);
+      if (reset) renderingSuspended = false;
       const cameraHistorical = reset || !snapshot || snapshot.phase === 'paused' || performance.now() - snapshotReceived > 350;
-      if (reset) { seenEvents.clear(); eventQueue.length = 0; effects.clear(); effectReviewKey = null; hitstop = 0; cameraChoreography.reset(); presentationGeneration++; }
+      if (reset) { seenEvents.clear(); eventQueue.length = 0; effects.clear(); effectReviewKey = null; hitstop = 0; cameraChoreography.reset(); lastFaceoffFrame = null; presentationGeneration++; }
       else if (snapshot?.round !== state?.round) { eventQueue.length = 0; effects.clear(); cameraChoreography.clearFeedback(); }
       cameraSeek = state?.phase === 'paused' && (state.visualSeekToken !== snapshot?.visualSeekToken || reset);
       snapshot = state;
@@ -468,6 +481,7 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
       }
     },
     resize,
+    setSuspended(value) { renderingSuspended = Boolean(value); },
     setQuality(value) {
       quality = value === 'low' ? 'low' : 'high';
       effectReviewKey = null;

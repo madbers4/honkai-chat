@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import WebSocket from 'ws';
 import { startServer } from '../server/index.js';
+import { MAX_HP, V5_ATTACKS } from '../shared/constants.js';
 
 test('two socket clients receive the same heavy stages, timings, damage and cancel cues', async t => {
   const app = await startServer({ port: 0, host: '127.0.0.1', autoTick: false }); t.after(() => app.close());
@@ -31,7 +32,7 @@ test('two socket clients receive the same heavy stages, timings, damage and canc
   advance(181);
   const game = app.rooms.get(welcome.room).game;
   game.player('p1').x = -1.25; game.player('p2').x = 1.25;
-  for (const frames of [27, 23, 28]) {
+  for (const frames of [Math.ceil((V5_ATTACKS.heavyDrive.startup + .14) * 60), Math.ceil((V5_ATTACKS.heavyHook.startup + .14) * 60), Math.ceil((V5_ATTACKS.heavyPress.startup + .06) * 60)]) {
     await deliver(a, { type: 'input', seq: game.player('p1').lastSeq + 1, move: 0, crouch: false, block: false, action: 'heavy' });
     advance(frames); await deliver(a); await deliver(b);
   }
@@ -40,9 +41,11 @@ test('two socket clients receive the same heavy stages, timings, damage and canc
   assert.deepEqual(events(a).filter(e => e.type === 'hit').map(e => e.variant), ['heavyDrive', 'heavyHook', 'heavyPress']);
   for (const ws of clients) {
     const state = ws.packets.findLast(p => p.type === 'state').state;
-    assert.equal(state.players[1].hp, 58); assert.equal(state.players[0].comboRoute, 'heavyDrive-heavyHook-heavyPress');
+    assert.equal(state.players[1].hp, MAX_HP - 88); assert.equal(state.players[0].comboRoute, 'heavyDrive-heavyHook-heavyPress');
     assert.equal(state.players[0].cancelWindow, 0);
     const drive = ws.packets.find(p => p.state?.players[0].variant === 'heavyDrive' && p.state.players[0].cancelWindow > 0);
     assert.ok(drive, 'confirmation is serialized for the contextual heavy label');
+    assert.ok(drive.state.players[1].defenseOnly > 0, 'both clients receive the authoritative defense-only timer');
+    assert.ok(ws.packets.some(packet => packet.state?.players[0].groundHeavy && packet.state.players[0].y > .06), 'ground-route marker survives the real hop on both clients');
   }
 });

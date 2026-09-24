@@ -1,3 +1,4 @@
+import { MAX_HP, WINS_TO_MATCH } from '../shared/constants.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
@@ -63,7 +64,7 @@ test('two real clients agree on V5 routes, paired pummels, back throw, frozen fi
   await input(a, 'p1', { action: 'heavy' }); advance(app, .4);
   await deliver(a); await deliver(b);
   for (const ws of [a, b]) assert.deepEqual([...ws.events.values()].filter(event => event.type === 'hit').map(event => event.variant), ['jab', 'cross', 'crusher']);
-  assert.equal(game.player('p2').hp, 67);
+  assert.equal(game.player('p2').hp, MAX_HP - 33);
 
   game.startRound(); advance(app, 3.05); close();
   await input(a, 'p1', { action: 'heavy', crouch: true }); advance(app, .55);
@@ -78,10 +79,10 @@ test('two real clients agree on V5 routes, paired pummels, back throw, frozen fi
   }
   await input(a, 'p1', { action: 'heavy', move: -1 }); advance(app, .25);
   const thrown = await identicalEvent('throw', grab.id);
-  assert.equal(thrown.throwStyle, 'back'); assert.equal(thrown.direction, -1); assert.equal(game.player('p2').hp, 77);
+  assert.equal(thrown.throwStyle, 'back'); assert.equal(thrown.direction, -1); assert.equal(game.player('p2').hp, MAX_HP - 23);
 
   game.startRound(); advance(app, 3.05); close();
-  game.player('p1').wins = 2; game.player('p2').hp = 6;
+  game.player('p1').wins = WINS_TO_MATCH - 1; game.player('p2').hp = 6;
   await input(a, 'p1', { action: 'light' }); advance(app, .18);
   assert.equal(game.phase, 'finishing'); assert.equal(game.finish.stage, 'offer');
   await input(b, 'p2', { action: 'ultimate' }); assert.equal(game.finish.stage, 'offer');
@@ -121,5 +122,5 @@ test('two real clients agree on V5 routes, paired pummels, back throw, frozen fi
   assert.equal([...a.events.values()].filter(event => event.type === 'destruction')[0].id, explosion.id);
   await deliver(a, { type: 'rematch' }); assert.equal(game.phase, 'matchOver');
   await deliver(b, { type: 'rematch' }); assert.equal(game.phase, 'countdown'); assert.equal(game.finish, null);
-  assert.ok(game.snapshot().players.every(player => player.hp === 100 && player.destructionTime === null && player.wins === 0));
+  assert.ok(game.snapshot().players.every(player => player.hp === MAX_HP && player.destructionTime === null && player.wins === 0));
 });

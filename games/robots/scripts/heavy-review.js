@@ -20,12 +20,12 @@ export function buildHeavyCase(type = 'series', facing = 1) {
     if (type === 'block') send(b, null, { block: true });
     once('start', frame === (type === 'block' ? 12 : 0), () => send(a, type === 'light' ? 'light' : 'heavy'));
     if (['series', 'stop', 'late', 'burst'].includes(type)) {
-      const lag = type === 'late' ? .25 : .10;
+      const lag = type === 'late' ? .23 : .13;
       once('hook', a.variant === 'heavyDrive' && a.cancelWindow > 0 && a.actionTime >= V5_ATTACKS.heavyDrive.startup + lag, () => send(a, 'heavy'));
-      if (type !== 'stop') once('press', a.variant === 'heavyHook' && a.cancelWindow > 0 && a.actionTime >= V5_ATTACKS.heavyHook.startup + .10, () => send(a, 'heavy'));
+      if (type !== 'stop') once('press', a.variant === 'heavyHook' && a.cancelWindow > 0 && a.actionTime >= V5_ATTACKS.heavyHook.startup + .13, () => send(a, 'heavy'));
     }
     if (type === 'late' && fired.has('hook')) send(b, null, { block: true });
-    if (type === 'parry' && a.variant === 'heavyDrive' && a.actionTime >= .24) send(b, null, { block: true });
+    if (type === 'parry' && a.variant === 'heavyDrive' && a.actionTime >= V5_ATTACKS.heavyDrive.startup - .08) send(b, null, { block: true });
     once('burst', type === 'burst' && b.action === 'hit' && a.variant === 'heavyHook', () => send(b, 'dash'));
     if (type === 'light') {
       once('cross', a.variant === 'jab' && a.cancelWindow > 0 && a.actionTime >= .18, () => send(a, 'light'));

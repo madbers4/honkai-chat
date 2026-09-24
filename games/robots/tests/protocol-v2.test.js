@@ -1,3 +1,4 @@
+import { MAX_HP, WINS_TO_MATCH } from '../shared/constants.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
@@ -70,22 +71,28 @@ test('V2 wave, parry reward and three authoritative ultimate pulses reach both r
     const event = packet.state.events.find(e => e.type === 'parry');
     parry.push(event);
     assert.equal(event.player, 'p2'); assert.equal(event.target, 'p1');
-    assert.equal(packet.state.players[1].hp, 100);
+    assert.equal(packet.state.players[1].hp, MAX_HP);
     assert.ok(packet.state.players[1].counterWindow > 0);
   }
   assert.deepEqual(parry[0], parry[1]);
   game.startRound(); advance(app, 3.05);
   game.player('p1').x = -1.1; game.player('p2').x = 1.1;
-  game.player('p1').energy = 100;
-  await input(a, 'p1', { action:'ultimate' }); advance(app, 1.4);
+  game.player('p1').energy = 80;
+  await input(a, 'p1', { action:'ultimate' }); advance(app, 1.7);
+  const dischargePackets = [];
   for (const ws of [a,b]) {
     const packet = await take(ws, p => p.type === 'state' && p.state.events.filter(e => e.type === 'ultimatePulse').length === 3);
     const pulses = packet.state.events.filter(e => e.type === 'ultimatePulse');
     assert.deepEqual(pulses.map(e => e.pulse), [0,1,2]);
     assert.equal(new Set(pulses.map(e => e.id)).size, 3);
     assert.ok(pulses.every(e => e.player === 'p1' && Number.isFinite(e.x) && Number.isFinite(e.y)));
-    assert.equal(packet.state.players[0].variant, 'overload');
+    assert.deepEqual(pulses.map(e => e.damage), [45, 55, 120]);
+    assert.equal(packet.state.players[0].variant, 'overloadRecovery');
+    assert.equal(packet.state.players[1].hp, 0);
+    assert.equal(packet.state.phase, 'roundOver');
+    dischargePackets.push(pulses);
   }
+  assert.deepEqual(dischargePackets[0], dischargePackets[1]);
 });
 
 test('V3 grab, fresh tech, throw, aerial burst and feint are identical on two real clients', async t => {
@@ -126,7 +133,7 @@ test('V3 grab, fresh tech, throw, aerial burst and feint are identical on two re
   await input(b, 'p2', { action:'light' }); advance(app, .06);
   const tech = await pairedEvent('grabBreak', caught.id);
   assert.equal(tech.player, 'p2');
-  assert.equal(game.player('p2').hp, 100);
+  assert.equal(game.player('p2').hp, MAX_HP);
   assert.equal(game.player('p2').grabbedBy, null);
 
   fresh();
@@ -134,7 +141,7 @@ test('V3 grab, fresh tech, throw, aerial burst and feint are identical on two re
   await input(a, 'p1', { action:'heavy' }); advance(app, .30);
   const thrown = await pairedEvent('throw', tech.id);
   assert.equal(thrown.target, 'p2');
-  assert.equal(game.player('p2').hp, 85);
+  assert.equal(game.player('p2').hp, MAX_HP - 15);
   const hpAfterThrow = game.player('p2').hp;
   advance(app, .35);
   assert.equal(game.player('p2').hp, hpAfterThrow);

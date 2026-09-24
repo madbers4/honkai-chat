@@ -1,3 +1,4 @@
+import { MAX_HP, WINS_TO_MATCH } from '../shared/constants.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
@@ -75,8 +76,8 @@ test('two real WebSocket clients create/join, ready, fight, reject stale inputs 
   one.sendPacket({ type: 'input', seq: 1, move: -1, block: false, crouch: false, action: 'ultimate' });
   await frame();
   tick(app, 0.3);
-  const struck = await packet(two, value => value.type === 'state' && value.state.players[1].hp < 100);
-  assert.equal(struck.state.players[1].hp, 94);
+  const struck = await packet(two, value => value.type === 'state' && value.state.players[1].hp < MAX_HP);
+  assert.equal(struck.state.players[1].hp, MAX_HP - 6);
   assert.deepEqual(struck.state.players.map(player => player.character), expectedCharacters);
   assert.equal(room.game.player('p1').lastSeq, 2);
   const disconnect = once(two, 'close');
@@ -93,7 +94,7 @@ test('two real WebSocket clients create/join, ready, fight, reject stale inputs 
   assert.equal(restored.token, welcomeTwo.token);
   const restoredState = await packet(recovered, phase('countdown'));
   assert.deepEqual(restoredState.state.players.map(player => player.character), expectedCharacters);
-  assert.equal(room.game.player('p2').hp, 94);
+  assert.equal(room.game.player('p2').hp, MAX_HP - 6);
   assert.equal(room.game.player('p2').name, 'Сварог');
   tick(app, 3.05);
   await packet(recovered, phase('fight'));
@@ -121,7 +122,7 @@ test('training is playable with one human and bot auto-readiness', async t => {
   await packet(socket, phase('countdown'));
   tick(app, 12);
   const room = app.rooms.get(welcome.room);
-  assert.ok(room.game.player('p1').hp < 100 || room.game.player('p2').wins > 0, 'bot has dealt damage or already won a round and begun recovery');
+  assert.ok(room.game.player('p1').hp < MAX_HP || room.game.player('p2').wins > 0, 'bot has dealt damage or already won a round and begun recovery');
 });
 
 test('HTTP serves health, LAN details and static files while blocking private path access', async t => {

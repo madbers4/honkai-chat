@@ -1,7 +1,8 @@
+import { MAX_HP, WINS_TO_MATCH } from '../shared/constants.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CombatRoom } from '../server/combat.js';
-import { ATTACKS, ARENA_EDGE, ROUND_SECONDS } from '../shared/constants.js';
+import { ATTACKS, ARENA_EDGE, ROUND_SECONDS, V5_ATTACKS } from '../shared/constants.js';
 
 function fight(mode = 'pvp') {
   const room = new CombatRoom({ mode, random: () => 0.25 });
@@ -40,7 +41,7 @@ test('readiness, countdown and immutable public snapshots define the round lifec
   const snapshot = room.snapshot();
   snapshot.players[0].hp = 1;
   snapshot.players[0].cooldowns.special = 100;
-  assert.equal(room.player('p1').hp, 100);
+  assert.equal(room.player('p1').hp, MAX_HP);
   assert.equal(room.player('p1').cooldowns.special, 0);
   assert.equal(snapshot.players[0].input, undefined);
   assert.equal(snapshot.players[0].lastSeq, undefined);
@@ -74,16 +75,16 @@ test('light attacks respect startup and range, hit once and chain into a stronge
   closeRange(room);
   input(room, 'p1', { action: 'light' });
   advance(room, 0.1);
-  assert.equal(room.player('p2').hp, 100);
+  assert.equal(room.player('p2').hp, MAX_HP);
   advance(room, 0.18);
-  assert.equal(room.player('p2').hp, 94);
+  assert.equal(room.player('p2').hp, MAX_HP - 6);
   input(room, 'p1', { action: 'light' });
   advance(room, 0.28);
-  assert.equal(room.player('p2').hp, 86);
+  assert.equal(room.player('p2').hp, MAX_HP - 14);
   closeRange(room);
   input(room, 'p1', { action: 'light' });
   advance(room, 0.28);
-  assert.equal(room.player('p2').hp, 74);
+  assert.equal(room.player('p2').hp, MAX_HP - 26);
   assert.equal(room.player('p1').chain, 3);
   assert.equal(room.player('p1').combo, 3);
   assert.equal(room.events.filter(event => event.type === 'hit').length, 3);
@@ -91,7 +92,7 @@ test('light attacks respect startup and range, hit once and chain into a stronge
   room.player('p2').x = 5;
   input(room, 'p1', { action: 'light' });
   advance(room, 0.4);
-  assert.equal(room.player('p2').hp, 74);
+  assert.equal(room.player('p2').hp, MAX_HP - 26);
 });
 
 test('block absorbs jab, heavy drains guard and a broken guard causes a long stagger', () => {
@@ -101,14 +102,16 @@ test('block absorbs jab, heavy drains guard and a broken guard causes a long sta
   advance(room, 0.2, { p2: { block: true } });
   input(room, 'p1', { action: 'light' });
   advance(room, 0.4, { p2: { block: true } });
-  assert.equal(room.player('p2').hp, 100);
+  assert.equal(room.player('p2').hp, MAX_HP);
   assert.equal(room.player('p2').guard, 90);
   room.player('p2').guard = 20;
   closeRange(room);
   input(room, 'p1', { action: 'heavy' });
-  advance(room, 0.42, { p2: { block: true } });
+  advance(room, V5_ATTACKS.heavyDrive.startup - 1 / 60, { p2: { block: true } });
+  assert.equal(room.player('p2').guard, 20, 'the longer windup cannot break guard before contact');
+  advance(room, 2 / 60, { p2: { block: true } });
   assert.equal(room.player('p2').guard, 0);
-  assert.equal(room.player('p2').hp, 91);
+  assert.equal(room.player('p2').hp, MAX_HP - 16);
   assert.equal(room.player('p2').action, 'hit');
   assert.equal(room.player('p2').actionDuration, 0.95);
   assert.ok(room.events.some(event => event.type === 'block' && event.guardBreak));
@@ -122,7 +125,7 @@ test('dash dodge window prevents damage, has a cooldown, and cannot be spammed',
   const target = room.player('p2');
   assert.equal(target.action, 'dash');
   assert.equal(room.damage(room.player('p1'), target, ATTACKS.heavy), false);
-  assert.equal(target.hp, 100);
+  assert.equal(target.hp, MAX_HP);
   advance(room, 0.28);
   input(room, 'p2', { action: 'dash' });
   advance(room, 0.1);
@@ -135,11 +138,11 @@ test('cannon costs energy, travels over time, can be crouched and cannot bypass 
   normal.player('p1').x = -1.3; normal.player('p2').x = 1.3;
   input(normal, 'p1', { action: 'special' });
   advance(normal, 0.32);
-  assert.equal(normal.player('p2').hp, 100);
+  assert.equal(normal.player('p2').hp, MAX_HP);
   assert.equal(normal.projectiles.length, 1);
   assert.ok(normal.player('p1').energy < 17);
   advance(normal, 0.3);
-  assert.equal(normal.player('p2').hp, 85);
+  assert.equal(normal.player('p2').hp, MAX_HP - 28);
   assert.equal(normal.projectiles.length, 0);
   advance(normal, 0.15);
   input(normal, 'p1', { action: 'special' });
@@ -149,7 +152,7 @@ test('cannon costs energy, travels over time, can be crouched and cannot bypass 
   crouched.player('p1').x = -1.3; crouched.player('p2').x = 1.3;
   input(crouched, 'p1', { action: 'special' });
   advance(crouched, 0.8, { p2: { crouch: true } });
-  assert.equal(crouched.player('p2').hp, 100);
+  assert.equal(crouched.player('p2').hp, MAX_HP);
 });
 
 test('jump leaves the ground, evades low attacks and lands with an event', () => {
@@ -160,32 +163,32 @@ test('jump leaves the ground, evades low attacks and lands with an event', () =>
   assert.ok(room.player('p2').y > 1.1);
   input(room, 'p1', { action: 'light' });
   advance(room, 0.25);
-  assert.equal(room.player('p2').hp, 100);
+  assert.equal(room.player('p2').hp, MAX_HP);
   advance(room, 0.3);
   assert.equal(room.player('p2').y, 0);
   assert.equal(room.player('p2').vy, 0);
   assert.ok(room.events.some(event => event.type === 'land'));
 });
 
-test('ultimate requires full energy, has a visible windup and strikes at long range', () => {
+test('ultimate requires 80 energy, has a visible windup and knocks out at long range', () => {
   const room = fight();
   room.player('p1').x = -2; room.player('p2').x = 2;
   input(room, 'p1', { action: 'ultimate' });
   advance(room, 0.3);
   assert.notEqual(room.player('p1').action, 'ultimate');
-  room.player('p1').energy = 100;
+  room.player('p1').energy = 80;
   input(room, 'p1', { action: 'ultimate' });
-  advance(room, 0.6);
+  advance(room, 0.9);
   assert.equal(room.player('p1').action, 'ultimate');
-  assert.equal(room.player('p2').hp, 100);
+  assert.equal(room.player('p2').hp, MAX_HP);
   assert.ok(room.player('p1').energy < 2);
-  advance(room, 0.2);
-  assert.equal(room.player('p2').hp, 88);
+  advance(room, 0.1);
+  assert.equal(room.player('p2').hp, MAX_HP - 45);
   advance(room, 0.6);
-  assert.equal(room.player('p2').hp, 56);
+  assert.equal(room.player('p2').hp, 0);
 });
 
-test('three wins and final destruction end the match, timeouts compare health, draws award no point, rematch requires both players', () => {
+test('five wins and final destruction end the match, timeouts compare health, draws award no point, rematch requires both players', () => {
   const room = fight();
   room.time = 0.01;
   advance(room, 0.02);
@@ -204,13 +207,17 @@ test('three wins and final destruction end the match, timeouts compare health, d
   advance(room, 0.02);
   assert.equal(room.phase, 'roundOver');
   assert.equal(room.player('p1').wins, 2);
-  advance(room, 6.5);
-  room.player('p2').hp = 0; advance(room, 0.02);
+  for (let win = 3; win <= WINS_TO_MATCH; win++) {
+    advance(room, 6.5);
+    room.player('p2').hp = 0; advance(room, 0.02);
+    assert.equal(room.player('p1').wins, win);
+    if (win < WINS_TO_MATCH) assert.equal(room.phase, 'roundOver');
+  }
   assert.equal(room.phase, 'finishing');
   advance(room, 7);
   assert.equal(room.phase, 'matchOver');
   assert.equal(room.winner, 'p1');
-  assert.equal(room.player('p1').wins, 3);
+  assert.equal(room.player('p1').wins, WINS_TO_MATCH);
   room.requestRematch('p1');
   assert.equal(room.phase, 'matchOver');
   room.requestRematch('p2');
@@ -244,10 +251,10 @@ test('deterministic training AI readies itself and meaningfully engages a passiv
   const initialX = room.player('p2').x;
   advance(room, 4);
   assert.ok(room.player('p2').x < initialX);
-  assert.ok(room.player('p1').hp < 100);
+  assert.ok(room.player('p1').hp < MAX_HP);
   assert.ok(room.player('p2').energy >= 0 && room.player('p2').energy <= 100);
-  advance(room, 5);
-  assert.ok(room.player('p2').wins > 0, 'the stronger bot can finish its first round before nine seconds');
+  advance(room, 16);
+  assert.ok(room.player('p2').wins > 0, 'the bot can finish a 180 HP passive opponent within twenty seconds');
 });
 
 test('an airborne knockout falls to the floor while KO and victory animations continue', () => {

@@ -1,3 +1,4 @@
+import { WINS_TO_MATCH } from '../shared/constants.js';
 import { CombatRoom } from '../server/combat.js';
 import { V3_RULES, V5_RULES, V5_ATTACKS } from '../shared/constants.js';
 
@@ -15,7 +16,7 @@ export function buildV5Case(type, facing = 1) {
   for (let i = 0; i < 181; i++) room.step(1 / 60);
   const a = room.player('p1'), b = room.player('p2');
   a.x = -1.05 * facing; b.x = 1.05 * facing; a.facing = facing; b.facing = -facing;
-  if (['finish', 'overload', 'brutality'].includes(type)) a.wins = 2;
+  if (['finish', 'overload', 'brutality'].includes(type)) a.wins = WINS_TO_MATCH - 1;
   if (['finish', 'overload', 'recover'].includes(type)) b.hp = 5;
   if (type === 'brutality') b.hp = 20;
   const snapshots = [], events = [], seen = new Set(), fired = new Set();

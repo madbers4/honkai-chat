@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { createCombatEffects } from '../src/effects.js';
 import { CombatRoom } from '../server/combat.js';
+import { canAttemptBurst } from '../shared/constants.js';
 
 function setup(t) {
   const originalDocument = globalThis.document;
@@ -97,47 +98,56 @@ test('an ultimate snapshot cannot invent a shot and each authoritative pulse ren
   const { scene, effects, state } = setup(t);
   state.players[0].action = 'ultimate';
   state.players[0].variant = 'overload';
-  const shots = () => scene.children.filter(object => object.name.startsWith('ultimate-pulse-'));
-  for (const actionTime of [0, 0.70, 1.00, 1.30, 1.8, 2.4]) {
+  const shots = () => scene.children.filter(object => object.visible && object.name.startsWith('ultimate-pulse-'));
+  for (const actionTime of [0, 0.95, 1.23, 1.55, 2.28, 2.6]) {
     state.players[0].actionTime = actionTime;
     effects.update(1 / 60, actionTime, state);
     assert.equal(shots().length, 0, 'elapsed animation time only renders a telegraph');
   }
   const observed = [];
   for (let pulse = 0; pulse < 3; pulse++) {
+    state.players[0].actionTime = [.95, 1.23, 1.55][pulse];
     const event = { id: 101 + pulse, type: 'ultimatePulse', player: 'p1', x: -2, y: 1.35, facing: 1, range: 5.2, pulse };
     effects.emit(event, state);
     effects.emit(event, state);
     assert.equal(shots().length, 1, 'repeated server event cannot produce a duplicate beam');
     observed.push(shots()[0].name);
-    for (let frame = 0; frame < 25; frame++) effects.update(1 / 60, 3 + frame / 60, state);
+    for (let frame = 0; frame < 30; frame++) effects.update(1 / 60, 3 + frame / 60, state);
     assert.equal(shots().length, 0, 'pulse finishes even while the snapshot still says ultimate');
     assertFiniteGeometry(scene);
   }
   assert.deepEqual(observed, ['ultimate-pulse-0', 'ultimate-pulse-1', 'ultimate-pulse-2']);
 });
 
-test('ground shockwaves travel below ordinary bolts and keep their floor wake', t => {
+test('EMP mines expand at the placement point below bolts and return their field to its pool', t => {
   const { scene, effects, state } = setup(t);
+  state.phase = 'fight';
   state.projectiles = [
-    { id: 1, x: -1, y: 0.3, direction: 1, owner: 'p1', variant: 'shockwave', speed: 7.4 },
-    { id: 2, x: 1, y: 1.35, direction: -1, owner: 'p2', variant: 'bolt', speed: 10.5 },
+    { id: 1, x: -1, y: 0.06, direction: 1, owner: 'p1', variant: 'shockwave', speed: 0, age: .15, radius: 3.65 },
+    { id: 2, x: 1, y: 1.35, direction: -1, owner: 'p2', variant: 'bolt', speed: 11.5 },
   ];
   effects.update(1 / 60, 1, state);
-  const wave = scene.getObjectByName('ground-shockwave');
+  const wave = scene.getObjectByName('emp-mine-field');
   const bolt = scene.getObjectByName('energy-bolts');
-  assert.ok(wave && bolt);
+  assert.ok(wave?.visible && bolt?.visible);
   assert.ok(wave.position.y < 0.1);
   assert.ok(Math.abs(bolt.geometry.attributes.aAnchor.getY(0) - 1.35) < .00001);
   scene.updateMatrixWorld(true);
-  assert.ok(new THREE.Box3().setFromObject(wave).max.y < 0.9, 'the wave has a visibly low crest that can be jumped');
+  assert.ok(new THREE.Box3().setFromObject(wave).max.y < 0.9, 'the initial expanding corona stays close to the floor');
+  const corona = wave.children.find(child => child.geometry.type === 'SphereGeometry');
+  const startRadius = corona.scale.x;
   const startX = wave.position.x;
+  const boltX = bolt.geometry.attributes.aAnchor.getX(0);
   effects.update(1 / 60, 1 + 1 / 60, state);
-  assert.ok(wave.position.x > startX, 'visual movement continues between server snapshots');
+  assert.equal(wave.position.x, startX, 'the mine never travels between server snapshots');
+  assert.ok(corona.scale.x > startRadius, 'its expanding front continues between snapshots');
+  assert.ok(bolt.geometry.attributes.aAnchor.getX(0) < boltX, 'the ordinary bolt still travels toward its target');
   assertFiniteGeometry(scene);
   state.projectiles = [];
   effects.update(1 / 60, 1.04, state);
-  assert.equal(scene.getObjectByName('ground-shockwave'), undefined);
+  assert.equal(wave.visible, false);
+  assert.equal(effects.getEffectsStats().abilities.mines, 0);
+  assert.equal(scene.getObjectByName('emp-mine-field'), wave, 'the fixed pool retains and reuses its field');
 });
 
 test('bolt shell and trail ignore growing arena wall time during paused or zero-delta effects updates', t => {
@@ -277,7 +287,7 @@ test('real grab, tech, burst and feint sequences leave no obsolete shields or pa
   const scenarios = {
     grab: { expected: 'throw', actions: [[0, 'p2', null, { block: true }], [0, 'p1', 'heavy', { crouch: true }]] },
     tech: { expected: 'grabBreak', actions: [[0, 'p1', 'heavy', { crouch: true }], [21, 'p2', 'light']] },
-    burst: { expected: 'burst', actions: [[0, 'p1', 'heavy'], [26, 'p2', 'dash']] },
+    burst: { expected: 'burst', reactiveBurst: true, actions: [[0, 'p1', 'heavy']] },
     airburst: { expected: 'burst', actions: [[0, 'p1', 'light'], [12, 'p1', 'heavy'], [32, 'p2', 'dash']] },
     feint: { expected: 'feint', actions: [[0, 'p1', 'heavy'], [9, 'p1', 'dash'], [8, 'p2', 'heavy']] },
   };
@@ -291,9 +301,16 @@ test('real grab, tech, burst and feint sequences leave no obsolete shields or pa
     if (name.includes('burst')) two.energy = 85;
     if (name === 'feint') { one.x = -1.6; two.x = 1.6; }
     const seen = new Set(), observed = [];
+    let burstRequested = false;
     for (let frame = 0; frame < 169; frame++) {
       for (const [at, id, action, held = {}] of scenario.actions) {
         if (at === frame) room.input(id, { seq: room.player(id).lastSeq + 1, move: 0, crouch: false, block: false, action, ...held });
+      }
+      if (scenario.reactiveBurst && !burstRequested && canAttemptBurst(two)) {
+        assert.equal(two.variant, 'heavyStagger', 'burst begins during the real heavy microstun');
+        assert.ok(observed.some(event => event.type === 'hit' && event.variant === 'heavyDrive' && event.target === two.id));
+        room.input(two.id, { seq: two.lastSeq + 1, move: 0, crouch: false, block: false, action: 'dash' });
+        burstRequested = true;
       }
       room.step(1 / 60);
       const state = room.snapshot();
@@ -310,6 +327,10 @@ test('real grab, tech, burst and feint sequences leave no obsolete shields or pa
       assertFiniteGeometry(scene);
     }
     assert.ok(observed.some(event => event.type === scenario.expected), `${name}: the real mechanic occurred`);
+    if (scenario.reactiveBurst) {
+      assert.ok(burstRequested);
+      assert.equal(observed.filter(event => event.type === 'burst').length, 1, 'one confirmed heavy produces one requested escape');
+    }
     if (name === 'airburst') assert.ok(observed.find(event => event.type === 'burst').y > 1.3);
     assert.equal(scene.children.length, baseObjects, `${name}: only reusable combat/damage pools remain after recovery`);
   }

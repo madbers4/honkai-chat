@@ -58,7 +58,7 @@ test('finisher is free only for the winning player during the live offer', () =>
   assert.equal(finishContext(state, 'p2').canTrigger, false);
   assert.equal(finishContext({ ...state, phase: 'paused' }, 'p1').canTrigger, false);
   assert.equal(finishContext({ ...state, finish: { ...state.finish, stage: 'execute' } }, 'p1').canTrigger, false);
-  assert.equal(actionResource('ultimate', player).cost, 100);
+  assert.equal(actionResource('ultimate', player).cost, 80);
 });
 
 test('tech takes priority over counter prompts, and excludes an inappropriate burst prompt', () => {

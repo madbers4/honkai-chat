@@ -1,17 +1,20 @@
+import { healthPercent } from '../shared/health.js';
 import { assetUrl } from './app-paths.js';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
 import { ConvexHull } from 'three/addons/math/ConvexHull.js';
 import { robotPresentation } from '../shared/robot-presentation.js';
-import { choreographStrike } from './robot-choreography.js';
+import { choreographStrike, heavyStaggerChoreography } from './robot-choreography.js';
 import { choreographGrapple, choreographGrabbed, choreographGrabBreak } from './grapple-choreography.js';
 import { createRobotFragments } from './robot-fragments.js';
 import { shutdownMotion, rebootMotion } from '../shared/shutdown-motion.js';
 import { createRobotMaterialResources, loadRobotSurfaceAssets } from './robot-materials.js';
-import { slamChoreography } from './slam-choreography.js';
+import { slamChoreography, slamBounceChoreography } from './slam-choreography.js';
 import { recoilChoreography } from './recoil-choreography.js';
 import { createMechanicalTurn, turnStartup } from './mechanical-turn.js';
+import { specialChoreography, electricalReaction } from './special-choreography.js';
+import { choreographOverload, choreographOverloadHit } from './overload-choreography.js';
 
 // The user's Automaton Beetle, repaired and rigid-skinned in prepare-model.py.
 // The four articulated leg chains use CCD toward planted feet / attack targets;
@@ -366,7 +369,7 @@ export function createRobot({ skin = 'amber' } = {}) {
     dt = clamp(Number.isFinite(dt) ? dt : 1 / 60, 0, 0.05);
     const action = player.action || 'idle';
     const variant = player.variant || '';
-    const ordinaryHit = action === 'hit' && !variant
+    const ordinaryHit = action === 'hit' && (!variant || ['slamBounce', 'heavyStagger'].includes(variant))
       && !(player.guard <= 0 && Math.abs((Number(player.actionDuration) || .32) - .95) < .025);
     const reducedMotion = Boolean(player.visualReducedMotion);
     const presentation = robotPresentation({ ...player, skin: player.skin || skin }, time, { reducedMotion });
@@ -389,7 +392,7 @@ export function createRobot({ skin = 'amber' } = {}) {
     }
     if (fragments.active) fragments.reset();
     if (action === 'defeated') fragments.prepare(); // Prepare during offer/seize, never at the explosion beat.
-    const hp = Number.isFinite(player.hp) ? clamp(player.hp, 0, 100) : 100;
+    const hp = healthPercent(player);
     if (lastHealth !== undefined && hp < lastHealth) healthRecoil = Math.max(healthRecoil, Math.min(.65, (lastHealth - hp) / 32));
     if (lastHealth !== undefined && hp > lastHealth + 10) healthRecoil = 0;
     lastHealth = hp;
@@ -484,6 +487,7 @@ export function createRobot({ skin = 'amber' } = {}) {
     let headYaw = Math.sin(time * 1.7) * .028;
     let headRoll = -roll * .75;
     let charge = 0;
+    let reactorOpen = 0;
     let hit = 0;
     const shutdown = action === 'ko' ? shutdownMotion(elapsed, { reducedMotion }) : null;
     const reboot = action === 'recover' ? rebootMotion(p) : null;
@@ -545,7 +549,7 @@ export function createRobot({ skin = 'amber' } = {}) {
         }
       }
     } else if ((action === 'light' && ['jab', 'cross', 'rake', 'airJab', 'airCross', 'airFinish'].includes(variant)) || action === 'heavy' && ['crusher', 'heavyDrive', 'heavyHook', 'heavyPress'].includes(variant)) {
-      const acting = choreographStrike(variant, elapsed, duration, legs);
+      const acting = choreographStrike(variant, elapsed, duration, legs, { y: player.y || 0, vy: player.vy || 0 });
       bob += acting.bob; lean += acting.lean; roll += acting.roll; twist += acting.twist;
       thrust += acting.thrust; headPitch += acting.headPitch; headYaw += acting.headYaw;
     } else if (action === 'light') {
@@ -676,48 +680,40 @@ export function createRobot({ skin = 'amber' } = {}) {
           leg.desired.y += airborne * (.18 + vent * .18) + (leg.front ? flare * .11 : 0);
         }
       } else {
-        const low = variant === 'shockwave';
-        const release = low ? .37 : .30;
-        charge = pulse(elapsed, 0, release - .045, release + .07);
-        const recoil = pulse(elapsed, release, release + .045, duration - .05);
-        bob -= charge * (low ? .26 : .10);
-        bob -= low ? recoil * .12 : 0;
-        thrust -= recoil * (low ? .08 : .15);
-        lean += low ? charge * .11 : -recoil * .12;
-        headPitch += low ? charge * .24 : -charge * .075;
-        headRoll += Math.sin(time * 65) * charge * .012;
+        const acting = specialChoreography(variant, elapsed, { reducedMotion });
+        charge = acting.charge; bob += acting.bob; thrust += acting.thrust;
+        lean += acting.lean; twist += acting.twist;
+        headPitch += acting.headPitch; headYaw += acting.headYaw;
         for (const leg of legs) {
-          leg.desired.x *= 1 + .12 * charge;
-          if (leg.front) {
-            leg.desired.y += low ? .24 * charge * (1 - recoil) : .11 * charge;
-            leg.desired.z += low ? .2 * charge + .22 * recoil : 0;
-          }
+          const support = leg.front ? acting.front : acting.rear;
+          leg.desired.x *= support.xScale;
+          leg.desired.z += support.z; leg.desired.y += support.lift;
         }
       }
-    } else if (action === 'ultimate') {
-      // Pose recoil follows the canonical three release times; visual hit FX
-      // and damage remain driven exclusively by authoritative server events.
-      charge = smooth(elapsed / .60) * (1 - smooth((elapsed - 1.30) / .24)) * 1.7;
-      const burstA = pulse(elapsed, .70, .728, .91);
-      const burstB = pulse(elapsed, 1, 1.028, 1.21);
-      const burstC = pulse(elapsed, 1.30, 1.332, 1.63);
-      const blast = burstA * .65 + burstB * .75 + burstC;
-      bob -= charge * .07 + blast * .035;
-      thrust -= blast * .23;
-      lean -= blast * .19;
-      headPitch -= charge * .065;
-      headYaw = Math.sin(time * 53) * charge * .018 + (burstA - burstB) * .095;
-      headRoll = Math.cos(time * 71) * charge * .012 + (burstB - burstA) * .045;
-      for (const leg of legs) {
-        leg.desired.x *= 1.12;
-        leg.desired.z *= 1.08;
-        if (leg.front) {
-          leg.desired.y += blast * .15;
-          leg.desired.z += blast * .14;
-        }
-      }
+    } else if (action === 'ultimate' || action === 'victory' && variant === 'overloadRecovery' && elapsed < duration) {
+      const releasedAt = action === 'victory' ? 2.28 - duration : null;
+      const acting = choreographOverload(releasedAt == null ? elapsed : elapsed + releasedAt, legs, reducedMotion, releasedAt);
+      bob = acting.bob; lean += acting.lean; roll += acting.roll; twist += acting.twist;
+      thrust += acting.thrust; headPitch = acting.headPitch; headYaw = acting.headYaw; headRoll = acting.headRoll;
+      charge = acting.charge; reactorOpen = acting.open;
     } else if (action === 'hit') {
-      if (variant === 'grabbed') {
+      if (variant === 'overloadHit') {
+        const acting = choreographOverloadHit(elapsed, duration, legs, reducedMotion);
+        bob = acting.bob; lean += acting.lean; roll += acting.roll; twist += acting.twist;
+        thrust += acting.thrust; headPitch = acting.headPitch; headYaw = acting.headYaw; headRoll = acting.headRoll;
+        charge = acting.charge;
+      } else if (variant === 'heavyStagger') {
+        const acting = heavyStaggerChoreography(elapsed, duration);
+        bob += acting.bob; thrust += acting.thrust; lean += acting.lean; headPitch += acting.headPitch;
+        for (const leg of legs) if (!leg.front) leg.desired.x *= acting.rearSpread;
+      } else if (variant === 'slamBounce') {
+        const acting = slamBounceChoreography({ elapsed, duration, y: player.y || 0, vy: player.vy || 0 });
+        bob += acting.bob; lean += acting.lean; headPitch += acting.headPitch;
+        for (const leg of legs) {
+          const support = leg.front ? acting.front : acting.rear;
+          leg.desired.x *= support.xScale; leg.desired.y += support.y; leg.desired.z += support.z;
+        }
+      } else if (variant === 'grabbed') {
         const acting = choreographGrabbed(player, elapsed, legs, facing);
         bob = acting.bob; lean += acting.lean; roll += acting.roll; twist += acting.twist;
         thrust += acting.thrust; headPitch = acting.headPitch; headYaw = acting.headYaw; headRoll = acting.headRoll;
@@ -767,6 +763,11 @@ export function createRobot({ skin = 'amber' } = {}) {
           leg.desired.y += opening * .91 + slump * .13;
           leg.desired.z -= opening * .19;
         }
+      } else if (variant === 'empLift' || variant === 'electrified') {
+        const acting = electricalReaction(variant, elapsed, duration, player.y || 0, reducedMotion);
+        bob += acting.bob; lean += acting.lean; thrust += acting.thrust;
+        headPitch += acting.headPitch; headYaw += acting.headYaw; roll += acting.roll;
+        for (const leg of legs) { leg.desired.x *= acting.spread; leg.desired.y += acting.tuck; }
       } else if (variant === 'launched' || variant === 'parried') {
         hit = (1 - smooth(p)) * Math.sin(Math.min(p * 7, Math.PI));
         thrust -= hit * .17;
@@ -912,11 +913,11 @@ export function createRobot({ skin = 'amber' } = {}) {
         bone.quaternion.copy(entry.get(bone) || rest.get(bone).q).slerp(correction, blend);
       }
     }
-    extractedCore.visible = action === 'defeated' && variant === 'coreRip' && elapsed >= .68;
+    extractedCore.visible = reactorOpen > .001 || action === 'defeated' && variant === 'coreRip' && elapsed >= .68;
     coreSource.visible = !extractedCore.visible;
-    const corePull = extractedCore.visible ? smooth((elapsed - .68) / .57) : 0;
-    const coreStrain = extractedCore.visible ? smooth((elapsed - 1.25) / .90) : 0;
-    extractedCore.position.set(0, corePull * .34 + coreStrain * .20, corePull * .40 + coreStrain * .17);
+    const corePull = action === 'defeated' && extractedCore.visible ? smooth((elapsed - .68) / .57) : 0;
+    const coreStrain = action === 'defeated' && extractedCore.visible ? smooth((elapsed - 1.25) / .90) : 0;
+    extractedCore.position.set(0, corePull * .34 + coreStrain * .20, reactorOpen + corePull * .40 + coreStrain * .17);
     updateGroundSupport();
     updateDamageAnchors();
     // Keep the contact beat, but let authored enamel/metal remain visible.
@@ -934,6 +935,10 @@ export function createRobot({ skin = 'amber' } = {}) {
     headLamp.intensity = presentation.destroyed ? 0 : presentation.healthIntensity * 11;
     reactorLamp.color.setHex(presentation.reactorColor);
     reactorLamp.intensity = presentation.destroyed ? 0 : presentation.reactorIntensity * 10;
+    if (action === 'ultimate' || variant === 'overloadHit' || variant === 'overloadRecovery') {
+      reactorLamp.intensity += charge * (reducedMotion ? 5 : 13);
+      for (const material of signalMaterials.reactor) material.emissiveIntensity += charge * 1.1;
+    }
     reactorLamp.position.copy(coreLocal).add(extractedCore.position);
     if (action === 'defeated' && variant !== 'offer') {
       const pressure = smooth((elapsed - .65) / 1.5);
@@ -941,7 +946,8 @@ export function createRobot({ skin = 'amber' } = {}) {
       for (const material of signalMaterials.reactor) material.emissiveIntensity += pressure * 2.6;
     }
     reactorLamp.visible = player.visualQuality !== 'low';
-    glowMaterial.opacity = clamp(charge * .3, 0, .65);
+    const bespokeSpecial = action === 'special' && variant !== 'burst';
+    glowMaterial.opacity = bespokeSpecial ? 0 : clamp(charge * .3, 0, .65);
     const groundWave = action === 'special' && variant === 'shockwave';
     const reactorBurst = action === 'special' && variant === 'burst';
     glowMaterial.color.setHex(reactorBurst || groundWave ? presentation.reactorColor : presentation.abilityColor);
@@ -949,7 +955,7 @@ export function createRobot({ skin = 'amber' } = {}) {
     chargeGlow.position.set(0, reactorBurst ? -.50 : groundWave ? -.68 : .30, reactorBurst ? .07 : groundWave ? .56 : .23);
     chargeRing.position.set(0, reactorBurst ? -.50 : groundWave ? -.68 : .30, reactorBurst ? .07 : groundWave ? .61 : .28);
     chargeGlow.scale.setScalar(1 + charge * 1.2 + (reducedMotion ? 0 : Math.sin(time * 30) * charge * .08));
-    ringMaterial.opacity = clamp(charge * .45, 0, .85);
+    ringMaterial.opacity = bespokeSpecial ? 0 : clamp(charge * .45, 0, .85);
     chargeRing.scale.setScalar(reactorBurst ? .85 + smooth(elapsed / .18) * 1.8 : .8 + charge * .6);
     chargeRing.rotation.x = reactorBurst ? -Math.PI / 2 : 0;
     chargeRing.rotation.z = reducedMotion ? 0 : time * 5;

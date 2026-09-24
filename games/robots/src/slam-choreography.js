@@ -70,3 +70,22 @@ export function slamChoreography({ elapsed = 0, y = 0, vy = 0, vx = 0, facing = 
     gather, brace, compression,
   };
 }
+
+/** Victim of the authoritative shallow slam bounce. The root still follows
+ * server gravity; toes open before landing and the housing absorbs once. */
+export function slamBounceChoreography({ elapsed = 0, duration = .28, y = 0, vy = 0 } = {}) {
+  const airborne = ease(y / .065);
+  const toFloor = Math.max(0, y) / Math.max(1, -vy);
+  const open = vy < 0 ? ease((.12 - toFloor) / .10) : 0;
+  const tuck = airborne * (1 - open);
+  const load = beat(elapsed, .055, Math.max(.06, duration));
+  const landed = y <= .003 && elapsed > .12;
+  const settle = landed ? 1 - ease((elapsed - .23) / .14) : 0;
+  return {
+    bob: -.035 * load - .048 * settle,
+    lean: -.075 * load + .055 * settle,
+    headPitch: .065 * beat(elapsed, .09, Math.max(.12, duration + .045)),
+    front: { xScale: 1 + .06 * (load + settle), y: .15 * tuck, z: -.055 * load },
+    rear: { xScale: 1 + .05 * (load + settle), y: .11 * tuck, z: -.035 * load },
+  };
+}

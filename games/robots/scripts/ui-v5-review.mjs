@@ -1,3 +1,4 @@
+import { WINS_TO_MATCH } from '../shared/constants.js';
 // Local-only review of the compiled UI over a real WebSocket connection.
 // The named fixture changes initial conditions once, never attack resolution.
 import { startServer } from '../server/index.js';
@@ -16,7 +17,7 @@ const timer = setInterval(() => {
     a.energy = 0; a.cooldowns.ultimate = 7;
     b.brainTimer = 999; b.input.move = 0; b.input.block = false; b.input.crouch = false;
     if (fixture !== 'grapple') b.hp = 5;
-    if (fixture === 'finish') a.wins = 2;
+    if (fixture === 'finish') a.wins = WINS_TO_MATCH - 1;
     app.broadcast(room);
     console.log(`Staged ${fixture} initial conditions in ${game.id}; use the real buttons to fight.`);
   }

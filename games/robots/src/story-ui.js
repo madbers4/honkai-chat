@@ -1,3 +1,4 @@
+import { WINS_TO_MATCH, ROUND_SECONDS } from '../shared/constants.js';
 import { BOOTH_STORY, MICRO_STORIES, ROBOT_TRAITS, ANNOUNCER_LINES } from './story-content.js';
 import { fontainkaSignature } from './brand-mark.js';
 import { cleanCharacter } from '../shared/fighter-profile.js';
@@ -30,7 +31,7 @@ export function createStoryUI() {
         <p class="story-footnote">${BOOTH_STORY.completion.stampText} Победа в матче для этого не обязательна.</p>
       </div>
       <div id="story-panel-referee" hidden><h2>МИКРОФОН<br><em>ВАШ.</em></h2><p class="story-lede">Ведущий или гость-рефери даёт бойцам голос. Игроки сражаются с телефонов.</p>
-        <ol class="story-host-steps"><li><b>Представь бойцов.</b><span id="referee-fighters">Назови имена роботов и по одной черте характера.</span></li><li><b>Задай по вопросу.</b><span>«Почему ваш робот победит?» — полминуты на обе стороны.</span></li><li><b>Объяви правила.</b><span>Один на один, до трёх побед. В раунде 60 секунд. Левый палец двигает, правый атакует. Оба готовы — начинается бой.</span></li><li><b>Заверши историю.</b><span>Победителю — поза для публики, проигравшему — последняя реплика. За участие печать получают оба.</span></li></ol>
+        <ol class="story-host-steps"><li><b>Представь бойцов.</b><span id="referee-fighters">Назови имена роботов и по одной черте характера.</span></li><li><b>Задай по вопросу.</b><span>«Почему ваш робот победит?» — полминуты на обе стороны.</span></li><li><b>Объяви правила.</b><span>Один на один, до ${WINS_TO_MATCH} побед. В раунде ${ROUND_SECONDS} секунд. Левый палец двигает, правый атакует. Оба готовы — начинается бой.</span></li><li><b>Заверши историю.</b><span>Победителю — поза для публики, проигравшему — последняя реплика. За участие печать получают оба.</span></li></ol>
         <div class="story-host-line"><span class="story-kicker">КОММЕНТАРИЙ РЕФЕРИ</span><p id="referee-line"></p><button class="text-btn" id="referee-next">ЕЩЁ РЕПЛИКА ↻</button></div>
       </div>
     </dialog>`);

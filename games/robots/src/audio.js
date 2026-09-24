@@ -1,3 +1,5 @@
+import { healthPercent } from '../shared/health.js';
+
 export class GameAudio {
   constructor() { this.muted = localStorage.getItem('belobog-muted') === 'true'; this.voices = new Set(); }
   unlock() {
@@ -68,8 +70,9 @@ export class GameAudio {
       this.tone(2300 + (event.combo || 0) * 120, .06, 'sine', .15, 800);
       this.metal(heavyPitch ?? (heavy ? 185 : event.variant === 'cross' ? 290 : 390), heavy ? 1.4 : .8, heavy ? .35 : .19);
       if (event.counter) this.tone(1200, .25, 'triangle', .3, 250);
-      if (event.targetHp > 0 && event.targetHp <= 60) {
-        const critical = event.targetHp <= 25;
+      const remainingHealth = healthPercent({ hp: event.targetHp, maxHp: event.targetMaxHp });
+      if (remainingHealth > 0 && remainingHealth <= 60) {
+        const critical = remainingHealth <= 25;
         this.burst(critical ? .12 : .065, 4600, critical ? .22 : .11);
         this.tone(critical ? 1150 : 1650, .09, 'square', .045, 190, .08);
       }

@@ -1,8 +1,10 @@
+import { healthPercent } from './health.js';
 import { rebootSignals } from './shutdown-motion.js';
+import { ATTACKS } from './constants.js';
 
 /**
  * Both original head lenses belong to HP. Ability status modulates the reactor.
- * HP: green >60, amber >25, red >0, offline at 0 or KO; absent HP means 100.
+ * HP fraction: green >60%, amber >25%, red >0, offline at 0 or KO.
  * Priority: offline > burst > parry > grabbed > hit > ultimate > special >
  * grab > block > attack > energy-ready > standby. Reactor tint retains team ID.
  * Critical fault dips use slow, smooth, deterministic waves, never random strobe.
@@ -48,13 +50,13 @@ function selectStatus(player, offline, energy) {
   if (variant === 'grab' || player.grabTarget) return 'grab';
   if (action === 'block') return 'block';
   if (['light', 'heavy', 'dash'].includes(action)) return 'attack';
-  if (energy >= 100 && finite(player.cooldowns?.ultimate, 0) <= 0) return 'energy-ready';
+  if (energy >= ATTACKS.ultimate.energy && finite(player.cooldowns?.ultimate, 0) <= 0) return 'energy-ready';
   return 'standby';
 }
 
 export function robotPresentation(player = {}, time = 0, { reducedMotion = false } = {}) {
   if (!player || typeof player !== 'object') player = {};
-  const hp = bound(finite(player.hp, 100), 0, 100);
+  const hp = healthPercent(player);
   const energy = bound(finite(player.energy, 0), 0, 100);
   const actionTime = Math.max(0, finite(player.actionTime, 0));
   const duration = Math.max(0.01, finite(player.actionDuration, 0.8));

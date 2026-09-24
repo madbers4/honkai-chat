@@ -380,7 +380,7 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
 
     const renderState = { ...snapshot, players: renderPlayers };
     for (const { event, cameraHistorical } of eventQueue.splice(0)) {
-      const strength = effects.emit(event, renderState);
+      const strength = effects.emit({ ...event, presentationHistorical: cameraHistorical }, renderState);
       cameraChoreography.contact(event, players, { historical: cameraHistorical || paused, reduced: reducedMotion, strength });
       if (event.type === 'burst') {
         // Defensive vent: release the camera and hitstop instead of imitating an offensive blast.

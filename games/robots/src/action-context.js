@@ -1,9 +1,10 @@
-import { ATTACKS, V3_RULES, V5_RULES, canAttemptAirDash, canAttemptBurst, canAttemptFeint } from '../shared/constants.js';
+import { ATTACKS, VARIANT_ATTACKS, V3_RULES, V5_RULES, canAttemptAirDash, canAttemptBurst, canAttemptFeint } from '../shared/constants.js';
 
 // One description drives the button, its resource feedback and the help prompt.
 // Legality and final choice remain authoritative on the server.
 export function actionContext(player = {}, intent = {}, state = null) {
-  const airborne = (player.y || 0) > .08;
+  const airborne = (player.y || 0) > .08 && !player.groundHeavy;
+  const defenseOnly = (player.defenseOnly || 0) > 0;
   const finish = finishContext(state, player.id);
   const tech = player.variant === 'grabbed' && player.grabTechWindow > 0;
   const holding = Boolean(player.grabTarget);
@@ -19,7 +20,7 @@ export function actionContext(player = {}, intent = {}, state = null) {
   const wave = !!intent.crouch && !airborne;
   const airDash = airborne && !burst && !feint;
   const dash = {
-    label: burst ? 'СБРОС' : feint ? 'ОТМЕНА' : airDash ? 'В ВОЗДУХЕ' : 'РЫВОК',
+    label: burst ? 'СБРОС' : defenseOnly ? 'ОТСКОК' : feint ? 'ОТМЕНА' : airDash ? 'В ВОЗДУХЕ' : 'РЫВОК',
     kind: burst ? 'burst' : feint ? 'feint' : airDash ? 'airDash' : 'dash',
     cost: burst ? V3_RULES.burstEnergy : feint ? V3_RULES.feintEnergy : 0,
     cooldown: Math.max(0, player.cooldowns?.[burst ? 'burst' : 'dash'] || 0),
@@ -27,7 +28,7 @@ export function actionContext(player = {}, intent = {}, state = null) {
   dash.ready = (player.energy || 0) >= dash.cost && dash.cooldown <= 0 && (!airDash || canAttemptAirDash(player));
   return {
     airborne, tech, holding, strikeCount, pummelReady: holding && strikeCount < V5_RULES.grabStrikeLimit && player.grabHoldTime >= V3_RULES.grabTech && player.grabHoldTime <= V5_RULES.grabHold - V5_RULES.grabStrikeDuration && player.grabStrikeTime == null && player.grabThrowTime == null,
-    burst, feint, grab, launcher, crusher, ram, counter, wave, dash, airDash, combo, finish,
+    defenseOnly, burst, feint, grab, launcher, crusher, ram, counter, wave, dash, airDash, combo, finish,
     light: tech ? 'ВЫРВАТЬСЯ' : holding ? 'ДОЖИМ' : ram ? 'ТАРАН' : counter ? 'КОНТРУДАР' : combo.nextLight || 'УДАР',
     heavy: finish.canTrigger ? 'ДОБИТЬ' : holding ? (intent.move * player.facing < -.2 ? 'НАЗАД' : 'БРОСОК') : airborne ? 'ПИКЕ' : grab ? 'ЗАХВАТ' : combo.nextHeavy || (crusher ? 'ДРОБИТЕЛЬ' : launcher ? 'ПОДБРОС' : 'ТЯЖЁЛЫЙ'),
     special: wave ? 'ВОЛНА' : 'ИМПУЛЬС',
@@ -37,7 +38,7 @@ export function actionContext(player = {}, intent = {}, state = null) {
 export function actionResource(action, player = {}, intent = {}, state = null) {
   if (finishContext(state, player.id).canTrigger && ['heavy', 'ultimate'].includes(action)) return { cost: 0, cooldown: 0 };
   if (action === 'dash') return actionContext(player, intent).dash;
-  const attack = ATTACKS[action];
+  const attack = action === 'special' && intent.crouch && !(player.y > .08) ? VARIANT_ATTACKS.shockwave : ATTACKS[action];
   return { cost: attack?.energy || 0, cooldown: Math.max(0, player.cooldowns?.[action] || 0) };
 }
 
@@ -54,7 +55,7 @@ export function finishContext(state, playerId) {
 export function comboCue(player = {}) {
   const open = player.cancelWindow > 0 && player.hp > 0 && !player.grabbedBy && !player.grabTarget;
   const variant = player.variant || ({ jab: 'jab', 'jab-cross': 'cross', airJab: 'airJab', 'airJab-airCross': 'airCross', heavyDrive: 'heavyDrive', 'heavyDrive-heavyHook': 'heavyHook' })[player.comboRoute] || '';
-  const airborne = (player.y || 0) > .08;
+  const airborne = (player.y || 0) > .08 && !player.groundHeavy;
   if (!open) return { open: false, text: '', nextLight: '', stage: 0 };
   if (!airborne && ['heavyDrive', 'heavyHook'].includes(variant)) return { open, heavy: true, stage: variant === 'heavyHook' ? 2 : 1, nextLight: '',
     nextHeavy: variant === 'heavyHook' ? 'ПРЕСС' : 'КРЮК',

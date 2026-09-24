@@ -1,17 +1,22 @@
+import { healthFraction } from '../shared/health.js';
+import './balance-ui.css';
 import { appPaths } from './app-paths.js';
 import './style.css';
 import './fontainka-brand.css';
 import './story.css';
+import './ultimate.css';
 import { fontainkaSignature } from './brand-mark.js';
 import { createStoryUI } from './story-ui.js';
 import QRCode from 'qrcode';
 import { createArena } from './arena.js';
 import { createControls } from './input.js';
+import { ultimateAvailability } from './ultimate-hold.js';
+import { createUltimateUI } from './ultimate-ui.js';
 import { GameAudio } from './audio.js';
 import { createCombatUI } from './combat-ui.js';
 import { actionResource, finishContext } from './action-context.js';
 import { robotPresentation } from '../shared/robot-presentation.js';
-import { WINS_TO_MATCH } from '../shared/constants.js';
+import { WINS_TO_MATCH, MAX_HP, ROUND_SECONDS } from '../shared/constants.js';
 
 const icons = {
   robot: '<path d="m5 7 7-4 7 4v10l-7 4-7-4Z"/><path d="M8 9h8v7H8zm2 3h.01M14 12h.01M12 3V1"/>',
@@ -50,7 +55,7 @@ document.getElementById('app').innerHTML = `
     <div class="lobby-copy"><div class="eyebrow"><span></span>БЕЛОБОГ / НОВЫЙ</div>
       <h1>БОЙЦОВСКИЙ<span>КЛУБ<span class="title-dot">.</span></span></h1>
       <p class="tagline">Дай машине имя. Покажи характер.<br> Зрители уже ждут твою историю.</p>
-      <div class="mode-line"><span>01 — 1 НА 1</span><i></i><span>ДВА ТЕЛЕФОНА</span><i></i><span>ДО ТРЁХ ПОБЕД</span></div>
+      <div class="mode-line"><span>01 — 1 НА 1</span><i></i><span>ДВА ТЕЛЕФОНА</span><i></i><span>ДО ${WINS_TO_MATCH} ПОБЕД</span></div>
       <div class="lobby-actions">
         <label class="name-field"><span>ИМЯ РОБОТА</span><input id="player-name" maxlength="20" placeholder="Как зовут твоего бойца?" autocomplete="nickname" aria-label="Имя робота" /></label>
         <button id="create-btn" class="button primary" disabled><span>${joinedRoom ? 'ПРИНЯТЬ ВЫЗОВ' : 'ВЫЗВАТЬ ДРУГА'}</span>${icon('arrow')}</button>
@@ -72,9 +77,9 @@ document.getElementById('app').innerHTML = `
     </div><div class="waiting-note"><span>ОБРАТИ ВНИМАНИЕ</span><p>Открой ссылку на телефоне<br>и поверни экран горизонтально.</p><small id="network-hint">Для локального сервера оба телефона должны быть в одной Wi-Fi сети.</small></div>
   </section>
   <section id="game" class="game screen" hidden>
-    <div class="fight-hud"><div class="fighter-hud amber" id="hud-p1"><div class="fighter-heading"><span class="fighter-code">01</span><strong id="name-p1">АВТОМАТОН</strong><span class="you-tag" id="you-p1">ТЫ</span><span class="wins" id="wins-p1">◇ ◇ ◇</span></div><div class="health-track"><i id="hp-p1"></i></div><div class="meter-row"><div class="energy-track"><i id="energy-p1"></i></div><span id="energy-label-p1">0%</span><div class="guard-track"><i id="guard-p1"></i></div></div></div>
-      <div class="round-clock"><span id="round-label">РАУНД 1</span><strong id="timer">60</strong><small>ДО ${WINS_TO_MATCH} ПОБЕД</small></div>
-      <div class="fighter-hud cyan" id="hud-p2"><div class="fighter-heading"><span class="fighter-code">02</span><strong id="name-p2">АВТОМАТОН</strong><span class="you-tag" id="you-p2">ТЫ</span><span class="wins" id="wins-p2">◇ ◇ ◇</span></div><div class="health-track"><i id="hp-p2"></i></div><div class="meter-row"><div class="energy-track"><i id="energy-p2"></i></div><span id="energy-label-p2">0%</span><div class="guard-track"><i id="guard-p2"></i></div></div></div></div>
+    <div class="fight-hud"><div class="fighter-hud amber" id="hud-p1"><div class="fighter-heading"><span class="fighter-code">01</span><strong id="name-p1">АВТОМАТОН</strong><span class="you-tag" id="you-p1">ТЫ</span><span class="wins" id="wins-p1">${Array(WINS_TO_MATCH).fill('◇').join(' ')}</span></div><div class="health-track"><i id="hp-p1"></i><span class="hp-value" id="hp-value-p1">${MAX_HP} / ${MAX_HP}</span></div><div class="meter-row"><div class="energy-track"><i id="energy-p1"></i></div><span id="energy-label-p1">0%</span><div class="guard-track"><i id="guard-p1"></i></div></div></div>
+      <div class="round-clock"><span id="round-label">РАУНД 1</span><strong id="timer">${ROUND_SECONDS}</strong><small>ДО ${WINS_TO_MATCH} ПОБЕД</small></div>
+      <div class="fighter-hud cyan" id="hud-p2"><div class="fighter-heading"><span class="fighter-code">02</span><strong id="name-p2">АВТОМАТОН</strong><span class="you-tag" id="you-p2">ТЫ</span><span class="wins" id="wins-p2">${Array(WINS_TO_MATCH).fill('◇').join(' ')}</span></div><div class="health-track"><i id="hp-p2"></i><span class="hp-value" id="hp-value-p2">${MAX_HP} / ${MAX_HP}</span></div><div class="meter-row"><div class="energy-track"><i id="energy-p2"></i></div><span id="energy-label-p2">0%</span><div class="guard-track"><i id="guard-p2"></i></div></div></div></div>
     <div class="game-meta"><button id="game-leave-btn" aria-label="Выйти из боя">${icon('close')}</button><span id="game-room">АРЕНА</span><span id="ping">— MS</span><button id="game-guide-btn" aria-label="Приёмы и комбинации">${icon('help')}</button></div>
     <div id="announcement" class="announcement" aria-live="polite"><small id="announcement-sub"></small><strong id="announcement-main"></strong></div>
     <div id="combat-callout" class="combat-callout" aria-live="polite"><strong id="callout-title"></strong><span id="callout-subtitle"></span></div>
@@ -83,13 +88,13 @@ document.getElementById('app').innerHTML = `
     <div id="escape-prompt" class="escape-prompt" hidden><strong id="escape-title"></strong><span id="escape-detail"></span><div><i id="escape-fill"></i></div></div>
     <div id="controls" class="controls">
       <div class="movement-controls"><div class="stick-wrap"><span class="stick-label">ПРЫЖОК</span><div id="joystick" class="joystick" role="application" aria-label="Джойстик: движение влево и вправо, вверх — прыжок, вниз — присед"><span class="stick-axis x"></span><span class="stick-axis y"></span><span class="stick-direction left">‹</span><span class="stick-direction right">›</span><div id="stick-nub" class="stick-nub">${icon('robot')}</div></div><span class="stick-caption">ДВИЖЕНИЕ <kbd>A D</kbd></span></div><button data-action="dash" class="action-btn dash-btn" aria-label="Рывок">${icon('dash')}<span>РЫВОК</span><kbd>⇧</kbd><small id="dash-cost"></small></button></div>
-      <div class="ultimate-wrap"><button data-action="ultimate" id="ultimate-btn" class="ultimate-btn" aria-label="Ультимейт, нужна полная энергия">${icon('crown')}<span>ПЕРЕГРУЗКА</span><kbd>U</kbd><i id="ultimate-fill"></i></button><span id="ultimate-hint">НАКОПИ ЭНЕРГИЮ УДАРАМИ</span></div>
+      <div class="ultimate-wrap"><button data-action="ultimate" id="ultimate-btn" class="ultimate-btn" aria-label="Перегрузка, 80 энергии: удерживай 0,65 секунды">${icon('crown')}<span>ПЕРЕГРУЗКА</span><kbd>U</kbd><i id="ultimate-fill"></i></button><span id="ultimate-hint">НАКОПИ ЭНЕРГИЮ УДАРАМИ</span></div>
       <div class="attack-controls"><button data-action="block" class="action-btn block-btn" aria-label="Удерживать блок">${icon('shield')}<span>БЛОК</span><kbd>SPACE</kbd></button><button data-action="light" class="action-btn light-btn" aria-label="Быстрый удар">${icon('fist')}<span>УДАР</span><kbd>J</kbd></button><button data-action="heavy" class="action-btn heavy-btn" aria-label="Тяжёлый удар">${icon('heavy')}<span>ТЯЖЁЛЫЙ</span><kbd>K</kbd></button><button data-action="special" class="action-btn special-btn" aria-label="Импульс, 25 энергии">${icon('bolt')}<span>ИМПУЛЬС</span><kbd>L</kbd><small id="special-cost">25 ⚡</small></button></div>
     </div>
     <div id="result" class="result" hidden><div class="result-card"><div class="eyebrow" id="result-eyebrow">БОЙ ОКОНЧЕН</div><h2 id="result-title">ПОБЕДА</h2><p id="result-score"></p><div id="result-stats" class="result-stats"></div><button id="rematch-btn" class="button primary">РЕВАНШ ${icon('arrow')}</button><button id="result-leave-btn" class="text-btn">ВЕРНУТЬСЯ В КЛУБ</button></div></div>
   </section>
   <div id="rotate-screen" class="rotate-screen"><div class="rotate-phone">${icon('phone')}</div><div class="eyebrow">АРЕНЕ НУЖНО БОЛЬШЕ МЕСТА</div><h2>ПОВЕРНИ<br><em>ТЕЛЕФОН.</em></h2><p>Два больших пальца. Один соперник.<br>Играй в горизонтальном положении.</p><button id="rotate-fullscreen" class="button secondary">${icon('full')}НА ВЕСЬ ЭКРАН</button></div>
-  <dialog id="guide-dialog"><button class="dialog-close icon-btn" data-close="guide-dialog" aria-label="Закрыть">${icon('close')}</button><div class="eyebrow">ИНСТРУКТАЖ / 30 СЕКУНД</div><h2>ОСВОЙ СВОЮ<br><em>МАШИНУ.</em></h2><div class="guide-grid"><div>${icon('dash')}<strong>Левый палец</strong><p>Джойстик — движение.<br>Вверх — прыжок. Вниз — присед.<br>Рывок помогает сблизиться и уйти от атаки.</p></div><div>${icon('fist')}<strong>Правый палец</strong><p>Удар — быстрая серия.<br>Тяжёлый — ломает защиту.<br>Удерживай блок, чтобы пережить ответ.</p></div><div>${icon('bolt')}<strong>Энергия решает</strong><p>Импульс — выстрел за 25 энергии.<br>Полный заряд открывает «Перегрузку».<br>Попадания и защита заряжают реактор.</p></div><div>${icon('crown')}<strong>Один победитель</strong><p>Раунд длится 60 секунд.<br>Забери три раунда, чтобы выиграть матч.<br>Начни с тренировки против бота.</p></div></div><div class="keyboard-guide">КЛАВИАТУРА <span>A / D — движение · W — прыжок · S — присед · J / K — удары · L — импульс · Space — блок · Shift — рывок · U — ульта</span></div><button class="button primary" data-close="guide-dialog">ПОНЯТНО. К БОЮ. ${icon('arrow')}</button></dialog>
+  <dialog id="guide-dialog"><button class="dialog-close icon-btn" data-close="guide-dialog" aria-label="Закрыть">${icon('close')}</button><div class="eyebrow">ИНСТРУКТАЖ / 30 СЕКУНД</div><h2>ОСВОЙ СВОЮ<br><em>МАШИНУ.</em></h2><div class="guide-grid"><div>${icon('dash')}<strong>Левый палец</strong><p>Джойстик — движение.<br>Вверх — прыжок. Вниз — присед.<br>Рывок помогает сблизиться и уйти от атаки.</p></div><div>${icon('fist')}<strong>Правый палец</strong><p>Удар — быстрая серия.<br>Тяжёлый — ломает защиту.<br>Удерживай блок, чтобы пережить ответ.</p></div><div>${icon('bolt')}<strong>Энергия решает</strong><p>Импульс — выстрел за 25 энергии.<br>80 энергии — зажми «Перегрузку» на 0,65 с.<br>Попадания и защита заряжают реактор.</p></div><div>${icon('crown')}<strong>Один победитель</strong><p>Раунд длится ${ROUND_SECONDS} секунд, здоровье — ${MAX_HP} HP.<br>Забери ${WINS_TO_MATCH} раундов, чтобы выиграть матч.<br>Начни с тренировки против бота.</p></div></div><div class="keyboard-guide">КЛАВИАТУРА <span>A / D — движение · W — прыжок · S — присед · J / K — удары · L — импульс · Space — блок · Shift — рывок · U — ульта</span></div><button class="button primary" data-close="guide-dialog">ПОНЯТНО. К БОЮ. ${icon('arrow')}</button></dialog>
   <dialog id="join-dialog"><button class="dialog-close icon-btn" data-close="join-dialog" aria-label="Закрыть">${icon('close')}</button><div class="eyebrow">ТВОЙ СОПЕРНИК УЖЕ ЖДЁТ</div><h2>ПРИНЯТЬ<br><em>ВЫЗОВ.</em></h2><label class="name-field"><span>КОД КОМНАТЫ</span><input id="join-code" maxlength="8" placeholder="КОД КОМНАТЫ" autocomplete="off" autocapitalize="characters" aria-label="Код комнаты" /></label><button id="join-confirm-btn" class="button primary">НА АРЕНУ ${icon('arrow')}</button></dialog>
   <div id="toast" class="toast" role="status"></div>
 `;
@@ -98,18 +103,18 @@ const savedName = localStorage.getItem('belobog-name');
 if (savedName) $('player-name').value = savedName;
 const storyUI = createStoryUI();
 const signalDot = (color, label) => `<span class="signal-chip"><i style="--signal:#${color.toString(16).padStart(6, '0')}"></i>${label}</span>`;
-const healthSignals = [[100,'61–100 HP'],[55,'26–60 HP'],[18,'1–25 HP']].map(([hp,label]) => signalDot(robotPresentation({hp}).healthColor,label)).join('');
+const healthSignals = [[100,'БОЛЬШЕ 60%'],[55,'26–60%'],[18,'1–25%']].map(([hp,label]) => signalDot(robotPresentation({hp}).healthColor,label)).join('');
 document.querySelector('.keyboard-guide').insertAdjacentHTML('beforebegin', `
   <div class="signal-guide"><div class="eyebrow">РОБОТ ГОВОРИТ СВЕТОМ</div>
     <div><strong>Обе линзы — здоровье</strong><div class="signal-chips">${healthSignals}</div><p>Здоровый робот светит ровно. Повреждённый искрит, приводы сбиваются, красные огни предупреждают об отказе.</p></div>
     <div><strong>Реактор — твой цвет и заряд</strong><p>Реактор и кольцо под роботом сохраняют цвет бойца. После проигранного раунда машина отключается и поднимается вновь. Финальное поражение заканчивается разрушением.</p></div>
   </div>
   <div class="combo-book"><div class="eyebrow">СОБЕРИ СВОЮ СЕРИЮ</div>
-    <div><span>ТЯЖЁЛЫЙ → ТЯЖЁЛЫЙ → ТЯЖЁЛЫЙ</span><strong>Пробой. Крюк. Пресс.</strong><p>Продолжай после попадания: блок и промах прерывают серию. Первые два удара позволяют остановиться, финальный пресс требует долгого возврата в стойку.</p></div>
+    <div><span>ТЯЖЁЛЫЙ → ТЯЖЁЛЫЙ → ТЯЖЁЛЫЙ</span><strong>Пробой. Крюк. Пресс.</strong><p>Удары с прыжком: 24 → 28 → 36 урона. Продолжай после попадания. Противник может блокировать, прыгнуть или отскочить назад, но перебить продолжение ударом не сможет. Блок и промах обрывают связку.</p></div>
     <div><span>УДАР → УДАР → УДАР</span><strong>Джеб. Кросс. Рассечение.</strong><p>Каждое попадание открывает продолжение. Клешни меняются, корпус доворачивается, робот продвигается вперёд.</p></div>
     <div><span>УДАР → УДАР → ТЯЖЁЛЫЙ</span><strong>Дробитель.</strong><p>Заверши серию силовым ударом. Промах оставит тебя открытым — после него связка не продолжается.</p></div>
     <div><span>УДАР → ТЯЖЁЛЫЙ → ПРЫЖОК</span><strong>Поймай в воздухе.</strong><p>Подбрось соперника, прыгни следом и продолжай ударами. Один воздушный рывок помогает догнать, тяжёлый направляет тебя вниз.</p></div>
-    <div><span>ФИНАЛЬНАЯ ПОБЕДА → ДОБИТЬ</span><strong>Сорви ядро.</strong><p>После третьей победы нажми Тяжёлый или Перегрузку во время приглашения. Сильное завершающее комбо может сразу перейти в бруталити.</p></div>
+    <div><span>ФИНАЛЬНАЯ ПОБЕДА → ДОБИТЬ</span><strong>Сорви ядро.</strong><p>После пятой победы нажми Тяжёлый или Перегрузку во время приглашения. Сильное завершающее комбо может сразу перейти в бруталити.</p></div>
   </div>
   <div class="decision-book"><div class="eyebrow">ЧИТАЙ СОПЕРНИКА</div>
     <div><span>ВНИЗ + ТЯЖЁЛЫЙ <b>→</b> ЗАХВАТ</span><p>Вплотную обходит блок. После захвата нажми Удар до двух раз для ударов в корпус, затем Тяжёлый — бросок. Удерживай движение назад, чтобы бросить за спину. Если схватили тебя — быстро нажми Удар, чтобы вырваться.</p></div>
@@ -119,10 +124,11 @@ document.querySelector('.keyboard-guide').insertAdjacentHTML('beforebegin', `
   <div class="move-book"><div class="eyebrow">СВЯЗКИ И СПОСОБНОСТИ</div>
     <div><span>УДАР <b>→</b> ТЯЖЁЛЫЙ</span><p>После попадания — подброс. Нажми прыжок, затем удар, чтобы продолжить серию.</p></div>
     <div><span>РЫВОК <b>→</b> УДАР</span><p>Удар во время рывка превращает его в таран. Уклонение заканчивается в момент атаки.</p></div>
-    <div><span>ПРЫЖОК <b>→</b> ТЯЖЁЛЫЙ</span><p>Пикирование: корпус падает вниз и выпускает ударную волну при приземлении.</p></div>
-    <div><span>ВНИЗ <b>+</b> ИМПУЛЬС</span><p>Низкая сейсмическая волна. Её можно перепрыгнуть или заблокировать, но нельзя пригнуться под ней.</p></div>
+    <div><span>ПРЫЖОК <b>→</b> ТЯЖЁЛЫЙ</span><p>Пикирование: при приземлении 28 урона, короткий стан и небольшой отскок соперника от пола.</p></div>
+    <div><span>ИМПУЛЬС</span><p>28 урона и короткий электрический стан за 25 энергии. Пригнись под выстрелом, заблокируй его или уклонись.</p></div>
+    <div><span>ВНИЗ <b>+</b> ИМПУЛЬС</span><p>Электромагнитная мина за 35 энергии: 42 урона, подброс и короткий стан. Перепрыгни детонацию, отойди или держи блок.</p></div>
     <div><span>ТОЧНЫЙ БЛОК <b>→</b> ОТВЕТ</span><p>Нажми блок прямо перед попаданием: парирование откроет короткое окно для усиленной контратаки.</p></div>
-    <div class="overload-recipe"><span>100 ЭНЕРГИИ <b>→</b> ПЕРЕГРУЗКА</span><p>Три последовательных залпа с мощным финалом. Соперник может отойти за радиус или держать блок.</p></div>
+    <div class="overload-recipe"><span>80 ЭНЕРГИИ <b>→</b> ЗАЖМИ ПЕРЕГРУЗКУ</span><p>Держи кнопку или U 0,65 секунды. Отпустишь раньше — отменишь без потери энергии. Затем робот готовит реактор 0,95 секунды: замах можно сорвать ударом. Три разряда уничтожают незащищённого противника. Отойди за отмеченную зону или держи полный блок до конца.</p></div>
   </div>`);
 document.getElementById('escape-prompt').insertAdjacentHTML('afterend', `
   <div id="finisher-prompt" class="finisher-prompt" hidden aria-live="polite">
@@ -130,6 +136,7 @@ document.getElementById('escape-prompt').insertAdjacentHTML('afterend', `
     <p id="finisher-detail">НАЖМИ ТЯЖЁЛЫЙ ИЛИ ПЕРЕГРУЗКУ</p><div><i id="finisher-time"></i></div>
   </div>`);
 const combatUI = createCombatUI();
+const ultimateUI = createUltimateUI();
 const setText = (id, value) => { const el = $(id); if (el && el.textContent !== String(value)) el.textContent = value; };
 function toast(message) { setText('toast', message); $('toast').classList.add('visible'); clearTimeout(toastTimer); toastTimer = setTimeout(() => $('toast').classList.remove('visible'), 4500); }
 function showView(view) {
@@ -141,7 +148,7 @@ function showView(view) {
   if (view !== 'game') controls?.neutral();
 }
 function send(message) { if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(message)); }
-const controls = createControls({ send, enabled: () => currentView === 'game' && (state?.phase === 'fight' || finishContext(state, playerId).canTrigger) && connected && !document.querySelector('dialog[open]'), onAction: (action, intent) => {
+const controls = createControls({ send, ultimateState: () => ultimateAvailability(state, playerId), onUltimateHold: value => ultimateUI.hold(value), enabled: () => currentView === 'game' && (state?.phase === 'fight' || finishContext(state, playerId).canTrigger) && connected && !document.querySelector('dialog[open]'), onAction: (action, intent) => {
   audio.unlock();
   const me = state?.players?.find(p => p.id === playerId);
   if (state?.phase === 'finishing' && !['heavy', 'ultimate'].includes(action)) return false;
@@ -188,7 +195,7 @@ function connect(request) {
   });
   socket.addEventListener('close', event => {
     if (socket !== currentSocket) return;
-    connected = false; setConnection('СВЯЗЬ ПРЕРВАНА', false);
+    connected = false; controls.neutral(); setConnection('СВЯЗЬ ПРЕРВАНА', false);
     if (event.code === 4001 || event.code === 4000) { leave(); toast(event.reason || 'Комната закрыта.'); return; }
     if (!quitting && room && token) {
       announce('ПЕРЕПОДКЛЮЧЕНИЕ', 'ВОССТАНАВЛИВАЕМ СВЯЗЬ С АРЕНОЙ');
@@ -269,29 +276,28 @@ function receiveState(next) {
     if (currentView !== 'game') showView('game');
     $('result').hidden = state.phase !== 'matchOver';
     setText('game-room', mode === 'training' ? 'ТРЕНИРОВКА / БОТ' : `АРЕНА ${room}`);
-    setText('timer', Math.max(0, Math.ceil(state.time ?? 60)).toString().padStart(2,'0'));
+    setText('timer', Math.max(0, Math.ceil(state.time ?? ROUND_SECONDS)).toString().padStart(2,'0'));
     $('timer').classList.toggle('danger', state.time <= 10);
     setText('round-label', `РАУНД ${state.round || 1}`);
     for (const p of players) {
       const id = p.id; if (!$(`hp-${id}`)) continue;
       setText(`name-${id}`, p.name); $(`you-${id}`).hidden = id !== playerId;
-      $(`hp-${id}`).style.transform = `scaleX(${Math.max(0,p.hp || 0)/100})`;
+      $(`hp-${id}`).style.transform = `scaleX(${healthFraction(p)})`;
       $(`energy-${id}`).style.transform = `scaleX(${Math.min(100,p.energy || 0)/100})`;
       $(`guard-${id}`).style.transform = `scaleX(${Math.min(100,p.guard ?? 100)/100})`;
       setText(`energy-label-${id}`, `${Math.floor(p.energy || 0)}%`);
+      setText(`hp-value-${id}`, `${Math.ceil(p.hp || 0)} / ${p.maxHp || MAX_HP}`);
       setText(`wins-${id}`, Array.from({ length: WINS_TO_MATCH }, (_, index) => p.wins > index ? '◆' : '◇').join(' '));
-      $(`hud-${id}`).classList.toggle('critical', p.hp < 25);
+      $(`hud-${id}`).classList.toggle('critical', healthFraction(p) <= .25);
     }
-    $('ultimate-fill').style.transform = `scaleX(${(me?.energy || 0)/100})`;
-    $('ultimate-btn').classList.toggle('charged', (me?.energy || 0) >= 100);
-    $('ultimate-btn').classList.toggle('unavailable', (me?.energy || 0) < 100);
-    setText('ultimate-hint', (me?.energy || 0) >= 100 ? 'УЛЬТА ГОТОВА · ИЛИ СОХРАНИ ЗАРЯД НА СБРОС' : (me?.energy || 0) >= 50 ? (me?.cooldowns?.burst > 0 ? `СБРОС ЧЕРЕЗ ${Math.ceil(me.cooldowns.burst)} С · УЛЬТА 100 ⚡` : '50 ⚡ НА СБРОС · 100 ⚡ НА УЛЬТУ') : 'СБРОС 50 ⚡ · УЛЬТА 100 ⚡');
-    document.querySelector('[data-action="special"]').classList.toggle('unavailable', (me?.energy || 0) < 25 || me?.cooldowns?.special > 0);
-    setText('special-cost', me?.cooldowns?.special > 0 ? `${me.cooldowns.special.toFixed(1)}с` : '25 ⚡');
+    const specialResource = actionResource('special', me, controls.intent(), state);
+    document.querySelector('[data-action="special"]').classList.toggle('unavailable', (me?.energy || 0) < specialResource.cost || specialResource.cooldown > 0);
+    setText('special-cost', specialResource.cooldown > 0 ? `${specialResource.cooldown.toFixed(1)}с` : `${specialResource.cost} ⚡`);
     const finish = finishContext(state, playerId);
     $('controls').classList.toggle('inactive', state.phase !== 'fight' && !finish.canTrigger);
     $('controls').classList.toggle('finisher-offer', finish.canTrigger);
     combatUI.update(state, playerId, controls.intent());
+    ultimateUI.update(state, playerId);
     if (state.phase === 'countdown') {
       if (lastPhase !== 'countdown' && me?.action === 'recover') audio.play('recover');
       const n = Math.ceil(state.countdown || 0);
@@ -320,8 +326,8 @@ function receiveState(next) {
   for (const event of next.events || []) {
     if (event.id <= lastEvent) continue;
     lastEvent = event.id;
-    const targetHp = ['hit', 'grabStrike'].includes(event.type) ? next.players?.find(player => player.id === event.target)?.hp : undefined;
-    audio.play(event.type, targetHp === undefined ? event : { ...event, targetHp });
+    const target = ['hit', 'grabStrike'].includes(event.type) ? next.players?.find(player => player.id === event.target) : undefined;
+    audio.play(event.type, target ? { ...event, targetHp: target.hp, targetMaxHp: target.maxHp } : event);
     combatUI.event(event, playerId, state);
     if (['hit', 'grabStrike'].includes(event.type) && event.target === playerId && navigator.vibrate && localStorage.getItem('belobog-haptics') !== 'false') navigator.vibrate(event.type === 'grabStrike' ? 30 : 20);
     if (event.type === 'parry' && event.player === playerId && navigator.vibrate && localStorage.getItem('belobog-haptics') !== 'false') navigator.vibrate([10, 25, 10]);

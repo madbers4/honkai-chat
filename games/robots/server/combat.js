@@ -1,9 +1,11 @@
 import {
-  ACTIONS, ARENA_EDGE, ATTACKS, COMBAT_WINDOWS, COUNTDOWN_SECONDS, GRAVITY, INPUT_TIMEOUT_SECONDS,
+  ACTIONS, ARENA_EDGE, ATTACKS, COMBAT_WINDOWS, COUNTDOWN_SECONDS, GRAVITY, INPUT_TIMEOUT_SECONDS, MAX_HP,
   JUMP_SPEED, PLAYER_RADIUS, ROUND_BREAK_SECONDS, ROUND_SECONDS, ULTIMATE_PULSES, V3_RULES, V5_ATTACKS, V5_RULES, FINISH_RULES, WINS_TO_MATCH, VARIANT_ATTACKS, WALK_SPEED,
   canAttemptAirDash, canAttemptBurst, canAttemptFeint, clamp, HEAVY_RULES,
 } from '../shared/constants.js';
 import { cleanCharacter } from '../shared/fighter-profile.js';
+import { isGroundHeavy, offenseLocked, isDefensiveAction, grantHeavyAdvantage, applySlamBounce } from '../shared/heavy-advantage.js';
+import { healthFraction } from '../shared/health.js';
 
 const LOCKED_ACTIONS = new Set(['light', 'heavy', 'special', 'ultimate', 'dash', 'hit', 'ko', 'victory', 'recover', 'finisher', 'defeated', 'destroyed']);
 const neutralInput = () => ({ move: 0, block: false, crouch: false });
@@ -17,9 +19,10 @@ function makePlayer(id, name, bot = false, character = '') {
   return {
     id, name, character: cleanCharacter(character), bot, connected: true, ready: bot,
     x: id === 'p1' ? -2.7 : 2.7, y: 0, vx: 0, vy: 0, facing: id === 'p1' ? 1 : -1,
-    hp: 100, energy: 40, guard: 100, wins: 0, action: 'idle', actionTime: 0,
+    hp: MAX_HP, maxHp: MAX_HP, energy: 40, guard: 100, wins: 0, action: 'idle', actionTime: 0,
     actionDuration: 0, variant: '', combo: 0, cooldowns: { dash: 0, special: 0, ultimate: 0, burst: 0 },
     counterWindow: 0, launchWindow: 0, parryWindow: 0, parryCooldown: 0,
+    defenseOnly: 0, groundHeavy: false, heavyHopStarted: false, slamBounceUsed: false,
     dashFollowWindow: 0, jumpCancelWindow: 0, airLaunchUsed: false, airHits: 0,
     skin: id === 'p1' ? 'amber' : 'cyan', input: neutralInput(), inputAge: 0,
     lastSeq: -1, queued: null, comboExpiry: 0, chain: 0, chainExpiry: 0,
@@ -166,13 +169,14 @@ export class CombatRoom {
       this.grabInput(player, input.action, input.move);
       return true;
     }
-    if (input.action) player.queued = { action: input.action, crouch: input.crouch, expires: this.combatTime + COMBAT_WINDOWS.inputBuffer };
+    if (input.action && offenseLocked(player) && !isDefensiveAction(input.action)) player.queued = null;
+    else if (input.action) player.queued = { action: input.action, crouch: input.crouch, expires: this.combatTime + COMBAT_WINDOWS.inputBuffer };
     return true;
   }
 
   applyControls(player, input) {
     const risingBlock = input.block && !player.input.block;
-    if (risingBlock && player.parryCooldown <= 0 && player.y < 0.1 && player.guard > 0 && !LOCKED_ACTIONS.has(player.action)) {
+    if (risingBlock && !offenseLocked(player) && player.parryCooldown <= 0 && player.y < 0.1 && player.guard > 0 && !LOCKED_ACTIONS.has(player.action)) {
       player.parryWindow = COMBAT_WINDOWS.parry;
       player.parryCooldown = COMBAT_WINDOWS.parryCooldown;
     }
@@ -185,6 +189,9 @@ export class CombatRoom {
     if (player.action === 'hit' && action !== 'hit') player.grabImmunity = Math.max(player.grabImmunity, V3_RULES.postHitGrabImmunity);
     player.action = action;
     player.variant = variant;
+    player.groundHeavy = action === 'heavy' && isGroundHeavy(variant);
+    player.heavyHopStarted = false;
+    if (['ko', 'recover', 'defeated', 'destroyed'].includes(action)) player.defenseOnly = 0;
     player.actionTime = 0;
     player.actionDuration = duration;
     player.hitTargets.clear();
@@ -211,14 +218,16 @@ export class CombatRoom {
 
   beginAction(player, action, crouch = player.input.crouch) {
     if (player.grabTarget || player.grabbedBy) return false;
+    const defenseOnly = offenseLocked(player);
     if (action === 'dash' && canAttemptBurst(player)) return this.beginBurst(player);
+    if (defenseOnly && (!isDefensiveAction(action) || player.action === 'hit')) return false;
     if (action === 'dash' && canAttemptFeint(player)) return this.beginFeint(player);
     if (player.landingRecovery > 0) return false;
     if (action === 'dash' && canAttemptAirDash(player)) {
       if (player.cooldowns.dash > 0) return false;
       player.airDashUsed = true;
       player.cooldowns.dash = ATTACKS.dash.cooldown;
-      player.dashDirection = Math.abs(player.input.move) > 0.2 ? Math.sign(player.input.move) : player.facing;
+      player.dashDirection = defenseOnly ? -player.facing : Math.abs(player.input.move) > 0.2 ? Math.sign(player.input.move) : player.facing;
       player.dashFollowWindow = 0;
       this.setAction(player, 'dash', V5_RULES.airDashDuration, 'airDash');
       this.event('dash', player, { variant: 'airDash', duration: V5_RULES.airDashDuration, facing: player.facing });
@@ -228,7 +237,7 @@ export class CombatRoom {
       const previousAttack = this.attackProperties(player);
       const confirmed = player.cancelWindow > 0 && player.actionTime >= (previousAttack?.startup ?? 1) + V5_RULES.cancelAfterContact;
       const lightChain = player.action === 'light' && action === 'light' && confirmed && ['jab', 'cross', 'airJab', 'airCross', 'dashStrike'].includes(player.variant);
-      const heavyChain = player.action === 'heavy' && action === 'heavy' && !crouch && player.y <= 0.08
+      const heavyChain = player.action === 'heavy' && action === 'heavy' && !crouch && (player.y <= 0.08 || player.groundHeavy)
         && player.cancelWindow > 0 && ['heavyDrive', 'heavyHook'].includes(player.variant)
         && player.cancelWindow <= HEAVY_RULES.cancelWindow - HEAVY_RULES.cancelAfterContact;
       const dashStrike = player.action === 'dash' && !player.variant && action === 'light' && player.actionTime >= COMBAT_WINDOWS.dashCancel;
@@ -254,7 +263,7 @@ export class CombatRoom {
     }
     if (action === 'dash') {
       if (player.cooldowns.dash > 0 || player.y > 0.05) return false;
-      player.dashDirection = Math.abs(player.input.move) > 0.2 ? Math.sign(player.input.move) : player.facing;
+      player.dashDirection = defenseOnly ? -player.facing : Math.abs(player.input.move) > 0.2 ? Math.sign(player.input.move) : player.facing;
       player.cooldowns.dash = ATTACKS.dash.cooldown;
       player.dashFollowWindow = ATTACKS.dash.duration + COMBAT_WINDOWS.dashFollow;
       this.setAction(player, 'dash', ATTACKS.dash.duration);
@@ -262,7 +271,7 @@ export class CombatRoom {
       return true;
     }
     let variant = '';
-    const airborne = player.y > 0.08;
+    const airborne = player.y > 0.08 && !player.groundHeavy;
     const heavyRoute = player.comboRoute.startsWith('heavy');
     const heavyStage = player.cancelWindow > 0 && heavyRoute ? player.routeStage : 0;
     const stage = player.cancelWindow > 0 && !heavyRoute ? player.routeStage : 0;
@@ -531,7 +540,7 @@ export class CombatRoom {
     const canBlock = target.input.block && target.guard > 0 && target.y < 0.1 && !LOCKED_ACTIONS.has(target.action) && fromFront;
     const direction = target.x >= attacker.x ? 1 : -1;
     if (canBlock) {
-      if (target.parryWindow > 0 && kind !== 'ultimate') {
+      if (target.parryWindow > 0 && !offenseLocked(target) && kind !== 'ultimate') {
         target.parryWindow = 0;
         target.counterWindow = COMBAT_WINDOWS.counter;
         target.energy = clamp(target.energy + 14, 0, 100);
@@ -561,19 +570,23 @@ export class CombatRoom {
     const airborneBefore = target.y > 0.2;
     const counter = kind !== 'ultimate' && !metadata.throw && attacker.counterWindow > 0;
     const punish = !metadata.projectile && !metadata.throw && ['light', 'heavy'].includes(kind) && this.isWhiffRecovery(target);
-    const damageScale = airborneBefore ? Math.max(0.45, 1 - target.airHits * 0.18) : 1;
+    // A confirmed reactor discharge is its own sequence, not a scaled juggle.
+    const damageScale = kind !== 'ultimate' && airborneBefore ? Math.max(0.45, 1 - target.airHits * 0.18) : 1;
     const dealt = Math.max(1, Math.round((attack.damage + (counter ? COMBAT_WINDOWS.counterDamage : 0) + (punish ? V3_RULES.punishDamage : 0)) * damageScale));
     if (counter) attacker.counterWindow = 0;
     if (punish) target.punishConsumed = true;
     target.hp = Math.max(0, target.hp - dealt);
     target.vx = direction * attack.knockback;
-    const launch = variant === 'launcher' && !target.airLaunchUsed;
+    grantHeavyAdvantage(target, variant);
+    const slamBounce = applySlamBounce(target, variant);
+    const empLaunch = variant === 'shockwave' && target.y < VARIANT_ATTACKS.shockwave.hitHeight && !target.airLaunchUsed;
+    const launch = (variant === 'launcher' || empLaunch) && !target.airLaunchUsed;
     if (launch) {
-      target.vy = V5_ATTACKS.launcher.launchSpeed;
+      target.vy = empLaunch ? VARIANT_ATTACKS.shockwave.launchSpeed : V5_ATTACKS.launcher.launchSpeed;
       target.y = Math.max(0.03, target.y);
       target.airLaunchUsed = true;
       target.airHits = 1;
-      attacker.jumpCancelWindow = 0.60;
+      if (!empLaunch) attacker.jumpCancelWindow = 0.60;
     } else if (airborneBefore) target.airHits++;
     if (variant === 'airFinish') target.vy = Math.min(target.vy, -V5_ATTACKS.airFinish.downwardSpeed);
     // Follow-up hits never add vertical velocity: gravity bounds every air combo.
@@ -588,7 +601,7 @@ export class CombatRoom {
       // A practiced bot follows its own confirmed contact after a visible reaction beat.
       if (attacker.bot) attacker.brainTimer = Math.min(attacker.brainTimer, 0.12);
     }
-    if (['heavyDrive', 'heavyHook'].includes(variant) && attacker.y <= 0.08) {
+    if (['heavyDrive', 'heavyHook'].includes(variant) && (attacker.y <= 0.08 || attacker.groundHeavy)) {
       attacker.routeStage = variant === 'heavyHook' ? 2 : 1;
       attacker.cancelWindow = HEAVY_RULES.cancelWindow;
       attacker.launchWindow = 0;
@@ -600,8 +613,8 @@ export class CombatRoom {
     target.jumpCancelWindow = 0;
     target.dashFollowWindow = 0;
     target.queued = null;
-    const stun = airborneBefore && target.airHits > V5_RULES.airHitLimit ? 0.05 : airborneBefore && !launch ? Math.min(attack.stun, 0.24) : attack.stun;
-    this.setAction(target, 'hit', stun, metadata.throw ? 'thrown' : launch ? 'launched' : '');
+    const stun = kind === 'ultimate' ? attack.stun : airborneBefore && target.airHits > V5_RULES.airHitLimit ? 0.05 : airborneBefore && !launch ? Math.min(attack.stun, 0.24) : attack.stun;
+    this.setAction(target, 'hit', stun, kind === 'ultimate' ? 'overloadHit' : metadata.throw ? 'thrown' : empLaunch ? 'empLift' : variant === 'bolt' ? 'electrified' : launch ? 'launched' : slamBounce ? 'slamBounce' : isGroundHeavy(variant) ? 'heavyStagger' : '');
     this.event('hit', attacker, { x: target.x, y: target.y + 1.15, target: target.id, damage: dealt, combo: attacker.combo, action: kind, variant, counter, punish, airborne: airborneBefore || launch });
     if (launch) this.event('launch', attacker, { x: target.x, y: target.y + 1.15, target: target.id, variant, velocity: target.vy });
     this.lastHit = { player: attacker.id, target: target.id, variant, combo: attacker.combo, at: this.combatTime };
@@ -628,7 +641,7 @@ export class CombatRoom {
       let action = null;
       const incoming = this.projectiles.find(p => p.owner !== player.id && Math.abs(p.x - player.x) < 3);
       if (canAttemptBurst(player) && player.energy >= V3_RULES.burstEnergy && player.cooldowns.burst <= 0
-        && (player.hp < 65 || enemy.combo >= 2) && this.random() < 0.48) action = 'dash';
+        && (healthFraction(player) < .65 || enemy.combo >= 2) && this.random() < 0.48) action = 'dash';
       else if (canAttemptFeint(player) && player.energy >= V3_RULES.feintEnergy && player.cooldowns.dash <= 0
         && enemy.input.block && this.random() < 0.28) action = 'dash';
       else if (this.isWhiffRecovery(enemy) && distance < 2.4) action = 'light';
@@ -647,10 +660,15 @@ export class CombatRoom {
       else if (player.dashFollowWindow > 0 && distance < 3.2) action = 'light';
       else if (player.counterWindow > 0 && distance < 2.55) action = 'light';
       else if (player.cancelWindow > 0 && player.y < 0.1 && distance < 2.9) action = player.comboRoute.startsWith('heavy') || this.random() < (player.routeStage === 2 ? 0.45 : 0.32) ? 'heavy' : 'light';
-      else if (player.energy >= 100 && distance < 4.5) action = 'ultimate';
-      else if (distance > 3.2 && player.energy >= 25 && player.cooldowns.special <= 0 && this.random() < 0.52) {
+      else if (player.energy >= ATTACKS.ultimate.energy && player.cooldowns.ultimate <= 0 && distance < 4.5) action = 'ultimate';
+      else if (distance > 3.2 && player.energy >= ATTACKS.special.energy && player.cooldowns.special <= 0 && this.random() < 0.52) {
         action = 'special';
-        if (player.brainSerial % 2 === 0) player.botCrouchTimer = 0.6;
+        const mine = VARIANT_ATTACKS.shockwave;
+        const mineDistance = Math.abs(enemy.x - (player.x + direction * .65));
+        const placeMine = player.brainSerial % 2 === 0 && player.energy >= mine.energy && mineDistance <= mine.radius + .25;
+        // A previous grab/crouch timer must not turn an affordable ranged bolt
+        // into an unaffordable or out-of-range mine.
+        player.botCrouchTimer = placeMine ? .6 : 0;
       } else if (distance < 2.8 && player.y === 0 && this.random() < 0.13) action = 'jump';
       else if (distance < 2.45 && this.random() < 0.65) action = this.random() < 0.3 ? 'heavy' : 'light';
       else if (distance > 3.7 && player.cooldowns.dash <= 0 && this.random() < 0.32) action = 'dash';
@@ -664,7 +682,7 @@ export class CombatRoom {
     player.inputAge += dt;
     if (player.inputAge > INPUT_TIMEOUT_SECONDS) player.input = neutralInput();
     if (player.bot) this.updateBot(player, dt);
-    for (const key of ['counterWindow', 'launchWindow', 'parryWindow', 'parryCooldown', 'dashFollowWindow', 'jumpCancelWindow', 'grabImmunity', 'burstInvulnerable', 'cancelWindow', 'pursuitWindow', 'landingRecovery', 'throwDrive']) player[key] = Math.max(0, player[key] - dt);
+    for (const key of ['counterWindow', 'launchWindow', 'parryWindow', 'parryCooldown', 'dashFollowWindow', 'jumpCancelWindow', 'grabImmunity', 'burstInvulnerable', 'cancelWindow', 'pursuitWindow', 'landingRecovery', 'throwDrive', 'defenseOnly']) player[key] = Math.max(0, player[key] - dt);
     for (const key of Object.keys(player.cooldowns)) player.cooldowns[key] = Math.max(0, player.cooldowns[key] - dt);
     player.energy = clamp(player.energy + 1.35 * dt, 0, 100);
     if (!player.input.block && player.action !== 'hit') player.guard = clamp(player.guard + 15 * dt, 0, 100);
@@ -678,6 +696,7 @@ export class CombatRoom {
     }
     if (player.variant === 'parry' && player.actionTime > player.actionDuration) player.variant = '';
     if (player.queued && player.queued.expires < this.combatTime) player.queued = null;
+    if (player.queued && offenseLocked(player) && !isDefensiveAction(player.queued.action)) player.queued = null;
     if (player.queued && this.beginAction(player, player.queued.action, player.queued.crouch)) player.queued = null;
     if (!LOCKED_ACTIONS.has(player.action)) {
       player.facing = this.opponent(player).x >= player.x ? 1 : -1;
@@ -690,7 +709,7 @@ export class CombatRoom {
       else player.vx *= Math.exp(-14 * dt);
     } else if (player.action === 'dash') player.vx = player.dashDirection * (player.variant === 'airDash' ? V5_RULES.airDashSpeed : ATTACKS.dash.speed);
     else if (player.variant === 'dashStrike' && player.actionTime < 0.19) player.vx = player.facing * 5;
-    else if (V5_ATTACKS[player.variant]?.stepSpeed && player.y < 0.1 && player.actionTime >= V5_ATTACKS[player.variant].stepStart && player.actionTime < V5_ATTACKS[player.variant].stepEnd) player.vx = player.facing * V5_ATTACKS[player.variant].stepSpeed;
+    else if (V5_ATTACKS[player.variant]?.stepSpeed && (player.y < 0.1 || player.groundHeavy) && player.actionTime >= V5_ATTACKS[player.variant].stepStart && player.actionTime < V5_ATTACKS[player.variant].stepEnd) player.vx = player.facing * V5_ATTACKS[player.variant].stepSpeed;
     else if (player.pursuitWindow > 0 && player.y > 0) player.vx = player.facing * V5_RULES.pursuitSpeed;
     else if (player.variant.startsWith('air')) player.vx *= Math.exp(-3 * dt);
     else if (player.variant === 'slam' && !player.slamLanded) player.vx *= Math.exp(-4 * dt);
@@ -701,6 +720,11 @@ export class CombatRoom {
       player.vx = player.throwFlightTime < 0.16 ? 0 : player.grabThrowDirection * 10.5;
     }
     player.x = clamp(player.x + player.vx * dt, -ARENA_EDGE, ARENA_EDGE);
+    const hop = player.groundHeavy && V5_ATTACKS[player.variant];
+    if (hop && !player.heavyHopStarted && player.actionTime >= hop.hopStart && player.y <= .02) {
+      player.heavyHopStarted = true;
+      player.vy = hop.hopSpeed;
+    }
     if (player.y > 0 || player.vy > 0) {
       const diving = player.variant === 'slam' && !player.slamLanded && player.actionTime >= VARIANT_ATTACKS.slam.startup;
       if (diving) player.vy = Math.min(player.vy, -VARIANT_ATTACKS.slam.diveSpeed);
@@ -713,9 +737,11 @@ export class CombatRoom {
         player.airHits = 0;
         player.airActions = 0;
         player.airDashUsed = false;
+        const slamBounceLanding = player.slamBounceUsed;
+        player.slamBounceUsed = false;
         player.throwFlight = false;
         player.pursuitWindow = 0;
-        player.landingRecovery = V5_RULES.landingRecovery;
+        player.landingRecovery = player.groundHeavy || slamBounceLanding ? 0 : V5_RULES.landingRecovery;
         if (player.variant.startsWith('air')) { player.cancelWindow = 0; player.routeStage = 0; }
         if (player.variant === 'slam' && !player.slamLanded) {
           player.slamLanded = true;
@@ -761,7 +787,8 @@ export class CombatRoom {
     if (player.action === 'special') {
       if (player.actionTime + 1e-8 >= attack.startup && !player.projectileLaunched) {
         this.projectiles.push({ id: this.nextProjectileId++, x: player.x + player.facing * 0.65, y: player.y + attack.height,
-          owner: player.id, direction: player.facing, life: attack.life, variant: player.variant, speed: attack.speed });
+          owner: player.id, direction: player.facing, life: attack.life, age: 0, variant: player.variant, speed: attack.speed,
+          ...(player.variant === 'shockwave' ? { radius: attack.radius, hitTargets: new Set() } : {}) });
         player.projectileLaunched = true;
       }
       return;
@@ -770,7 +797,8 @@ export class CombatRoom {
     if (player.hitTargets.has(target.id)) return;
     const horizontal = (target.x - player.x) * player.facing;
     const heightReach = player.action === 'ultimate' ? 3.5 : player.variant.startsWith('air') ? 1.45 : player.action === 'light' ? 1.05 : 1.25;
-    if (horizontal > -0.3 && horizontal < attack.range && Math.abs(target.y - player.y) < heightReach) {
+    const inHeight = player.groundHeavy ? target.y < attack.heightReach : Math.abs(target.y - player.y) < heightReach;
+    if (horizontal > -0.3 && horizontal < attack.range && inHeight) {
       if (this.damage(player, target, attack)) { player.hitTargets.add(target.id); player.attackConnected = true; }
     }
   }
@@ -810,14 +838,27 @@ export class CombatRoom {
       const oldX = projectile.x;
       projectile.x += projectile.direction * projectile.speed * dt;
       projectile.life -= dt;
+      projectile.age = (projectile.age ?? 0) + dt;
       const attacker = this.player(projectile.owner);
       const target = this.opponent(attacker);
+      if (projectile.variant === 'shockwave') {
+        const wave = VARIANT_ATTACKS.shockwave;
+        const elapsed = projectile.age - wave.detonationDelay;
+        // A mine detonates once at its placement point. The short, low moving
+        // front can be jumped, blocked or left behind; it never chases a target.
+        if (elapsed >= 0 && elapsed - dt < wave.expansionTime && !projectile.hitTargets.has(target.id)) {
+          const radius = wave.radius * Math.min(1, elapsed / wave.expansionTime);
+          if (Math.abs(target.x - projectile.x) < radius + .25 && target.y < wave.hitHeight) {
+            if (this.damage(attacker, target, wave, 'special', projectile.x, { projectile: true, variant: 'shockwave' })) projectile.hitTargets.add(target.id);
+          }
+        }
+        continue;
+      }
       const hitHeight = target.input.crouch && target.y === 0 && !LOCKED_ACTIONS.has(target.action) ? 0.91 : 2.05;
       const nearX = target.x >= Math.min(oldX, projectile.x) - 0.6 && target.x <= Math.max(oldX, projectile.x) + 0.6;
-      const wave = projectile.variant === 'shockwave';
-      const nearY = wave ? target.y < 0.58 : projectile.y >= target.y + 0.2 && projectile.y <= target.y + hitHeight;
+      const nearY = projectile.y >= target.y + 0.2 && projectile.y <= target.y + hitHeight;
       if (nearX && nearY) {
-        if (this.damage(attacker, target, wave ? VARIANT_ATTACKS.shockwave : ATTACKS.special, 'special', oldX, { projectile: true, variant: projectile.variant })) projectile.life = 0;
+        if (this.damage(attacker, target, ATTACKS.special, 'special', oldX, { projectile: true, variant: projectile.variant })) projectile.life = 0;
       }
       if (Math.abs(projectile.x) > 7) projectile.life = 0;
     }
@@ -843,7 +884,9 @@ export class CombatRoom {
       player.burstInvulnerable = 0;
       player.vx = 0;
       player.vy = 0;
-      this.setAction(player, player === winner ? 'victory' : winner ? 'ko' : 'idle', 99);
+      const overloadRecovery = player === winner && player.action === 'ultimate' && this.lastHit?.variant === 'overload';
+      const recoveryDuration = overloadRecovery ? Math.max(.05, ATTACKS.ultimate.duration - player.actionTime) : 99;
+      this.setAction(player, player === winner ? 'victory' : winner ? 'ko' : 'idle', recoveryDuration, overloadRecovery ? 'overloadRecovery' : '');
       if (player !== winner && winner) this.event('ko', player, { target: player.id, winner: winner.id });
     }
     if (winner && winner.wins >= WINS_TO_MATCH) {
@@ -981,9 +1024,10 @@ export class CombatRoom {
       players: this.players.map(player => ({
         id: player.id, name: player.name, character: player.character, connected: player.connected, ready: player.ready,
         x: roundNumber(player.x), y: roundNumber(player.y), vx: roundNumber(player.vx), vy: roundNumber(player.vy), facing: player.facing,
-        hp: roundNumber(player.hp), energy: roundNumber(player.energy), guard: roundNumber(player.guard), wins: player.wins,
+        hp: roundNumber(player.hp), maxHp: player.maxHp, energy: roundNumber(player.energy), guard: roundNumber(player.guard), wins: player.wins,
         action: player.action, variant: player.variant, actionTime: roundNumber(player.actionTime), actionDuration: player.actionDuration,
         counterWindow: roundNumber(player.counterWindow), launchWindow: roundNumber(player.launchWindow), parryCooldown: roundNumber(player.parryCooldown),
+        defenseOnly: roundNumber(player.defenseOnly), groundHeavy: player.groundHeavy, slamBounceUsed: player.slamBounceUsed,
         landedTime: player.landedTime,
         grabTarget: player.grabTarget, grabbedBy: player.grabbedBy, grabTechWindow: roundNumber(player.grabTechWindow),
         grabHoldTime: roundNumber(player.grabHoldTime), grabCatchTime: player.grabCatchTime, grabReleaseTime: player.grabReleaseTime,
@@ -995,7 +1039,7 @@ export class CombatRoom {
         combo: player.combo, chain: player.chain, cooldowns: Object.fromEntries(Object.entries(player.cooldowns).map(([key, value]) => [key, roundNumber(value)])),
         skin: player.skin, rematch: player.rematch, bot: player.bot,
       })),
-      projectiles: this.projectiles.map(({ id, x, y, owner, direction, variant, speed }) => ({ id, x: roundNumber(x), y: roundNumber(y), owner, direction, variant, speed })),
+      projectiles: this.projectiles.map(({ id, x, y, owner, direction, variant, speed, age, radius }) => ({ id, x: roundNumber(x), y: roundNumber(y), owner, direction, variant, speed, age: roundNumber(age ?? 0), ...(radius ? { radius } : {}) })),
       events: this.events.map(({ at, ...event }) => event), winner: this.winner,
     };
   }

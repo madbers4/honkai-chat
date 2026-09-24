@@ -1,11 +1,14 @@
+import { healthPercent } from '../shared/health.js';
 import * as THREE from 'three';
 import { robotPresentation } from '../shared/robot-presentation.js';
 import { createSparkStreaks } from './spark-streaks.js';
 import { createEnergyBolts } from './energy-bolts.js';
+import { createAbilityEffects } from './ability-effects.js';
 import { createMechanicalEffects } from './mechanical-effects.js';
 import { SHUTDOWN_DISCHARGES } from '../shared/shutdown-motion.js';
 import { createElectricalFaults, stepElectricalFragment } from './electrical-faults.js';
 import { createContactLights } from './contact-light.js';
+import { createOverloadEffects } from './overload-effects.js';
 
 const AMBER = new THREE.Color('#ffbd5c');
 const CYAN = new THREE.Color('#6bdfff');
@@ -153,7 +156,7 @@ function createDamageEffects(scene, { spark, clearSparks, countSparks }) {
     const ranks = { healthy: 0, damaged: 1, critical: 2, offline: 3 };
     for (const player of players) {
       const band = robotPresentation(player, time, { reducedMotion: reduced }).healthBand;
-      const hp = Number.isFinite(player.hp) ? THREE.MathUtils.clamp(player.hp, 0, 100) : 100;
+      const hp = healthPercent(player);
       let record = trackers.get(player.id);
       if (!record) {
         record = { hp, band, faultTimer: rand(0.65, 1.4), smokeTimer: rand(0.8, 1.5), koAge: 5,
@@ -292,22 +295,21 @@ export function createCombatEffects(scene) {
   const ringGeometry = new THREE.RingGeometry(0.87, 1, 56);
   const arcGeometry = new THREE.RingGeometry(0.91, 1, 32, 1, 0, Math.PI * 1.36);
   const sphereGeometry = new THREE.SphereGeometry(0.15, 12, 8);
-  const beamGeometry = new THREE.PlaneGeometry(1, 1);
   const waveGeometry = new THREE.RingGeometry(0.78, 1, 28, 1, 0, Math.PI);
   const clawGeometry = new THREE.RingGeometry(0.85, 1, 20, 1, -0.65, 1.3);
   ringGeometry.name = 'combat-ring'; arcGeometry.name = 'combat-arc';
-  sphereGeometry.name = 'projectile-sphere'; beamGeometry.name = 'ultimate-beam';
+  sphereGeometry.name = 'projectile-sphere';
   waveGeometry.name = 'ground-wave';
   clawGeometry.name = 'grapple-claw';
 
   const flashes = [];
-  const beams = [];
+  const overloadEffects = createOverloadEffects(scene);
 
   const projectileObjects = new Map();
   const energyBolts = createEnergyBolts(scene, colorFor);
+  const abilityEffects = createAbilityEffects(scene, { colorFor, spark: particle });
   const charges = new Map();
   const holds = new Map();
-  const pulseEvents = new Set();
   const debrisGeometry = new THREE.BoxGeometry(1, 1, 1);
   debrisGeometry.name = 'impact-debris';
   const debrisMaterial = new THREE.MeshStandardMaterial({ color: '#a7a9a3', roughness: 0.78, metalness: 0.42 });
@@ -388,67 +390,14 @@ export function createCombatEffects(scene) {
     flashes.push({ sprite, life: duration, duration, size });
   }
 
-  function ultimateBlast(event, source, color) {
-    if (beams.length >= 6) removeGroup(beams.shift().group);
-    const direction = event.facing ?? source?.facing ?? 1;
-    const range = THREE.MathUtils.clamp(event.range ?? 5.2, 0.8, 7);
-    const length = range - 0.65;
-    const muzzle = source?.combatAnchors?.muzzle;
-    const x = muzzle?.x ?? (event.x ?? source?.x ?? 0) + direction * .65;
-    const y = muzzle?.y ?? event.y ?? (source?.y ?? 0) + 1.35;
-    const z = muzzle?.z ?? .3;
-    const finish = event.pulse === 2;
-    const group = new THREE.Group();
-    group.name = `ultimate-pulse-${event.pulse ?? 0}`;
-    group.position.set(x + direction * length / 2, y, z);
-    const core = new THREE.Mesh(beamGeometry, new THREE.ShaderMaterial({
-      uniforms: { tint: { value: color.clone() }, opacity: { value: .95 } }, transparent: true, depthWrite: false,
-      blending: THREE.AdditiveBlending, toneMapped: false, side: THREE.DoubleSide,
-      vertexShader: `varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
-      fragmentShader: `uniform vec3 tint;uniform float opacity;varying vec2 vUv;
-        void main(){float lane=abs(vUv.y-.5);float core=exp(-lane*lane*800.0);
-          float aura=exp(-lane*lane*55.0);float filament=exp(-pow((vUv.y-.5-sin(vUv.x*58.0)*.08)/.014,2.0));
-          float ends=smoothstep(0.0,.025,vUv.x)*(1.0-smoothstep(.93,1.0,vUv.x));
-          gl_FragColor=vec4(tint*(aura*.9+filament*.3)+vec3(1.0,.96,.78)*core*1.6,(core+aura*.3+filament*.35)*ends*opacity);}`,
-    }));
-    core.scale.set(length, finish ? .74 : .38, 1);
-    group.add(core);
-    const halo = new THREE.Sprite(new THREE.SpriteMaterial({
-      map: glow, color, transparent: true, opacity: 0.95, depthWrite: false,
-      blending: THREE.AdditiveBlending, toneMapped: false,
-    }));
-    halo.scale.set(length * 1.05, finish ? .95 : .48, 1);
-    group.add(halo);
-    scene.add(group);
-    const duration = finish ? 0.34 : 0.19;
-    beams.push({ group, life: duration, duration });
-    flash(x, y, WHITE, finish ? 1.65 : 1.0, finish ? .16 : .10, z);
-    burst(x, y, color, finish ? 22 : 12, finish ? .9 : .55, z);
-    if (finish) {
-      chunks(x + direction * 1.8, color, 8, 0.7);
-    }
-  }
-
   function emit(event, state) {
     damageEffects.queue(event, state);
+    const abilityResult = abilityEffects.emit(event, state);
+    if (abilityResult != null) return abilityResult;
+    const overload = overloadEffects.emit(event, state);
+    if (overload != null) return overload;
     const result = mechanical.emit(event, state);
     if (result != null) return result;
-    const source = state?.players?.find(player => player.id === event.player);
-    const color = colorFor(event.player, state);
-    if (event.type === 'ultimate') {
-      const core = source?.combatAnchors?.core;
-      flash(core?.x ?? source?.x ?? event.x ?? 0, core?.y ?? 1.1, color, 1.2, .18, core?.z ?? .3);
-      return 0;
-    }
-    if (event.type === 'ultimatePulse') {
-      if (event.id != null && pulseEvents.has(event.id)) return 0;
-      if (event.id != null) {
-        pulseEvents.add(event.id);
-        if (pulseEvents.size > 256) pulseEvents.delete(pulseEvents.values().next().value);
-      }
-      ultimateBlast(event, source, color);
-      return event.pulse === 2 ? .16 : .065;
-    }
     return 0;
   }
   function makeProjectile(id, color, variant = 'bolt') {
@@ -534,6 +483,7 @@ export function createCombatEffects(scene) {
     const live = state?.phase === 'fight';
     damageEffects.update(dt, time, state, pixelRatio);
     mechanical.update(dt, time, state);
+    overloadEffects.update(dt, time, state);
     if (state?.phase !== 'paused' || state?.visualSeekToken !== presentationSeekToken) presentationTime = time;
     presentationSeekToken = state?.visualSeekToken;
     time = presentationTime;
@@ -573,17 +523,6 @@ export function createCombatEffects(scene) {
       f.sprite.material.opacity = t * (reducedMotion ? 0.45 : 0.95);
       f.sprite.scale.setScalar(f.size * (0.75 + 0.25 * t));
     }
-    for (let i = beams.length - 1; i >= 0; i--) {
-      const beam = beams[i];
-      beam.life -= age;
-      if (beam.life <= 0) { removeGroup(beam.group); beams.splice(i, 1); continue; }
-      const t = beam.life / beam.duration;
-      beam.group.scale.y = 0.4 + 0.6 * t;
-      beam.group.children.forEach(child => {
-        if (child.material.uniforms?.opacity) child.material.uniforms.opacity.value = t * (reducedMotion ? .45 : .95);
-        else child.material.opacity = t * (reducedMotion ? 0.45 : 0.95);
-      });
-    }
     for (let i = debris.length - 1; i >= 0; i--) {
       const chunk = debris[i];
       chunk.life -= dt;
@@ -611,9 +550,10 @@ export function createCombatEffects(scene) {
     }
 
     energyBolts.update(dt, state);
+    abilityEffects.update(dt, state);
     const activeProjectiles = new Set();
     for (const projectile of state?.projectiles ?? []) {
-      if ((projectile.variant ?? 'bolt') === 'bolt') continue;
+      if (['bolt', 'shockwave'].includes(projectile.variant ?? 'bolt')) continue;
       activeProjectiles.add(projectile.id);
       const color = colorFor(projectile.owner, state);
       const variant = projectile.variant ?? 'bolt';
@@ -689,7 +629,7 @@ export function createCombatEffects(scene) {
       const counter = (player.counterWindow ?? 0) > 0 && !['ultimate', 'block', 'hit', 'ko'].includes(player.action)
         && !player.grabTarget && !player.grabbedBy && player.variant !== 'burst';
       const defensive = player.variant === 'burst' && (player.burstInvulnerable ?? 0) > 0;
-      if (player.action !== 'ultimate' && player.action !== 'block' && !counter && !defensive) continue;
+      if (player.action !== 'block' && !counter && !defensive) continue;
       charging.add(player.id);
       const color = colorFor(player.id, state);
       let charge = charges.get(player.id);
@@ -703,7 +643,7 @@ export function createCombatEffects(scene) {
         charge = { mesh, emit: 0 };
         charges.set(player.id, charge);
       }
-      const ultimate = player.action === 'ultimate';
+      const ultimate = false; // Overload owns its staged capacitor and range telegraph.
       // Snapshots may telegraph a charge, but only authoritative ultimatePulse events fire beams.
       const ground = ultimate || counter;
       charge.mesh.name = defensive ? 'burst-immunity' : ultimate ? 'overload-charge-ring' : counter ? 'counter-window' : 'block-shield';
@@ -729,29 +669,30 @@ export function createCombatEffects(scene) {
     damageEffects.clear();
     mechanical.clear();
     energyBolts.clear();
+    abilityEffects.clear();
+    overloadEffects.clear();
     for (const p of particles) p.life = 0;
 
     for (const f of flashes) { scene.remove(f.sprite); f.sprite.material.dispose(); }
     for (const p of projectileObjects.values()) removeGroup(p.group);
-    for (const beam of beams) removeGroup(beam.group);
     for (const c of charges.values()) { scene.remove(c.mesh); c.mesh.material.dispose(); }
     for (const hold of holds.values()) removeHold(hold);
     flashes.length = 0;
-    beams.length = 0;
 
-    debris.length = 0; debrisMesh.count = 0; pulseEvents.clear();
+    debris.length = 0; debrisMesh.count = 0;
     projectileObjects.clear(); charges.clear(); holds.clear();
   }
 
   return {
     emit, update, clear,
+    getOverloadStats() { return overloadEffects.getStats(); },
     getDamageStats() { return damageEffects.getStats(); },
-    getEffectsStats() { return mechanical.getStats(); },
-    setQuality(value) { quality = value; energyBolts.setQuality(value); damageEffects.setQuality(value); mechanical.setQuality(value); },
-    setReducedMotion(value) { reducedMotion = value; energyBolts.setReducedMotion(value); damageEffects.setReducedMotion(value); mechanical.setReducedMotion(value); },
+    getEffectsStats() { return { ...mechanical.getStats(), abilities: abilityEffects.getStats() }; },
+    setQuality(value) { quality = value; overloadEffects.setQuality(value); energyBolts.setQuality(value); abilityEffects.setQuality(value); damageEffects.setQuality(value); mechanical.setQuality(value); },
+    setReducedMotion(value) { reducedMotion = value; overloadEffects.setReducedMotion(value); energyBolts.setReducedMotion(value); abilityEffects.setReducedMotion(value); damageEffects.setReducedMotion(value); mechanical.setReducedMotion(value); },
     dispose() {
-      clear(); damageEffects.dispose(); mechanical.dispose(); energyBolts.dispose(); scene.remove(points, debrisMesh); geometry.dispose(); material.dispose(); glow.dispose();
-      ringGeometry.dispose(); arcGeometry.dispose(); sphereGeometry.dispose(); beamGeometry.dispose(); waveGeometry.dispose(); clawGeometry.dispose();
+      clear(); overloadEffects.dispose(); damageEffects.dispose(); mechanical.dispose(); energyBolts.dispose(); abilityEffects.dispose(); scene.remove(points, debrisMesh); geometry.dispose(); material.dispose(); glow.dispose();
+      ringGeometry.dispose(); arcGeometry.dispose(); sphereGeometry.dispose(); waveGeometry.dispose(); clawGeometry.dispose();
       debrisGeometry.dispose(); debrisMaterial.dispose(); debrisMesh.dispose();
     },
   };

@@ -1,3 +1,4 @@
+import { MAX_HP, WINS_TO_MATCH } from '../shared/constants.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CombatRoom } from '../server/combat.js';
@@ -34,11 +35,11 @@ test('profile survives ordinary rounds, finishing reconnect, destruction and ful
   const check = () => assert.deepEqual(game.snapshot().players.map(player => player.character), expected);
   check();
   command(game, 'p1', { character: 'Подмена', name: 'Подмена', hp: 999 });
-  assert.equal(game.player('p1').hp, 100); assert.equal(game.player('p1').name, 'Рыцарь'); check();
+  assert.equal(game.player('p1').hp, MAX_HP); assert.equal(game.player('p1').name, 'Рыцарь'); check();
   const snapshot = game.snapshot(); snapshot.players[0].character = 'Подмена'; check();
-  for (let win = 1; win <= 3; win++) {
+  for (let win = 1; win <= WINS_TO_MATCH; win++) {
     game.player('p2').hp = 0; advance(game, 1 / 60); check();
-    if (win < 3) { assert.equal(game.phase, 'roundOver'); advance(game, 6.5); assert.equal(game.phase, 'fight'); check(); }
+    if (win < WINS_TO_MATCH) { assert.equal(game.phase, 'roundOver'); advance(game, 6.5); assert.equal(game.phase, 'fight'); check(); }
   }
   assert.equal(game.phase, 'finishing');
   command(game, 'p1', { action: 'heavy', character: 'Снова подмена' }); advance(game, .5);
@@ -47,7 +48,7 @@ test('profile survives ordinary rounds, finishing reconnect, destruction and ful
   assert.equal(game.phase, 'matchOver'); assert.equal(game.player('p2').action, 'destroyed');
   game.requestRematch('p1'); game.requestRematch('p2');
   assert.equal(game.phase, 'countdown'); check();
-  assert.ok(game.players.every(player => player.hp === 100 && player.wins === 0));
+  assert.ok(game.players.every(player => player.hp === MAX_HP && player.wins === 0));
 });
 
 test('different roleplay characters cannot alter authoritative fighting outcomes or timing', () => {
@@ -60,5 +61,5 @@ test('different roleplay characters cannot alter authoritative fighting outcomes
     command(game, 'p1', { action: 'heavy' }); advance(game, .4);
   }
   assert.deepEqual(withoutCharacter(dramatic.snapshot()), withoutCharacter(plain.snapshot()));
-  assert.equal(dramatic.player('p2').hp, 67);
+  assert.equal(dramatic.player('p2').hp, MAX_HP - 33);
 });

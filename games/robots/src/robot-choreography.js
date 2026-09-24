@@ -8,8 +8,18 @@ const pulse = (t, a, b, c) => t < b ? smooth((t - a) / (b - a)) : 1 - smooth((t 
 export const ROBOT_BEATS = Object.freeze({ jab: .11, cross: .16, rake: .24, crusher: .34, airJab: .09, airCross: .12, airFinish: .17,
   heavyDrive: V5_ATTACKS.heavyDrive.startup, heavyHook: V5_ATTACKS.heavyHook.startup, heavyPress: V5_ATTACKS.heavyPress.startup });
 
-export function choreographStrike(variant, time, duration, legs) {
-  if (['heavyDrive', 'heavyHook', 'heavyPress'].includes(variant)) return choreographHeavy(variant, time, legs);
+/** Strong impulse, short stun: strength is an explicit hit class rather than
+ * inferred from how long the server disables control. */
+export function heavyStaggerChoreography(elapsed, duration) {
+  const drive = pulse(elapsed, 0, .026, duration * .84);
+  const load = pulse(elapsed, .008, .065, duration);
+  const head = pulse(elapsed, .02, .085, duration);
+  return { bob: -.050 * load, thrust: -.13 * drive, lean: -.13 * drive,
+    headPitch: .055 * drive - .11 * head, rearSpread: 1 + .07 * load };
+}
+
+export function choreographStrike(variant, time, duration, legs, motion = {}) {
+  if (['heavyDrive', 'heavyHook', 'heavyPress'].includes(variant)) return choreographHeavy(variant, time, legs, motion);
   const startup = ROBOT_BEATS[variant];
   if (startup === undefined) return null;
   const ready = pulse(time, 0, startup * .58, startup + .005);
@@ -91,10 +101,10 @@ export function choreographStrike(variant, time, duration, legs) {
 // A heavy is a sequence of mechanical poses, not an enlarged jab. The two rear
 // feet carry the chassis while a foreleg strikes. Each return has its own lifted
 // arc and the rear feet compensate for the exact server-authoritative advance.
-function choreographHeavy(variant, time, legs) {
+function choreographHeavy(variant, time, legs, { y = 0, vy = 0 } = {}) {
   const attack = V5_ATTACKS[variant], t = Math.max(0, time), hit = attack.startup;
   const press = variant === 'heavyPress', hook = variant === 'heavyHook';
-  const peak = hit - (press ? .12 : .10);
+  const peak = attack.hopStart - .025;
   const recoilAt = hit + .075;
   const settleAt = attack.duration;
   const pose = (keys, values) => {
@@ -104,16 +114,19 @@ function choreographHeavy(variant, time, legs) {
     return lerp(values[n], values[n + 1], smooth((t - keys[n]) / (keys[n + 1] - keys[n])));
   };
   const keys = [0, peak, hit, recoilAt, settleAt];
-  const load = pulse(t, 0, peak, hit + .02);
+  const load = pulse(t, 0, peak, attack.hopStart + .03);
   const force = pulse(t, hit - .09, hit, attack.duration - .10);
   const follow = pulse(t, hit, recoilAt, attack.duration - .07);
   const displacement = clamp(t - attack.stepStart, 0, attack.stepEnd - attack.stepStart) * attack.stepSpeed;
+  const airborne = smooth(y / .055);
+  const gather = airborne * (1 - smooth((t - hit + .065) / .065));
+  const compression = pulse(t, hit - .015, hit + .055, hit + .26);
   const body = {
-    bob: pose(keys, [0, press ? -.13 : -.10, press ? -.19 : -.09, press ? -.24 : -.13, 0]),
-    lean: pose(keys, [hook ? .12 : 0, press ? -.24 : -.12, press ? .22 : .19, press ? .27 : .14, 0]),
+    bob: -.052 * load - (press ? .065 : .048) * compression,
+    lean: pose(keys, [hook ? .07 : 0, press ? -.15 : -.085, press ? .15 : .135, press ? .16 : .10, 0]),
     roll: (hook ? -.09 : .09) * load + (hook ? .12 : -.10) * force,
     twist: (hook ? -.16 : .08) * load + (hook ? .20 : -.09) * force,
-    thrust: -.065 * load + (press ? .10 : .15) * force + .025 * follow,
+    thrust: -.065 * load + (press ? .10 : .12) * force + .025 * follow,
     headPitch: press ? -.20 * load + .13 * force : .07 * load - .09 * force,
     headYaw: hook ? -.14 * force : .07 * force,
   };
@@ -123,11 +136,10 @@ function choreographHeavy(variant, time, legs) {
     const hx = h.x, hy = h.y, hz = h.z;
     if (!leg.front) {
       // Push from a planted foot, then deliberately step it underneath again.
-      const start = hit + (leg.side === 'RL' ? .09 : .20);
-      const end = Math.min(settleAt - .025, start + .24);
-      const replant = smooth((t - start) / (end - start));
-      leg.desired.z = hz - displacement * (1 - replant);
-      leg.desired.y = hy + Math.sin(replant * Math.PI) * (press ? .13 : .10);
+      // The real short hop advances the root. Tuck on ascent, open before
+      // contact and load both rear supports instead of skating planted toes.
+      leg.desired.z = hz - .10 * load + .07 * gather;
+      leg.desired.y = hy + .20 * gather;
       leg.desired.x = hx * (1 + .10 * load + .07 * force);
       continue;
     }
@@ -157,7 +169,7 @@ function choreographHeavy(variant, time, legs) {
     } else {
       leg.desired.x = hx * (1 + .035 * load);
       leg.desired.z = hz - displacement * (1 - smooth((t - recoilAt) / (settleAt - recoilAt)));
-      leg.desired.y = hy + returnArc * .08;
+      leg.desired.y = hy + .14 * gather + returnArc * .055;
     }
   }
   return body;

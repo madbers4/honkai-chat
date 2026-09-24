@@ -48,7 +48,7 @@ export function createEnergyBolts(scene, colorFor) {
         }
         tail*=calm>.5?.55:1.0;
         float alpha=clamp(shell*.86+core*.9+wake+tail,0.0,1.0);
-        vec3 tint=mix(vColor,vec3(.98,1.0,1.0),clamp(core*(.85+.15*hot),0.0,1.0));
+        vec3 tint=mix(vColor*1.55,vec3(2.3,2.6,2.7),clamp(core*(.85+.15*hot),0.0,1.0));
         gl_FragColor=vec4(tint,alpha);
         #include <colorspace_fragment>
       }`,

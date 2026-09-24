@@ -6,6 +6,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { buildHeavyCase } from '../scripts/heavy-review.js';
 import { createMechanicalEffects } from '../src/mechanical-effects.js';
 import { V5_ATTACKS } from '../shared/constants.js';
+import { buildHeavyAdvantageCase } from '../scripts/heavy-advantage-cases.js';
 
 globalThis.self = globalThis;
 globalThis.createImageBitmap = async () => ({ width: 1024, height: 1024, close() {} });
@@ -28,7 +29,7 @@ function bounds(robot) {
   return box;
 }
 
-for (const facing of [1, -1]) test(`actual heavy rig reaches the opponent and stays grounded through all links, facing ${facing}`, () => {
+for (const facing of [1, -1]) test(`actual heavy rig reaches the opponent and follows the supported hops through all links, facing ${facing}`, () => {
   const robots = [createRobot(), createRobot({ skin: 'cyan' })], data = buildHeavyCase('series', facing);
   const hits = new Map(data.events.filter(e => e.type === 'hit').map(e => [e.frame, e]));
   const links = new Set(data.events.filter(e => e.type === 'attack' && e.chain > 1).map(e => e.frame));
@@ -42,7 +43,8 @@ for (const facing of [1, -1]) test(`actual heavy rig reaches the opponent and st
     }
     if (frame % 3 === 0) {
       const box = bounds(robots[0]); assert.ok(box.min.y >= -.0001, 'all original vertices clear the floor');
-      assert.ok(box.min.y < .09, 'the ground combo retains a planted support');
+      const floorMargin = state.players[0].y < .02 ? .075 : .25;
+      assert.ok(box.min.y < floorMargin + state.players[0].y, `frame ${frame}: support ${box.min.y} / root ${state.players[0].y}`);
     }
     const current = robots[0].getCombatAnchors();
     if (links.has(frame)) {
@@ -87,4 +89,41 @@ test('heavy ribbons follow only the striking claw and the authoritative active i
     }
     assert.ok(observed); assert.equal(fx.getStats().trailVertices, 0, 'ribbons expire after recovery'); fx.dispose();
   }
+});
+
+for (const facing of [-1, 1]) test(`heavy microstagger and shallow slam bounce preserve original victim supports, facing ${facing}`, t => {
+  let worstStep = 0, minBelly = Infinity, maxFoot = 0;
+  for (const type of ['series', 'slam']) {
+    const data = buildHeavyAdvantageCase(type, facing), robot = createRobot({ skin: 'cyan' });
+    let previous;
+    for (let frame = 0; frame < 160; frame++) {
+      const player = data.snapshots[frame].players[1]; robot.group.position.set(player.x, player.y, 0); robot.update(player, 1 / 60, frame / 60);
+      assert.deepEqual(robot.group.position.toArray(), [player.x, player.y, 0]);
+      const box = bounds(robot), center = box.getCenter(new THREE.Vector3()).sub(robot.group.position);
+      assert.ok(box.min.y >= -.0001, `${type}/${frame}: original geometry clips the deck`);
+      if (previous) worstStep = Math.max(worstStep, center.distanceTo(previous)); previous = center;
+      if (player.action === 'hit' && player.y === 0) {
+        const minima = {}, point = new THREE.Vector3();
+        robot.group.traverse(mesh => {
+          if (!mesh.isSkinnedMesh) return;
+          for (let i = 0; i < mesh.geometry.attributes.position.count; i++) {
+            const name = mesh.skeleton.bones[mesh.geometry.attributes.skinIndex.getX(i)].name;
+            if (name !== 'chassis' && !/leg_.._foot/.test(name)) continue;
+            mesh.getVertexPosition(i, point).applyMatrix4(mesh.matrixWorld); minima[name] = Math.min(minima[name] ?? Infinity, point.y);
+          }
+        });
+        minBelly = Math.min(minBelly, minima.chassis); assert.ok(minima.chassis > .015, `${type}/${frame}: belly replaces the feet`);
+        for (const [name, value] of Object.entries(minima)) if (name !== 'chassis') {
+          maxFoot = Math.max(maxFoot, value); assert.ok(value < .07, `${type}/${frame}: ${name} not supporting (${value})`);
+        }
+      }
+    }
+    const contact = data.contacts[0].frame;
+    const player = { ...data.snapshots[contact + 4].players[1], visualPaused: true, visualSeekToken: 1 };
+    robot.group.position.set(player.x, player.y, 0); robot.update(player, 0, (contact + 4) / 60);
+    const before = bounds(robot); for (let i = 0; i < 10; i++) robot.update(player, 0, 100 + i);
+    assert.ok(bounds(robot).min.distanceTo(before.min) < .00001, 'paused new reaction remains frozen'); robot.dispose();
+  }
+  assert.ok(worstStep < .15, `local silhouette frame step ${worstStep}`);
+  t.diagnostic(`Worst local frame step ${worstStep.toFixed(4)}m; grounded belly ${minBelly.toFixed(4)}m; feet ${maxFoot.toFixed(4)}m.`);
 });

@@ -1,5 +1,5 @@
-import { actionContext } from './action-context.js';
-import { V3_RULES, V5_RULES, FINISH_RULES } from '../shared/constants.js';
+import { actionContext, actionResource } from './action-context.js';
+import { V3_RULES, V5_RULES, FINISH_RULES, ROUND_SECONDS } from '../shared/constants.js';
 
 const setText = (element, text) => { if (element.textContent !== text) element.textContent = text; };
 
@@ -33,7 +33,7 @@ export function createCombatUI() {
     'ПОПАЛ В СЕРИЮ? РЫВОК — СБРОС ЗА 50 ⚡',
     'ТЯЖЁЛЫЙ → РЫВОК В ЗАМАХЕ — ОБМАН',
     'УДАР → ТЯЖЁЛЫЙ — ПОДБРОС',
-    'ВНИЗ + ИМПУЛЬС — НИЗКАЯ ВОЛНА',
+    'ВНИЗ + ИМПУЛЬС — ЭМ-МИНА · ПОДБРОС ЗА 35 ⚡',
     'БЛОК ПЕРЕД ПОПАДАНИЕМ — ПАРИРОВАНИЕ',
     'ПРЫЖОК → ТЯЖЁЛЫЙ — УДАР СВЕРХУ',
     'РЫВОК → УДАР — ТАРАН',
@@ -58,10 +58,11 @@ export function createCombatUI() {
     if (!player) return;
     const fighting = state.phase === 'fight';
     const moves = actionContext(player, intent, state);
-    const { airborne, launcher, crusher, counter, ram, wave, tech, holding, pummelReady, strikeCount, burst, feint, grab, dash, airDash, finish, combo: cue } = moves;
+    const { defenseOnly, airborne, launcher, crusher, counter, ram, wave, tech, holding, pummelReady, strikeCount, burst, feint, grab, dash, airDash, finish, combo: cue } = moves;
     setText(actionButtons.heavy.querySelector('span'), moves.heavy);
     setText(actionButtons.light.querySelector('span'), moves.light);
     setText(actionButtons.special.querySelector('span'), moves.special);
+    actionButtons.special.setAttribute('aria-label', `${wave ? 'Электромагнитная мина' : 'Импульс'}, ${actionResource('special', player, intent, state).cost} энергии`);
     setText(actionButtons.dash.querySelector('span'), dash.label);
     setText(dashCost, dash.cooldown > 0 ? `${dash.cooldown.toFixed(1)}с` : dash.cost ? `${dash.cost} ⚡` : '');
     actionButtons.dash.setAttribute('aria-label', burst ? 'Аварийный сброс, 50 энергии' : feint ? 'Отменить замах, 12 энергии' : airDash ? 'Воздушный рывок' : 'Рывок');
@@ -75,12 +76,12 @@ export function createCombatUI() {
     actionButtons.light.classList.toggle('unavailable', holding && !pummelReady);
     actionButtons.light.classList.toggle('escape-ready', fighting && tech);
     actionButtons.special.classList.toggle('wave-mode', wave);
-    actionButtons.block.classList.toggle('parry-ready', !(player.parryCooldown > 0) && fighting);
-    recipe.classList.toggle('active', fighting && (counter || launcher || airborne || grab || feint || holding || cue.open));
+    actionButtons.block.classList.toggle('parry-ready', !defenseOnly && !(player.parryCooldown > 0) && fighting);
+    recipe.classList.toggle('active', fighting && (defenseOnly || counter || launcher || airborne || grab || feint || holding || cue.open));
     recipe.dataset.stage = cue.open ? String(cue.stage) : '';
     recipe.hidden = !fighting;
-    const tip = tech ? 'ТЕБЯ СХВАТИЛИ — НАЖМИ УДАР!' : holding ? `ДОЖИМ ${strikeCount}/${V5_RULES.grabStrikeLimit} · ТЯЖЁЛЫЙ — БРОСОК · НАЗАД — ЗА СПИНУ` : burst ? (dash.ready ? 'СБРОС РАЗОРВЁТ СЕРИЮ. ЦЕНА — 50 ⚡' : dash.cooldown > 0 ? 'СБРОС ПЕРЕЗАРЯЖАЕТСЯ' : 'ДЛЯ СБРОСА НУЖНО 50 ⚡') : cue.open ? cue.text : feint ? 'РЫВОК СЕЙЧАС — ОТМЕНА ЗАМАХА ЗА 12 ⚡' : grab ? 'ЗАХВАТ ОБХОДИТ БЛОК. ДЕРЖИСЬ БЛИЗКО.' : counter ? 'ОКНО КОНТРАТАКИ — НАНЕСИ УДАР!' : launcher ? 'ТЯЖЁЛЫЙ УДАР ПОДБРОСИТ СОПЕРНИКА' : airborne ? (player.airDashUsed ? 'ВОЗДУШНЫЙ РЫВОК ИСПОЛЬЗОВАН · ТЯЖЁЛЫЙ — ВНИЗ' : 'УДАР — СЕРИЯ · РЫВОК — ДОГНАТЬ · ТЯЖЁЛЫЙ — ВНИЗ') : recipes[(Math.floor((60 - state.time) / 8) + (state.round - 1)) % recipes.length];
-    setText(recipe, tip);
+    const tip = tech ? 'ТЕБЯ СХВАТИЛИ — НАЖМИ УДАР!' : holding ? `ДОЖИМ ${strikeCount}/${V5_RULES.grabStrikeLimit} · ТЯЖЁЛЫЙ — БРОСОК · НАЗАД — ЗА СПИНУ` : burst ? (dash.ready ? 'СБРОС РАЗОРВЁТ СЕРИЮ. ЦЕНА — 50 ⚡' : dash.cooldown > 0 ? 'СБРОС ПЕРЕЗАРЯЖАЕТСЯ' : 'ДЛЯ СБРОСА НУЖНО 50 ⚡') : cue.open ? cue.text : feint ? 'РЫВОК СЕЙЧАС — ОТМЕНА ЗАМАХА ЗА 12 ⚡' : grab ? 'ЗАХВАТ ОБХОДИТ БЛОК. ДЕРЖИСЬ БЛИЗКО.' : counter ? 'ОКНО КОНТРАТАКИ — НАНЕСИ УДАР!' : launcher ? 'ТЯЖЁЛЫЙ УДАР ПОДБРОСИТ СОПЕРНИКА' : airborne ? (player.airDashUsed ? 'ВОЗДУШНЫЙ РЫВОК ИСПОЛЬЗОВАН · ТЯЖЁЛЫЙ — ВНИЗ' : 'УДАР — СЕРИЯ · РЫВОК — ДОГНАТЬ · ТЯЖЁЛЫЙ — ВНИЗ') : recipes[Math.max(0, Math.floor((ROUND_SECONDS - state.time) / 8) + (state.round - 1)) % recipes.length];
+    setText(recipe, defenseOnly ? 'БЛОК / ПРЫЖОК / НАЗАД · АТАКА ВОССТАНАВЛИВАЕТСЯ' : tip);
     escape.hidden = !fighting || !(tech || holding || burst && dash.ready);
     escape.dataset.kind = tech ? 'tech' : holding ? 'hold' : 'burst';
     setText(escapeTitle, tech ? 'ВЫРВИСЬ!' : holding ? `ДОЖИМ ${strikeCount} / ${V5_RULES.grabStrikeLimit}` : 'РАЗОРВИ СЕРИЮ');
@@ -88,13 +89,14 @@ export function createCombatUI() {
     escapeFill.style.transform = `scaleX(${tech ? Math.min(1, player.grabTechWindow / V3_RULES.grabTech) : holding ? Math.max(0, 1 - (player.grabHoldTime || 0) / V5_RULES.grabHold) : 1})`;
     finisher.hidden = !finish.active;
     finisher.dataset.stage = state.finish?.stage || '';
-    setText(finisherKicker, finish.executing ? 'БЕЛОБОГ ЗАПОМНИТ' : finish.mine ? 'ТРЕТЬЯ ПОБЕДА · ПОСЛЕДНИЙ ХОД' : 'БОЕВОЙ КОНТУР РАЗРУШЕН');
+    setText(finisherKicker, finish.executing ? 'БЕЛОБОГ ЗАПОМНИТ' : finish.mine ? 'ПОБЕДА В МАТЧЕ · ПОСЛЕДНИЙ ХОД' : 'БОЕВОЙ КОНТУР РАЗРУШЕН');
     setText(finisherTitle, finish.executing ? finish.type === 'brutality' ? 'БРУТАЛИТИ' : finish.type === 'coreRip' ? 'СОРВАННОЕ ЯДРО' : 'КРИТИЧЕСКИЙ ОТКАЗ' : finish.mine ? 'СОРВИ ЯДРО' : 'ЯДРО НЕСТАБИЛЬНО');
     setText(finisherDetail, finish.executing ? '' : finish.canTrigger ? 'НАЖМИ ТЯЖЁЛЫЙ ИЛИ ПЕРЕГРУЗКУ' : 'АВТОМАТОН БОЛЬШЕ НЕ МОЖЕТ СРАЖАТЬСЯ');
     finisherTime.style.transform = `scaleX(${Math.min(1, finish.remaining / FINISH_RULES.offerDuration)})`;
-    for (const [action, button] of Object.entries(actionButtons)) button.disabled = !fighting && !(finish.canTrigger && ['heavy', 'ultimate'].includes(action));
+    for (const [action, button] of Object.entries(actionButtons)) button.disabled = !fighting && !(finish.canTrigger && ['heavy', 'ultimate'].includes(action))
+      || fighting && defenseOnly && ['light', 'heavy', 'special', 'ultimate'].includes(action);
     setText(actionButtons.ultimate.querySelector('span'), finish.canTrigger ? 'ДОБИВАНИЕ' : 'ПЕРЕГРУЗКА');
-    actionButtons.ultimate.setAttribute('aria-label', finish.canTrigger ? 'Добивание: сорвать ядро' : 'Ультимейт, нужна полная энергия');
+    actionButtons.ultimate.setAttribute('aria-label', finish.canTrigger ? 'Добивание: сорвать ядро' : 'Перегрузка: зажми 0,65 секунды, нужно 80 энергии');
     if (finish.canTrigger) {
       actionButtons.ultimate.classList.add('charged'); actionButtons.ultimate.classList.remove('unavailable');
     }
@@ -135,7 +137,7 @@ export function createCombatUI() {
     else if (event.type === 'block' && event.guardBreak) callout('ЗАЩИТА СЛОМАНА', mine ? 'ОКНО ДЛЯ АТАКИ' : 'ОТОЙДИ ОТ СОПЕРНИКА', 'danger', 3);
     else if (event.type === 'launch') callout('ПОДБРОС', mine ? 'ПРОДОЛЖИ СЕРИЮ В ВОЗДУХЕ' : 'СОПЕРНИК ПРОДОЛЖАЕТ СЕРИЮ', 'amber', 2, 900);
     else if (event.type === 'slam') callout('УДАР СВЕРХУ', '', 'amber', 2, 800);
-    else if (event.type === 'special' && event.variant === 'shockwave') callout('СЕЙСМИЧЕСКАЯ ВОЛНА', mine ? 'ЗЕМЛЯ ПОД НАПРЯЖЕНИЕМ' : 'ПРЫГАЙ ИЛИ БЛОКИРУЙ', 'cyan', 1, 900);
+    else if (event.type === 'special' && event.variant === 'shockwave') callout('ЭЛЕКТРОМАГНИТНАЯ МИНА', mine ? 'РАЗРЯД · ПОДБРОС · ОГЛУШЕНИЕ' : 'ПРЫГАЙ, ОТОЙДИ ИЛИ БЛОКИРУЙ', 'cyan', 1, 900);
     else if (event.type === 'ultimate') callout('ПЕРЕГРУЗКА', mine ? 'ТРИ ЗАЛПА. ПОЛНЫЙ РАЗРЯД.' : 'ОТОЙДИ ИЛИ ДЕРЖИ БЛОК', mine ? 'amber' : 'danger', 5, 1400);
   }
   function reset() {

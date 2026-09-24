@@ -6,6 +6,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { createMechanicalEffects } from '../src/mechanical-effects.js';
 import { slamChoreography, slamRenderHeight, createSlamRootFollower } from '../src/slam-choreography.js';
 import { buildSlamCase, SLAM_CASES } from '../scripts/slam-review.js';
+import { VARIANT_ATTACKS } from '../shared/constants.js';
 
 globalThis.self = globalThis;
 globalThis.createImageBitmap = async () => ({ width: 1024, height: 1024, close() {} });
@@ -78,7 +79,7 @@ test('deployment responds to remaining height and settles inside the existing re
   const full = slamChoreography({ elapsed: .257, landedTime: .20 });
   const reduced = slamChoreography({ elapsed: .257, landedTime: .20, reducedMotion: true });
   assert.equal(full.compression, reduced.compression, 'reduced motion preserves weight and support');
-  const settled = slamChoreography({ elapsed: .62, landedTime: .20 });
+  const settled = slamChoreography({ elapsed: .20 + VARIANT_ATTACKS.slam.recovery, landedTime: .20 });
   assert.equal(settled.brace, 0);
   assert.ok(Math.abs(settled.bob) < 1e-8);
 });

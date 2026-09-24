@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CombatRoom } from '../server/combat.js';
-import { ARENA_EDGE, HEAVY_RULES, V5_ATTACKS, canAttemptFeint } from '../shared/constants.js';
+import { MAX_HP, ARENA_EDGE, HEAVY_RULES, V5_ATTACKS, canAttemptFeint } from '../shared/constants.js';
 import { buildHeavyCase } from '../scripts/heavy-review.js';
 import { actionContext } from '../src/action-context.js';
 
@@ -18,8 +18,8 @@ test('three separate presses produce three different heavy contacts and physical
     const { snapshots, events } = buildHeavyCase('series', facing);
     const hits = events.filter(e => e.type === 'hit');
     assert.deepEqual(hits.map(e => e.variant), ['heavyDrive', 'heavyHook', 'heavyPress']);
-    assert.deepEqual(hits.map(e => e.damage), [13, 12, 17]);
-    assert.equal(snapshots.at(-1).players[1].hp, 58);
+    assert.deepEqual(hits.map(e => e.damage), [24, 28, 36]);
+    assert.equal(snapshots.at(-1).players[1].hp, MAX_HP - 88);
     const attacks = events.filter(e => e.type === 'attack');
     assert.equal(attacks.length, 3);
     for (let n = 0; n < 3; n++) {
@@ -51,10 +51,10 @@ test('a held or repeated neutral packet never invents follow-ups; stopping after
     assert.equal(held.input('p1', { seq: sequence, move: 0, block: false, crouch: false, action: 'heavy' }), false);
     send(held, 'p1'); held.step(1 / 60);
   }
-  assert.equal(held.player('p2').hp, 87, 'one press plus 30Hz held-input packets deals one hit');
+  assert.equal(held.player('p2').hp, MAX_HP - 24, 'one press plus 30Hz held-input packets deals one hit');
 });
 
-test('three early confirmations stay linked against held block, but a wall cannot turn the ender into a stun lock', () => {
+test('holding block after the first hit breaks the earliest confirmed heavy route even at a wall', () => {
   for (const facing of [1, -1]) {
     const room = fight(), a = room.player('p1'), b = room.player('p2');
     a.x = (ARENA_EDGE - 2.05) * facing; b.x = ARENA_EDGE * facing; a.facing = facing; b.facing = -facing;
@@ -63,21 +63,21 @@ test('three early confirmations stay linked against held block, but a wall canno
     const emit = room.event.bind(room);
     room.event = (...args) => { emit(...args); if (args[0] === 'hit' && args[1] === a) variants.push(args[2].variant); };
     for (let frame = 0; frame < 180; frame++) {
-      if (b.hp < 100) send(room, 'p2', null, { block: true });
+      if (b.hp < MAX_HP) send(room, 'p2', null, { block: true });
       if (!hook && a.variant === 'heavyDrive' && a.cancelWindow > 0 && a.actionTime >= .42) { send(room, 'p1', 'heavy'); hook = true; }
       if (!press && a.variant === 'heavyHook' && a.cancelWindow > 0 && a.actionTime >= .36) { send(room, 'p1', 'heavy'); press = true; }
       if (!restart && a.variant === 'heavyPress' && a.actionTime >= .85) { send(room, 'p1', 'heavy'); restart = true; }
       room.step(1 / 60);
       assert.ok(room.players.every(p => Math.abs(p.x) <= ARENA_EDGE));
     }
-    assert.deepEqual(variants, ['heavyDrive', 'heavyHook', 'heavyPress']);
-    assert.equal(b.hp, 56, 'fourth press is blockable and only deals two chip damage, never a fourth confirmed hit');
+    assert.deepEqual(variants, ['heavyDrive']);
+    assert.equal(b.hp, MAX_HP - 24 - Math.ceil(28 * .12), 'hook is blocked for chip and cannot confirm a press');
   }
 });
 
 test('pre-contact buffer waits for real hit and the heavy-only cancel delay', () => {
   const room = fight(), a = room.player('p1');
-  send(room, a.id, 'heavy'); advance(room, .21); send(room, a.id, 'heavy'); advance(room, .15);
+  send(room, a.id, 'heavy'); advance(room, .31); send(room, a.id, 'heavy'); advance(room, .18);
   assert.equal(a.variant, 'heavyDrive'); assert.ok(a.cancelWindow > 0);
   advance(room, .10); assert.equal(a.variant, 'heavyHook');
   const attack = room.events.find(e => e.variant === 'heavyHook' && e.type === 'attack');
@@ -95,7 +95,7 @@ test('block, whiff and parry never open a heavy route, including guard break', (
   }
   const room = fight(); send(room, 'p2', null, { block: true }); advance(room, .2); room.player('p2').guard = 10;
   send(room, 'p1', 'heavy');
-  for (let i = 0; i < 21; i++) { send(room, 'p2', null, { block: true }); room.step(1 / 60); }
+  for (let i = 0; i < 30; i++) { send(room, 'p2', null, { block: true }); room.step(1 / 60); }
   assert.equal(room.player('p1').cancelWindow, 0);
 });
 
@@ -109,7 +109,7 @@ test('late confirmation has a defendable gap; burst interrupts a correctly linke
 
 test('incoming strike erases the route; heavy confirm cannot manufacture a light cross or launcher', () => {
   const room = fight(), a = room.player('p1'), b = room.player('p2');
-  send(room, a.id, 'heavy'); advance(room, .36);
+  send(room, a.id, 'heavy'); advance(room, .5);
   assert.ok(a.cancelWindow > 0);
   assert.equal(room.beginAction(a, 'light'), false);
   assert.equal(room.beginAction(a, 'heavy', true), false, 'cannot cancel directly into a grab');
@@ -126,6 +126,7 @@ test('heavy contextual buttons describe the actual route while light, grab, air 
   assert.equal(actionContext(hook).heavy, 'ПРЕСС'); assert.equal(actionContext(hook).crusher, false);
   assert.equal(actionContext(hook, { crouch: true }).heavy, 'ЗАХВАТ');
   assert.equal(actionContext({ ...hook, y: .3 }).heavy, 'ПИКЕ');
+  assert.equal(actionContext({ ...hook, y: .12, groundHeavy: true }).heavy, 'ПРЕСС', 'the authored ground hop never relabels the confirmed ground route as a slam');
   assert.equal(actionContext({ ...base, variant: 'cross', action: 'light', launchWindow: .2 }).heavy, 'ДРОБИТЕЛЬ');
   assert.equal(canAttemptFeint({ ...base, actionTime: .15 }), true);
   assert.equal(canAttemptFeint({ ...hook, actionTime: .15 }), false);

@@ -15,7 +15,7 @@ command -v pm2 >/dev/null
 PREVIOUS=''
 if [ -L "$ROOT/current" ]; then
   CANDIDATE=$(readlink -e "$ROOT/current" || true)
-  if [[ "$CANDIDATE" == "$ROOT/releases/"* ]] && [ -f "$CANDIDATE/ecosystem.config.cjs" ]; then PREVIOUS="$CANDIDATE"; fi
+  if [[ "$CANDIDATE" == "$ROOT/releases/"* ]] && [ -f "$CANDIDATE/.healthy" ] && [ -f "$CANDIDATE/ecosystem.config.cjs" ]; then PREVIOUS="$CANDIDATE"; fi
 fi
 # Recover the legacy page if a prior migration stopped before a healthy app existed.
 if ! curl --silent --fail http://127.0.0.1:3001/ >/dev/null; then
@@ -51,5 +51,6 @@ pm2 start "$RELEASE/ecosystem.config.cjs" --only honkai-chat
 curl --fail --retry 8 --retry-connrefused --retry-delay 2 http://127.0.0.1:3001/robots/api/health >/dev/null
 node scripts/smoke-host.mjs http://127.0.0.1:3001
 pm2 save
+touch "$RELEASE/.healthy"
 trap - ERR
 echo "Festival release $REVISION is healthy: / and /robots/ on port 3001."

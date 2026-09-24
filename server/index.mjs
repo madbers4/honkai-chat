@@ -1,4 +1,4 @@
-import { createReadStream, realpathSync } from 'node:fs';
+import { createReadStream } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -31,10 +31,4 @@ export async function startFestivalServer({ port = process.env.PORT ? Number(pro
   }
   // Invitations normally use the browser origin, including HTTPS behind the existing proxy.
   return startServer({ port, host, staticDir: robotDir, publicDir: robotDir, basePath: '/robots', fallback, autoTick, log, publicUrl: null });
-}
-
-if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {
-  startFestivalServer({ log: true }).then(app => {
-    for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, async () => { await app.close(); process.exit(0); });
-  }).catch(error => { console.error(error.message); process.exitCode = 1; });
 }

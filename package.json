@@ -12,7 +12,7 @@
     "dev": "npm run dev --workspace=client --",
     "build": "npm run build --workspace=client && npm run build --workspace=@honkai-chat/robots",
     "preview": "npm run preview --workspace=client --",
-    "start": "node server/index.mjs",
+    "start": "node server/start.mjs",
     "sync:robots": "node scripts/sync-robots.mjs"
   },
   "devDependencies": {

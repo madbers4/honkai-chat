@@ -2,13 +2,14 @@ import { spawn } from 'node:child_process';
 import { mkdtemp, symlink, rm, rmdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const temp = await mkdtemp(path.join(tmpdir(), 'festival-release-'));
 const link = path.join(temp, 'current');
 await symlink(root, link, process.platform === 'win32' ? 'junction' : 'dir');
-const child = spawn(process.execPath, [path.join(link, 'server/index.mjs')], { env: { ...process.env, PORT: '0' }, stdio: ['ignore', 'pipe', 'pipe'] });
+// Import from a wrapper, as PM2 does, rather than assuming the entry is argv[1].
+const child = spawn(process.execPath, ['--input-type=module', '-e', 'await import(process.argv[1])', pathToFileURL(path.join(link, 'server/start.mjs')).href], { env: { ...process.env, PORT: '0' }, stdio: ['ignore', 'pipe', 'pipe'] });
 let output = '';
 child.stderr.on('data', data => { output += data; });
 try {

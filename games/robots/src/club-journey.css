@@ -7,6 +7,8 @@
 .club-journey[data-stage=faceoff] .faceoff-voice-note{display:none}
 .journey-round-intro{position:absolute;inset:0;pointer-events:none;z-index:-1}
 .club-journey[data-stage=roundIntro]{background:transparent}
-.club-journey[data-stage=roundIntro] .journey-header{border:0;align-self:start;padding-top:12px}
+.club-journey[data-stage=roundIntro] .journey-header{position:absolute;right:max(3vw,env(safe-area-inset-right));bottom:18px;border:0;padding:0;z-index:8}
+.club-journey[data-stage=roundIntro] .journey-header>div:first-child{display:none}
+.club-journey[data-stage=roundIntro] .round-intro-bottom{right:max(17%,170px)}
 .club-journey[data-stage=roundIntro] .journey-header>div:first-child,.club-journey[data-stage=roundIntro] .journey-footer{visibility:hidden}
 @media(max-height:560px) and (orientation:landscape){.journey-appearance .customization-controls header{display:none}.club-journey[data-stage=faceoff] .faceoff-caption{bottom:57px}.club-journey[data-stage=faceoff] .faceoff-bottom{right:250px;bottom:21px}}

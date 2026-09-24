@@ -1,0 +1,86 @@
+/* Deliberately scoped. No global palette, type, button, or arena overrides. */
+.fontainka-mark {
+  display: block;
+  flex: 0 0 auto;
+  max-width: none;
+  object-fit: contain;
+  image-rendering: auto;
+  user-select: none;
+}
+
+.fontainka-signature {
+  --fontainka-text: #f8f8f8;
+  --fontainka-muted: #b3c3cd;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+  color: var(--fontainka-text);
+  font-family: inherit;
+  font-style: normal;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: normal;
+  line-height: 1.35;
+  vertical-align: middle;
+}
+
+.fontainka-signature__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.fontainka-signature__identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.fontainka-signature__name {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: .015em;
+}
+
+.fontainka-signature__context,
+.fontainka-signature__separator {
+  color: var(--fontainka-muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .035em;
+}
+
+.fontainka-signature__club {
+  color: var(--fontainka-muted);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: .025em;
+  text-wrap: pretty;
+}
+
+.fontainka-signature--compact {
+  gap: 8px;
+}
+
+.fontainka-signature--compact .fontainka-signature__copy {
+  gap: 1px;
+}
+
+.fontainka-signature--compact .fontainka-signature__name {
+  font-size: 12px;
+}
+
+.fontainka-signature--compact .fontainka-signature__context,
+.fontainka-signature--compact .fontainka-signature__club {
+  font-size: 9px;
+}
+
+@media (max-height: 460px) and (orientation: landscape) {
+  .fontainka-signature { gap: 8px; }
+  .fontainka-signature__name { font-size: 12px; }
+  .fontainka-signature__context,
+  .fontainka-signature__club { font-size: 9px; }
+}

@@ -1,0 +1,36 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Отключение и перезапуск — review</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#0b1721;color:#e5e7dd;font:13px system-ui;overflow:hidden}canvas{display:block;width:100vw;height:100vh}header,footer{position:fixed;left:0;right:0;background:#08131ae8;padding:10px;display:flex;gap:7px;flex-wrap:wrap;align-items:center}header{top:0}footer{bottom:0}button,select{border:1px solid #547079;background:#22353e;color:inherit;border-radius:4px;padding:7px 10px}#timeline{flex:1;min-width:100px}#status{position:fixed;left:12px;top:65px;line-height:1.5;white-space:pre;background:#08131aba;padding:8px;pointer-events:none}label{display:flex;align-items:center;gap:5px}@media(max-height:500px){header,footer{padding:5px;gap:4px}button,select{padding:5px 7px;font-size:10px}#status{font-size:10px;top:46px}body{font-size:10px}}</style>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script></head><body>
+<header><strong>ОТКЛЮЧЕНИЕ → ПЕРЕЗАПУСК</strong><select id="entry" aria-label="Входная поза"><option value="heavy">Из тяжёлого удара</option><option value="air">Из полёта</option><option value="timeout">Поражение по времени · 35 HP</option><option value="late">Позднее подключение при запуске</option></select><button id="facing">Развернуть</button><label><input id="reduced" type="checkbox">Спокойно</label><label><input id="low" type="checkbox">Низкое качество</label></header>
+<output id="status"></output><footer><button id="play">Пуск / пауза</button><button id="again">Повтор</button><button data-time="1.55">Выключен</button><button data-time="2.65">Красный</button><button data-time="3.00">Янтарный</button><button data-time="3.37">Зелёный</button><input id="timeline" aria-label="Время эпизода" type="range" min="0" max="4.5" step=".005" value="0"><span id="clock"></span></footer>
+<script type="module">
+import * as THREE from 'three';
+import { loadRobotAssets, createRobot } from '/src/robot.js';
+import { createCombatEffects } from '/src/effects.js';
+import { robotPresentation } from '/shared/robot-presentation.js';
+const $=id=>document.getElementById(id), scene=new THREE.Scene();scene.background=new THREE.Color(0x10212b);
+scene.add(new THREE.HemisphereLight(0xb6d5ec,0x3f3025,2));
+const sun=new THREE.DirectionalLight(0xffe5c6,3);sun.position.set(-3,6,4);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-6;sun.shadow.camera.right=6;sun.shadow.camera.top=6;sun.shadow.camera.bottom=-6;sun.shadow.normalBias=.025;scene.add(sun);
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(30,30),new THREE.MeshStandardMaterial({color:0x384851,roughness:.58,metalness:.32}));floor.rotation.x=-Math.PI/2;floor.position.y=-.003;floor.receiveShadow=true;scene.add(floor);
+const grid=new THREE.GridHelper(30,30,0x61717a,0x3a4d59);grid.position.y=.001;scene.add(grid);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.02;document.body.append(renderer.domElement);
+const camera=new THREE.PerspectiveCamera(35,1,.1,60);camera.position.set(.2,3.2,8.6);camera.lookAt(0,1.25,0);
+await loadRobotAssets();const effects=createCombatEffects(scene);
+let robot,at=0,simulated=0,playing=false,facing=1,last=performance.now(),current,state,lateStarted=false;
+function reset(){robot?.dispose();robot=createRobot();scene.add(robot.group);effects.clear();simulated=0;lateStarted=false;state={room:'shutdown-review',round:1,phase:'fight',players:[],projectiles:[],events:[]};}
+function sample(time){const entry=$('entry').value,koAge=time-.45,recoverAge=time-2.45;let p={id:'review',skin:'amber',hp:100,guard:100,energy:25,facing,x:0,y:0,vx:0,vy:0,action:'heavy',variant:'',actionTime:time,actionDuration:.81,visualReducedMotion:$('reduced').checked,visualQuality:$('low').checked?'low':'high'};
+if(time<.45){if(entry==='air'){p.action='jump';p.y=.5+1.4*time;p.vy=1.4;}if(entry==='timeout'){p.action='idle';p.hp=35;}}
+else if(time<2.45){p.action='ko';p.actionTime=koAge;p.actionDuration=1.5;p.hp=entry==='timeout'?35:0;if(entry==='air'){p.y=Math.max(0,1.13+1.4*koAge-12*koAge*koAge);p.vy=1.4-24*koAge;}}
+else if(time<4.05){p.action='recover';p.actionTime=recoverAge;p.actionDuration=1.6;}
+else{p.action='idle';p.actionTime=time-4.05;p.actionDuration=1;}
+return p;}
+function step(target){if(target<simulated-1e-6)reset();while(simulated<target-1e-6){const before=simulated;simulated=Math.min(target,simulated+1/120);const dt=simulated-before;current=sample(simulated);state.phase=current.action==='ko'?'roundOver':current.action==='recover'?'countdown':'fight';
+if($('entry').value==='late'&&simulated<3.15){robot.group.visible=false;continue;}
+if($('entry').value==='late'&&!lateStarted){robot.dispose();robot=createRobot();scene.add(robot.group);lateStarted=true;}
+robot.group.visible=true;robot.group.position.y=current.y;robot.update(current,dt,simulated);current.damageAnchors=robot.getDamageAnchors();current.combatAnchors=robot.getCombatAnchors();state.players=[current];if(before<.45&&simulated>=.45)effects.emit({id:1,type:'ko',target:current.id},state);effects.update(dt,simulated,state,renderer.getPixelRatio());}}
+function seek(time){at=time;playing=false;reset();step(at);}
+$('play').onclick=()=>{if(at>=4.5){at=0;reset();}playing=!playing;};$('again').onclick=()=>{at=0;reset();playing=true;};$('timeline').oninput=()=>seek(Number($('timeline').value));$('facing').onclick=()=>{facing*=-1;reset();step(at);};$('entry').onchange=()=>{at=0;reset();playing=true;};$('reduced').onchange=()=>{effects.setReducedMotion($('reduced').checked);reset();step(at);};$('low').onchange=()=>{effects.setQuality($('low').checked?'low':'high');reset();step(at);};document.querySelectorAll('[data-time]').forEach(button=>button.onclick=()=>seek(Number(button.dataset.time)));
+reset();at=.01;step(at);
+function render(now){requestAnimationFrame(render);const dt=Math.min(.05,(now-last)/1000);last=now;if(playing){at=Math.min(4.5,at+dt);if(at>=4.5)playing=false;}step(at);$('timeline').value=at;$('clock').textContent=at.toFixed(2)+' c';renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.position.z=camera.aspect<1.4?10.5:8.6;camera.updateProjectionMatrix();if(current){const s=robotPresentation(current,simulated,{reducedMotion:$('reduced').checked}),fx=effects.getDamageStats();$('status').textContent=`${current.action} · ${current.actionTime.toFixed(2)} с · HP ${current.hp}\nСветофор #${s.healthColor.toString(16).padStart(6,'0')} · ${s.healthIntensity.toFixed(2)}\nИскры ${fx.sparkActive}/80 · разрядов ${fx.arcsEmitted}\nПауза фиксирует позу, лампы и частицы.`;}renderer.render(scene,camera);}
+requestAnimationFrame(render);
+</script></body></html>

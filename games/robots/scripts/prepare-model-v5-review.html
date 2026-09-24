@@ -1,0 +1,25 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Automaton V5 — contact review</title>
+<style>html,body{margin:0;background:#09121c;color:#d7e4f5;font:13px system-ui;overflow:hidden}canvas{display:block;width:100vw;height:100vh}#controls{position:absolute;inset:10px 10px auto;display:flex;gap:5px;flex-wrap:wrap;align-items:center}button{border:1px solid #47617a;background:#142c40;color:inherit;padding:6px 10px;border-radius:5px}button[aria-pressed=true]{background:#547d63}#status{position:absolute;left:12px;bottom:10px;background:#10212ad9;padding:8px;pointer-events:none}input{width:210px}</style></head><body><div id="controls"></div><div id="status"></div>
+<script type="module">
+import * as THREE from 'three';import {loadRobotAssets,createRobot} from '/src/robot.js';import {reviewCases,sampleReview} from './prepare-model-v5-cases.mjs';
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x09121c);scene.add(new THREE.HemisphereLight(0xbed7ff,0x3e3330,2.2));
+const key=new THREE.DirectionalLight(0xffe2bc,2.5);key.position.set(-3,5,4);scene.add(key);
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(40,30),new THREE.MeshStandardMaterial({color:0x354a60,roughness:.54,metalness:.4}));floor.rotation.x=-Math.PI/2;floor.position.y=-.01;scene.add(floor);
+const grid=new THREE.GridHelper(30,30,0x48647a,0x243646);grid.position.y=-.008;scene.add(grid);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.1;document.body.append(renderer.domElement);
+const camera=new THREE.PerspectiveCamera(36,1,.1,60);camera.position.set(.2,3.6,10.5);camera.lookAt(0,1.6,0);
+let robots=[],selected=reviewCases[0],time=0,simulated=0,playing=false,facing=1,last=performance.now();
+await loadRobotAssets();
+function reset(){robots.forEach(robot=>robot.dispose());robots=[createRobot(),createRobot({skin:'cyan'})];robots.forEach(robot=>scene.add(robot.group));simulated=0;}
+function step(target){if(target<simulated-.00001)reset();while(simulated<target-.000001){simulated=Math.min(target,simulated+1/120);const states=sampleReview(selected.name,simulated,facing);robots.forEach((robot,i)=>{robot.group.position.set(states[i].x,states[i].y,0);robot.update(states[i],1/120,simulated);});}}
+const controls=document.querySelector('#controls');
+for(const item of reviewCases){const button=document.createElement('button');button.textContent=item.name;button.onclick=()=>{selected=item;time=item.contact;playing=false;reset();range.max=item.duration;range.value=time;};controls.append(button);}
+const play=document.createElement('button');play.textContent='Play / pause';play.onclick=()=>{if(!playing){time=0;reset();}playing=!playing;};controls.append(play);
+const reverse=document.createElement('button');reverse.textContent='Reverse facing';reverse.onclick=()=>{facing*=-1;reset();};controls.append(reverse);
+const range=document.createElement('input');range.type='range';range.min=0;range.max=selected.duration;range.step=.005;range.setAttribute('aria-label','Action time');range.oninput=()=>{time=Number(range.value);playing=false;};controls.append(range);
+reset();time=selected.contact;
+function render(now){requestAnimationFrame(render);const dt=Math.min(.05,(now-last)/1000);last=now;if(playing){time+=dt;if(time>selected.duration){time=0;reset();}}step(time);range.value=time;
+renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.position.z=camera.aspect<1.6?11.8:9.3;camera.updateProjectionMatrix();
+document.querySelector('#status').textContent=`${selected.name} · ${time.toFixed(3)} s · facing ${facing} · real HP lamps / original 14,674 triangles`;renderer.render(scene,camera);}
+requestAnimationFrame(render);
+</script></body></html>

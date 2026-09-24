@@ -1,0 +1,319 @@
+{
+  "height": 2.4,
+  "original_floor": 0.5673375725746155,
+  "source_scale": 0.5498401679912637,
+  "forward": "+Z",
+  "mesh_vertices": 7516,
+  "triangles": 14674,
+  "bones": {
+    "chassis": {
+      "head": [
+        0.0,
+        0.19736507534980774,
+        -0.0
+      ],
+      "tail": [
+        0.0,
+        1.969331979751587,
+        -0.0
+      ],
+      "parent": null
+    },
+    "leg_FR_hip": {
+      "head": [
+        0.3922266364097595,
+        0.5222980976104736,
+        0.2799323797225952
+      ],
+      "tail": [
+        0.7522560954093933,
+        0.4681887626647949,
+        0.5199662446975708
+      ],
+      "parent": "chassis"
+    },
+    "leg_FR_knee": {
+      "head": [
+        0.7522560954093933,
+        0.4681887626647949,
+        0.5199662446975708
+      ],
+      "tail": [
+        0.7980380058288574,
+        0.7744638919830322,
+        0.5490062832832336
+      ],
+      "parent": "leg_FR_hip"
+    },
+    "leg_FR_ankle": {
+      "head": [
+        0.7980380058288574,
+        0.7744638919830322,
+        0.5490062832832336
+      ],
+      "tail": [
+        1.3390164375305176,
+        0.5479668378829956,
+        0.9181901216506958
+      ],
+      "parent": "leg_FR_knee"
+    },
+    "leg_FR_foot": {
+      "head": [
+        1.3390164375305176,
+        0.5479668378829956,
+        0.9181901216506958
+      ],
+      "tail": [
+        1.374541997909546,
+        3.427267074584961e-07,
+        0.9375163316726685
+      ],
+      "parent": "leg_FR_ankle"
+    },
+    "leg_RR_hip": {
+      "head": [
+        0.396033376455307,
+        0.5222980976104736,
+        -0.2745203673839569
+      ],
+      "tail": [
+        0.7436335682868958,
+        0.4681887626647949,
+        -0.5322247743606567
+      ],
+      "parent": "chassis"
+    },
+    "leg_RR_knee": {
+      "head": [
+        0.7436335682868958,
+        0.4681887626647949,
+        -0.5322247743606567
+      ],
+      "tail": [
+        0.7864391803741455,
+        0.7744638919830322,
+        -0.5654962062835693
+      ],
+      "parent": "leg_RR_hip"
+    },
+    "leg_RR_ankle": {
+      "head": [
+        0.7864391803741455,
+        0.7744638919830322,
+        -0.5654962062835693
+      ],
+      "tail": [
+        1.3167507648468018,
+        0.5479668378829956,
+        -0.949845016002655
+      ],
+      "parent": "leg_RR_knee"
+    },
+    "leg_RR_foot": {
+      "head": [
+        1.3167507648468018,
+        0.5479668378829956,
+        -0.949845016002655
+      ],
+      "tail": [
+        1.3469475507736206,
+        3.427267074584961e-07,
+        -0.9767472147941589
+      ],
+      "parent": "leg_RR_ankle"
+    },
+    "leg_RL_hip": {
+      "head": [
+        -0.38520190119743347,
+        0.5222979784011841,
+        -0.2895226776599884
+      ],
+      "tail": [
+        -0.7392006516456604,
+        0.46818867325782776,
+        -0.5383646488189697
+      ],
+      "parent": "chassis"
+    },
+    "leg_RL_knee": {
+      "head": [
+        -0.7392006516456604,
+        0.46818867325782776,
+        -0.5383646488189697
+      ],
+      "tail": [
+        -0.7842521667480469,
+        0.7744637727737427,
+        -0.5685252547264099
+      ],
+      "parent": "leg_RL_hip"
+    },
+    "leg_RL_ankle": {
+      "head": [
+        -0.7842521667480469,
+        0.7744637727737427,
+        -0.5685252547264099
+      ],
+      "tail": [
+        -1.3159589767456055,
+        0.547966718673706,
+        -0.9509415626525879
+      ],
+      "parent": "leg_RL_knee"
+    },
+    "leg_RL_foot": {
+      "head": [
+        -1.3159589767456055,
+        0.547966718673706,
+        -0.9509415626525879
+      ],
+      "tail": [
+        -1.3509972095489502,
+        2.980232238769531e-07,
+        -0.9711381793022156
+      ],
+      "parent": "leg_RL_ankle"
+    },
+    "leg_FL_hip": {
+      "head": [
+        -0.40118667483329773,
+        0.5222979784011841,
+        0.2669329047203064
+      ],
+      "tail": [
+        -0.7536287307739258,
+        0.46818867325782776,
+        0.5179747939109802
+      ],
+      "parent": "chassis"
+    },
+    "leg_FL_knee": {
+      "head": [
+        -0.7536287307739258,
+        0.46818867325782776,
+        0.5179747939109802
+      ],
+      "tail": [
+        -0.7970598936080933,
+        0.7744637727737427,
+        0.5504253506660461
+      ],
+      "parent": "leg_FL_hip"
+    },
+    "leg_FL_ankle": {
+      "head": [
+        -0.7970598936080933,
+        0.7744637727737427,
+        0.5504253506660461
+      ],
+      "tail": [
+        -1.3345906734466553,
+        0.547966718673706,
+        0.9246110320091248
+      ],
+      "parent": "leg_FL_knee"
+    },
+    "leg_FL_foot": {
+      "head": [
+        -1.3345906734466553,
+        0.547966718673706,
+        0.9246110320091248
+      ],
+      "tail": [
+        -1.365294098854065,
+        2.980232238769531e-07,
+        0.9509337544441223
+      ],
+      "parent": "leg_FL_ankle"
+    },
+    "turret": {
+      "head": [
+        0.0,
+        1.0626554489135742,
+        -0.0
+      ],
+      "tail": [
+        0.0,
+        2.272303581237793,
+        -0.0
+      ],
+      "parent": "chassis"
+    }
+  },
+  "bindings": {
+    "back.block": "chassis",
+    "back.plastin": "turret",
+    "body": "chassis",
+    "body.up": "turret",
+    "bolt.cap": "turret",
+    "cap": "turret",
+    "forearm": "leg_RR_ankle",
+    "forearm.001": "leg_RL_ankle",
+    "forearm.002": "leg_FR_ankle",
+    "forearm.003": "leg_FL_ankle",
+    "front.plate": "chassis",
+    "front.sphere": "chassis",
+    "joint.left": "leg_RR_knee",
+    "joint.left.001": "leg_RL_knee",
+    "joint.left.002": "leg_FR_knee",
+    "joint.left.003": "leg_FL_knee",
+    "joint.right": "leg_RR_knee",
+    "joint.right.001": "leg_RL_knee",
+    "joint.right.002": "leg_FR_knee",
+    "joint.right.003": "leg_FL_knee",
+    "leg.bolt.left": "leg_RR_ankle",
+    "leg.bolt.left.001": "leg_RL_ankle",
+    "leg.bolt.left.002": "leg_FR_ankle",
+    "leg.bolt.left.003": "leg_FL_ankle",
+    "leg.bolt.right": "leg_RR_ankle",
+    "leg.bolt.right.001": "leg_RL_ankle",
+    "leg.bolt.right.002": "leg_FR_ankle",
+    "leg.bolt.right.003": "leg_FL_ankle",
+    "leg.end": "leg_RR_foot",
+    "leg.end.001": "leg_RL_foot",
+    "leg.end.002": "leg_FR_foot",
+    "leg.end.003": "leg_FL_foot",
+    "leg.end.inside": "leg_RR_foot",
+    "leg.end.inside.001": "leg_RL_foot",
+    "leg.end.inside.002": "leg_FR_foot",
+    "leg.end.inside.003": "leg_FL_foot",
+    "light.case.down": "turret",
+    "light.case.in.down": "turret",
+    "light.case.in.up": "turret",
+    "light.case.up": "turret",
+    "light.down": "turret",
+    "light.up": "turret",
+    "O": "chassis",
+    "O.001": "chassis",
+    "O.002": "chassis",
+    "O.003": "chassis",
+    "shoulder": "leg_RR_hip",
+    "shoulder.001": "leg_RL_hip",
+    "shoulder.002": "leg_FR_hip",
+    "shoulder.003": "leg_FL_hip",
+    "shoulder.out": "leg_RR_hip",
+    "shoulder.out.001": "leg_RL_hip",
+    "shoulder.out.002": "leg_FR_hip",
+    "shoulder.out.003": "leg_FL_hip",
+    "tube": "chassis",
+    "tube.hz": "chassis"
+  },
+  "signal_channels": {
+    "health": {
+      "source_object": "light.up",
+      "material": "Automaton_Lenses_Health",
+      "bone": "turret"
+    },
+    "status": {
+      "source_object": "light.down",
+      "material": "Automaton_Lenses_Status",
+      "bone": "turret"
+    },
+    "reactor": {
+      "source_object": "front.sphere",
+      "material": "Automaton_Lenses_Reactor",
+      "bone": "chassis"
+    }
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "method": "Original base colour at native resolution, WebP quality 94. Original scalar G/B maps resized with Lanczos, packed G=roughness B=metalness, lossless WebP. No artistic changes.",
+  "sources": [
+    {
+      "file": "assets-source/original/textures/BaseColor.png",
+      "sha256": "f6d6383e51163cefea87a4a931626078959edfeb44594d3109f423192d3b4931"
+    },
+    {
+      "file": "assets-source/original/textures/Metallic_png-Roughness_png@channels=G.png",
+      "sha256": "93920c3f9f66fd058cd710856f49eaa5e43e46e9b611340d0f5256c845ee3261"
+    },
+    {
+      "file": "assets-source/original/textures/Metallic_png-Roughness_png@channels=B.png",
+      "sha256": "a8c40c5c7626dc67c2e73007343707b87fd74f87f6bdfe227a2d425453e1c4fb"
+    }
+  ],
+  "outputs": [
+    {
+      "file": "base-color-2048.webp",
+      "bytes": 1117360,
+      "size": [
+        2048,
+        2048
+      ],
+      "sha256": "c111fb03c6b639565cc2ef36aaa7912d5169eb671a08202cc44474bf3fce256b"
+    },
+    {
+      "file": "metallic-roughness-1024.webp",
+      "bytes": 824098,
+      "size": [
+        1024,
+        1024
+      ],
+      "sha256": "907025b5aa72370d47e04ebc1ebc783a6f208f9f5985fd3f1ae839fd738efe15"
+    }
+  ]
+}

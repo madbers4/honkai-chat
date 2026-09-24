@@ -1,0 +1,24 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Automaton rig QA</title>
+<style>body{margin:0;background:#06111b;color:#e5f4ff;font:16px system-ui;display:grid;grid-template-columns:repeat(3,1fr)}article{position:relative}canvas{display:block;width:100%;height:490px}label{position:absolute;top:16px;left:24px;letter-spacing:3px;font-size:13px}</style>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script></head><body><script type="module">
+import * as THREE from 'three';
+import {loadRobotAssets,createRobot} from '/src/robot.js';
+await loadRobotAssets();
+const poses=[['IDLE / 22 JOINTS','idle',.2,'amber'],['LIGHT / FRONT CLAW','light',.16,'cyan'],['HEAVY / ANTICIPATION','heavy',.23,'amber'],['BLOCK / RAISED GUARD','block',.2,'cyan'],['ULTIMATE / CHARGING','ultimate',.6,'amber'],['KNOCKOUT / COLLAPSE','ko',1.5,'cyan']];
+window.qa=[];
+for(const [label,action,actionTime,skin] of poses){
+const article=document.createElement('article');article.innerHTML=`<label>${label}</label>`;document.body.append(article);
+const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});renderer.setSize(600,490);renderer.setPixelRatio(1);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.setClearColor(0x081622);renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.5;article.append(renderer.domElement);
+const scene=new THREE.Scene();scene.add(new THREE.HemisphereLight(0xafdfff,0x37455b,2.3));
+const key=new THREE.DirectionalLight(0xffe3b7,3);key.position.set(2,5,6);key.castShadow=true;key.shadow.mapSize.set(1024,1024);scene.add(key);
+const rim=new THREE.DirectionalLight(0x50bfff,2.5);rim.position.set(-4,3,-4);scene.add(rim);
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(50,50),new THREE.MeshStandardMaterial({color:0x142b3b,roughness:.85}));ground.rotation.x=-Math.PI/2;ground.position.y=-.02;ground.receiveShadow=true;scene.add(ground);
+const robot=createRobot({skin});scene.add(robot.group);
+const camera=new THREE.PerspectiveCamera(34,600/490,.1,100);camera.position.set(4,3.4,6.4);camera.lookAt(0,1.05,0);
+const player={action,facing:1,actionTime,actionDuration:({light:.38,heavy:.75,ultimate:1.55,ko:1.5})[action]||1,combo:1};
+for(let i=0;i<100;i++)robot.update(player,1/60,2);
+renderer.render(scene,camera);
+window.qa.push({action,calls:renderer.info.render.calls,triangles:renderer.info.render.triangles});
+}
+window.qaReady=true;
+</script></body></html>

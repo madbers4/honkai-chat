@@ -1,0 +1,58 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Настил — материал A/B</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#14212b;color:#eee;font:13px system-ui;overflow:hidden}canvas{display:block;width:100vw;height:100vh}header,footer{position:fixed;left:0;right:0;background:#08131aec;padding:10px;display:flex;gap:8px;align-items:center}header{top:0}footer{bottom:0;font-size:11px}button,select{border:1px solid #547079;background:#22353e;color:inherit;border-radius:4px;padding:7px 10px}button[aria-pressed=true]{background:#876339;border-color:#e6bb71}label{display:flex;align-items:center;gap:6px}@media(max-height:500px){header,footer{padding:5px;gap:5px}button,select{padding:5px 7px;font-size:10px}body{font-size:10px}}</style>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script></head><body>
+<header><strong>НАСТИЛ A/B</strong><button id="before" aria-pressed="false">До</button><button id="after" aria-pressed="true">После</button><select id="view" aria-label="Камера"><option value="fight">Камера боя</option><option value="close">Близко к настилу</option><option value="grazing">Боковой свет</option></select><label><input id="lamps" type="checkbox" checked>Свет роботов</label><label><input id="robots" type="checkbox" checked>Роботы</label><select id="budget" aria-label="Разрешение материала"><option value="1024">1024 × 512</option><option value="512">512 × 256</option></select></header><footer id="status">Загрузка арены…</footer>
+<script type="module">
+import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { createIndustrialEnvironment } from '/src/environment.js';
+import { createDeckSurface } from '/src/deck-surface.js';
+import { loadPosterAtlas, createPaperPosters } from '/src/posters.js';
+import { loadRobotAssets, createRobot } from '/src/robot.js';
+import { makeLegacyFloorTexture } from './deck-legacy-review.js';
+const $ = id => document.getElementById(id), scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2('#18222b', .015);
+const renderer = new THREE.WebGLRenderer({antialias:true}); renderer.setClearColor('#141a20');
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.7)); renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.34;
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap; document.body.append(renderer.domElement);
+scene.add(new THREE.HemisphereLight('#d7efff', '#76736a', 2.7));
+const key = new THREE.DirectionalLight('#fff0d9', 3.4); key.position.set(-3,7,5); key.castShadow = true;
+key.shadow.mapSize.set(1024,1024); Object.assign(key.shadow.camera,{left:-9,right:9,top:5,bottom:-5,near:.5,far:22});
+key.shadow.bias=-.0004; key.shadow.normalBias=.035;key.shadow.radius=3;scene.add(key);
+const fill=new THREE.DirectionalLight('#8ddbff',1.35);fill.position.set(5,3,5);scene.add(fill);
+const rim=new THREE.DirectionalLight('#7bcbeb',2.5);rim.position.set(3,4,-4);scene.add(rim);
+for(const side of[-1,1]) {const light=new THREE.PointLight(side<0?'#ffb765':'#66dfff',side<0?10:9,12,2);light.position.set(side*5.4,3.1,-.7);scene.add(light);}
+const camera = new THREE.PerspectiveCamera(36,1,.1,70);
+const wallpaper=await new THREE.TextureLoader().loadAsync('/assets/belobog-arena.png');wallpaper.colorSpace=THREE.SRGBColorSpace;wallpaper.anisotropy=4;
+const posters=await loadPosterAtlas();
+const newSurface=createDeckSurface();let newEnvironment=createIndustrialEnvironment(scene,wallpaper,newSurface,null);
+const oldMap=makeLegacyFloorTexture();const oldMaterial=new THREE.MeshStandardMaterial({map:oldMap,color:'#b6bdba',roughness:.52,metalness:.48});
+const oldEnvironment=createIndustrialEnvironment(scene,wallpaper,{material:oldMaterial,dispose(){}},null);
+// The unchanged source geometry originally used each RoundedBox's 0–1 UVs.
+// Restore those UVs as well as the original raster so this is a faithful before.
+const template=new RoundedBoxGeometry(2.275,.10,1.035,2,.023);
+const oldGeometry=oldEnvironment.group.getObjectByName('industrial-deck').geometry;
+const oldUV=oldGeometry.getAttribute('uv'), originalUV=template.getAttribute('uv');
+for(let i=0;i<oldUV.count;i++)oldUV.setXY(i,originalUV.getX(i%originalUV.count),originalUV.getY(i%originalUV.count));oldUV.needsUpdate=true;
+const planeUV=new THREE.PlaneGeometry(72,42).getAttribute('uv');oldEnvironment.group.getObjectByName('continuous-industrial-floor').geometry.setAttribute('uv',planeUV);template.dispose();
+// Posters are shared visually, so switching the deck never changes the wall.
+const paper=createPaperPosters(posters);scene.add(paper.group);
+oldEnvironment.group.visible=false;
+await loadRobotAssets();const fighters=[];
+for(const [index,x]of[-1.65,1.65].entries()){const robot=createRobot();scene.add(robot.group);fighters.push(robot);robot.group.position.x=x;robot.update({id:`r${index}`,skin:index?'cyan':'amber',x,y:0,facing:index?-1:1,hp:100,guard:100,energy:30,action:'idle',actionTime:0,actionDuration:1},1/60,0);}
+let mode='after';function change(next){mode=next;newEnvironment.group.visible=next==='after';oldEnvironment.group.visible=next==='before';$('before').setAttribute('aria-pressed',next==='before');$('after').setAttribute('aria-pressed',next==='after');}
+$('before').onclick=()=>change('before');$('after').onclick=()=>change('after');
+$('budget').onchange=()=>{newEnvironment.dispose();newEnvironment=createIndustrialEnvironment(scene,wallpaper,createDeckSurface({resolution:Number($('budget').value)}),null);change(mode);};
+$('robots').onchange=()=>fighters.forEach(robot=>robot.group.visible=$('robots').checked);
+let last=performance.now();
+function render(now){requestAnimationFrame(render);const dt=Math.min(.05,(now-last)/1000);last=now;
+renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;
+if($('view').value==='close'){camera.position.set(0,1.35,4.4);camera.lookAt(0,.08,.25);}
+else if($('view').value==='grazing'){camera.position.set(2.4,.62,3.35);camera.lookAt(-.45,-.005,.0);}
+else{camera.position.set(0,3.8,Math.max(10.7,8.8/(2*Math.tan(Math.PI/10)*camera.aspect)));camera.lookAt(0,1.5,-.2);}
+camera.updateProjectionMatrix();
+for(const robot of fighters){robot.group.traverse(object=>{if(object.isLight)object.visible=$('lamps').checked;});}
+renderer.render(scene,camera);$('status').textContent=`${mode==='after'?'ПОСЛЕ · мировые UV · настоящие фаски и швы · две карты без анимации':'ДО · исходная карта 4 × 4, повтор 3 × 2 на каждой плите'} · ${renderer.info.render.calls} draws · ${innerWidth} × ${innerHeight}`;}
+requestAnimationFrame(render);
+</script></body></html>

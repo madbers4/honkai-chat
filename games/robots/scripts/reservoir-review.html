@@ -1,0 +1,31 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ресиверы — художественная приёмка</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#18222b;color:#e7e8dc;font:12px system-ui;overflow:hidden}#stage{position:fixed;inset:0}canvas{display:block;width:100%;height:100%}header,footer{position:fixed;left:0;right:0;background:#102029ed;padding:9px 12px;display:flex;gap:8px;align-items:center}header{top:0}footer{bottom:0;font-size:11px;color:#b2c3bd}a{color:inherit;border:1px solid #536d6b;padding:6px 9px;text-decoration:none;border-radius:3px}a.active{background:#49635c;color:#fff}#status{margin-left:auto}@media(max-height:500px){header,footer{padding:5px 8px;font-size:10px}a{padding:5px}header strong{display:none}}</style>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script></head><body><div id="stage"></div>
+<header><strong>РЕСИВЕРЫ</strong><a data-view="left" href="?view=left">Левый · крупно</a><a data-view="right" href="?view=right">Правый · крупно</a><a data-view="detail" href="?view=detail">Приборы</a><a data-view="game" href="?view=game">Камера боя</a><span id="status"></span></header>
+<footer>Реальные материалы и освещение арены · два ресивера / 7 объединённых мешей · собственный атлас приборов 512 × 256</footer>
+<script type="module">
+import * as THREE from 'three';
+import { createIndustrialEnvironment } from '/src/environment.js';
+import { loadPosterAtlas } from '/src/posters.js';
+import { createArena } from '/src/arena.js';
+const view=new URL(location.href).searchParams.get('view')||'left'; document.querySelector(`[data-view="${view}"]`)?.classList.add('active');
+const status=document.getElementById('status'), container=document.getElementById('stage');
+if(view==='game'){
+ const arena=await createArena(container); const p=(id,skin,x,facing)=>({id,skin,x,y:0,vx:0,vy:0,facing,hp:100,guard:100,energy:45,action:'idle',actionTime:1,actionDuration:0,cooldowns:{}});
+ const state={room:'reservoir-review',round:1,phase:'fight',time:90,players:[p('a','amber',-3.6,1),p('b','cyan',3.6,-1)],events:[],projectiles:[]};
+ arena.update(state,'a'); status.textContent='Игровая камера · реальные роботы'; window.addEventListener('pagehide',()=>arena.dispose(),{once:true});
+}else{
+ const scene=new THREE.Scene();scene.background=new THREE.Color('#18222b');scene.fog=new THREE.FogExp2('#18222b',.015);
+ scene.add(new THREE.HemisphereLight('#d7efff','#76736a',2.7));
+ for(const [colour,intensity,position]of [['#fff0d9',3.4,[-3,7,5]],['#8ddbff',1.35,[5,3,5]],['#7bcbeb',2.5,[3,4,-4]]]){const light=new THREE.DirectionalLight(colour,intensity);light.position.set(...position);scene.add(light);}
+ for(const [colour,intensity,x]of [['#ffb765',10,-5.4],['#66dfff',9,5.4]]){const light=new THREE.PointLight(colour,intensity,12,2);light.position.set(x,3.1,-.7);scene.add(light);}
+ const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.34;container.append(renderer.domElement);
+ const wallpaper=await new THREE.TextureLoader().loadAsync('/assets/belobog-arena.png');wallpaper.colorSpace=THREE.SRGBColorSpace;
+ const data=new Uint8Array([56,63,63,255]), floor=new THREE.DataTexture(data,1,1);floor.needsUpdate=true;floor.colorSpace=THREE.SRGBColorSpace;
+ const environment=createIndustrialEnvironment(scene,wallpaper,floor,await loadPosterAtlas());
+ const side=view==='right'?1:-1,camera=new THREE.PerspectiveCamera(36,1,.1,60);
+ if(view==='detail'){camera.position.set(-7.45,1.68,.0);camera.lookAt(-7.55,1.5,-2.08);}else{camera.position.set(side*6.66,2.42,2.60);camera.lookAt(side*7.55,1.27,-2.39);}
+ let frame;function render(){frame=requestAnimationFrame(render);renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.render(scene,camera);status.textContent=`${renderer.info.render.calls} вызовов сцены · ${innerWidth} × ${innerHeight}`;}render();
+ window.addEventListener('pagehide',()=>{cancelAnimationFrame(frame);environment.dispose();wallpaper.dispose();renderer.dispose();},{once:true});
+}
+</script></body></html>

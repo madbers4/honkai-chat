@@ -1,0 +1,63 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>Belobog — combat replay QA</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box}body{margin:0;background:#101719;color:#eee5d3;font:12px Arial,sans-serif}#stage{position:fixed;inset:0}header{position:fixed;top:0;left:0;right:0;background:#08131cdf;padding:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}button{background:#283b3e;color:#eee5d3;border:1px solid #59706b;padding:10px 14px;cursor:pointer}button.active{color:#18201e;background:#ebbd73}#info{margin-left:auto;white-space:pre-line;font-size:11px;line-height:1.5}footer{position:fixed;bottom:0;left:0;right:0;display:flex;align-items:center;gap:14px;padding:14px;background:#08131cdb}input{flex:1}#clock{font:15px monospace}#events{position:fixed;top:74px;left:20px;background:#0b171dad;padding:10px;white-space:pre;font:11px/1.7 monospace;pointer-events:none}
+</style>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script></head><body>
+<div id="stage"></div><header><button data-case="grab">Захват</button><button data-case="tech">Выход из захвата</button><button data-case="burst">Сброс</button><button data-case="airburst">Сброс в воздухе</button><button data-case="feint">Ложный замах</button><button data-case="punish">Наказание</button><button data-case="combo">Подброс и пикe</button><button data-case="wave">Низкая волна</button><button data-case="parry">Парирование</button><button data-case="ultimate">Три залпа</button><button data-case="ko">Нокаут</button><button data-case="airko">Нокаут в воздухе</button><div id="info"></div></header>
+<pre id="events"></pre><footer><button id="play">Пауза</button><button id="contact">Контрольный кадр</button><input id="scrub" aria-label="Кадр повтора" type="range" min="0" max="168" value="0"><span id="clock">0.00s</span></footer>
+<script type="module">
+import { createArena } from '/src/arena.js';
+import { CombatRoom } from '/server/combat.js';
+const $ = id => document.getElementById(id);
+const arena = await createArena($('stage'));
+let frames = [], firstEventFrame = new Map(), at = 0, playing = true, elapsed = 0, last = performance.now(), selected = 'grab';
+function build(type) {
+  const room = new CombatRoom({ id: `QA_${type}`, random: () => .25 });
+  room.addPlayer('ИСКРА'); room.addPlayer('ИНЕЙ'); room.ready('p1'); room.ready('p2');
+  for (let i = 0; i < 180; i++) room.step(1/60);
+  const a = room.player('p1'), b = room.player('p2');
+  a.x = -1.07; b.x = 1.07;
+  if (type === 'wave') { a.x=-3; b.x=2; }
+  if (type === 'ultimate') { a.energy=100; a.x=-1.5; b.x=1.5; }
+  if (type === 'ko' || type === 'airko') a.hp=7;
+  if (type === 'airko') { a.y=1.1; a.vy=-1; }
+  if (type === 'burst' || type === 'airburst') b.energy=85;
+  if (type === 'feint') { a.x=-1.6; b.x=1.6; }
+  if (type === 'punish') { a.x=-1.36; b.x=1.36; }
+  const plans = {
+    grab:[[0,'p2',null,{block:true}],[0,'p1','heavy',{crouch:true}]],
+    tech:[[0,'p1','heavy',{crouch:true}],[21,'p2','light']],
+    burst:[[0,'p1','heavy'],[26,'p2','dash']],
+    airburst:[[0,'p1','light'],[12,'p1','heavy'],[32,'p2','dash']],
+    feint:[[0,'p1','heavy'],[9,'p1','dash'],[8,'p2','heavy']],
+    punish:[[0,'p1','heavy',{crouch:true}],[24,'p2',null,{move:-1}],[30,'p2','light',{move:-1}]],
+    wave:[[0,'p1','special',{crouch:true}]],
+    ultimate:[[0,'p1','ultimate']],
+    parry:[[0,'p1','light'],[3,'p2',null,{block:true}],[15,'p2','heavy']],
+    combo:[[0,'p1','light'],[12,'p1','heavy'],[34,'p1','jump'],[48,'p1','heavy']],
+  }[type] || [[0,'p2','heavy']];
+  const snapshots=[];
+  for(let f=0;f<=168;f++) {
+    for(const [frame,id,action,held={}] of plans) if(frame===f) room.input(id,{seq:room.player(id).lastSeq+1,move:0,crouch:false,block:false,action,...held});
+    room.step(1/60); snapshots.push(room.snapshot());
+  }
+  return snapshots;
+}
+function show(frame, seek=false) {
+  at=Math.max(0,Math.min(frames.length-1,frame)); const state=frames[at];
+  if(seek) arena.update(null,null);
+  const events = state.events.filter(event => at-firstEventFrame.get(event.id) <= (seek ? 5 : 0));
+  arena.update({...state,events},'p1'); $('scrub').value=at; $('clock').textContent=(at/60).toFixed(2)+'s';
+  $('info').textContent=state.players.map(p=>`${p.name}: ${p.action}/${p.variant||'—'} · HP ${p.hp} · Y ${p.y.toFixed(2)}`).join('\n');
+  $('events').textContent=state.events.slice(-8).map(e=>`${e.id} ${e.type} ${e.variant||''} ${e.pulse??''}`).join('\n');
+}
+function choose(type) { selected=type; frames=build(type); firstEventFrame=new Map(); frames.forEach((state,index)=>state.events.forEach(event=>{if(!firstEventFrame.has(event.id))firstEventFrame.set(event.id,index)})); at=0;elapsed=0;playing=true; arena.update(null,null);document.querySelectorAll('[data-case]').forEach(b=>b.classList.toggle('active',b.dataset.case===type));$('play').textContent='Пауза';show(0); }
+document.querySelectorAll('[data-case]').forEach(b=>b.onclick=()=>choose(b.dataset.case));
+$('play').onclick=()=>{playing=!playing;$('play').textContent=playing?'Пауза':'Продолжить';if(playing&&at>=168){arena.update(null,null);show(0);}};
+$('contact').onclick=()=>{playing=false;$('play').textContent='Продолжить';show(({grab:26,tech:23,burst:28,airburst:34,feint:12,punish:39,ko:110,airko:120,ultimate:79,wave:34,parry:8,combo:22})[selected],true);};
+$('scrub').oninput=()=>{playing=false;$('play').textContent='Продолжить';show(Number($('scrub').value),true);};
+choose('grab');
+function loop(now){const dt=Math.min(.1,Math.max(0,(now-last)/1000));last=now;if(playing){elapsed+=dt;while(elapsed>=1/60){elapsed-=1/60;if(at<168)show(at+1);else{playing=false;$('play').textContent='Повторить';break;}}}requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+</script></body></html>

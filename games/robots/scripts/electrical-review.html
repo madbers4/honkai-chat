@@ -1,0 +1,33 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Контакты и искры — сравнение</title>
+<style>body{margin:0;background:#111d26;color:#e6eff7;font:12px system-ui}canvas{position:fixed;inset:0;width:100%;height:100%}header{position:fixed;top:8px;left:8px;right:8px;display:flex;gap:5px;flex-wrap:wrap;z-index:2}button,select{padding:7px;border:1px solid #55727c;border-radius:5px;color:#e5eff0;background:#152d38}button[aria-pressed=true]{background:#715022}footer{position:fixed;bottom:8px;left:8px;right:8px;display:flex;gap:8px;align-items:center;z-index:2;background:#0d1c26df;padding:8px}input{flex:1}#readout{min-width:150px}</style>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script></head><body>
+<header><button id="version">Новые искры</button><button id="scenario">Повреждение</button><button id="camera">Боевая камера</button><select aria-label="Качество" id="quality"><option value="high">Высокое</option><option value="low">Низкое</option><option value="reduced">Меньше движения</option></select><button id="contact">60 мс после пробоя</button><button id="cooling">Охлаждение: 180 мс</button><button id="play">Повторять</button></header>
+<footer><input aria-label="Время пробоя" id="time" type="range" min="0" max="2000" value="160" step="1"><span id="readout"></span></footer>
+<script type="module">
+import * as THREE from 'three';
+import {loadRobotAssets,createRobot} from '/src/robot.js';
+import {createCombatEffects as after} from '/src/effects.js';
+import {createCombatEffects as before} from '/__before/effects.js';
+const $=id=>document.getElementById(id);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.34;document.body.prepend(renderer.domElement);
+const scene=new THREE.Scene();scene.background=new THREE.Color('#18222b');scene.add(new THREE.HemisphereLight('#d7efff','#76736a',2.7));
+for(const [color,intensity,pos] of [['#fff0d9',3.4,[-3,7,5]],['#8ddbff',1.35,[5,3,5]],['#7bcbeb',2.5,[3,4,-4]]]){const lamp=new THREE.DirectionalLight(color,intensity);lamp.position.set(...pos);scene.add(lamp);}
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(40,30),new THREE.MeshStandardMaterial({color:'#344650',roughness:.64,metalness:.4}));floor.rotation.x=-Math.PI/2;floor.position.y=-.015;scene.add(floor);
+const grid=new THREE.GridHelper(30,30,0x4a6268,0x24383e);grid.position.y=-.009;scene.add(grid);
+const camera=new THREE.PerspectiveCamera(36,1,.1,70);
+await loadRobotAssets();const robot=createRobot();scene.add(robot.group);robot.group.position.x=-.7;
+const other=createRobot({skin:'cyan'});scene.add(other.group);other.group.position.x=2.4;
+let effects,old=false,close=false,at=.16,simulated=0,playing=false,ko=false,last=performance.now(),seed=271;
+const state={room:'SPARK_REVIEW',round:1,phase:'fight',players:[{id:'p1',skin:'amber',x:-.7,y:0,facing:1,hp:100,action:'idle',actionTime:0},{id:'p2',skin:'cyan',x:2.4,y:0,facing:-1,hp:100,action:'idle',actionTime:0}],projectiles:[]};
+function seeded(fn){const random=Math.random;Math.random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};try{return fn();}finally{Math.random=random;}}
+function reset(){effects?.dispose();seed=271;effects=seeded(()=>old?before(scene):after(scene));effects.setQuality($('quality').value);effects.setReducedMotion($('quality').value==='reduced');simulated=0;state.players[0].hp=100;state.players[0].action='idle';state.players[0].actionTime=0;state.phase='fight';seeded(()=>effects.update(0,0,state));}
+function step(target){if(target<simulated-1e-6)reset();while(simulated<target-1e-6){const dt=Math.min(1/120,target-simulated);simulated+=dt;const p=state.players[0];p.hp=simulated>=.1?(ko?0:18):100;p.action=ko&&simulated>=.1?'ko':'idle';p.actionTime=ko?Math.max(0,simulated-.1):simulated;state.phase=ko&&simulated>=.1?'roundOver':'fight';
+robot.update(p,dt,simulated);other.update(state.players[1],dt,simulated);p.damageAnchors=robot.getDamageAnchors();seeded(()=>effects.update(dt,simulated,state));}}
+function seek(t){at=t;playing=false;reset();step(at);}
+$('version').onclick=()=>{old=!old;$('version').textContent=old?'Прежние искры':'Новые искры';$('version').setAttribute('aria-pressed',String(old));reset();};
+$('camera').onclick=()=>{close=!close;$('camera').textContent=close?'Крупный план':'Боевая камера';};
+$('scenario').onclick=()=>{ko=!ko;$('scenario').textContent=ko?'Отключение: 5 разрядов':'Повреждение';seek(ko?.28:.16);};$('quality').onchange=()=>reset();$('contact').onclick=()=>seek(ko?.28:.16);$('cooling').onclick=()=>seek(ko?.40:.28);$('play').onclick=()=>{playing=!playing;$('play').textContent=playing?'Пауза':'Повторять';};$('time').oninput=()=>seek(Number($('time').value)/1000);
+reset();
+function render(now){requestAnimationFrame(render);const dt=Math.min(.05,(now-last)/1000);last=now;if(playing){at+=dt;if(at>2){at=0;reset();}}step(at);renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.position.set(close?-.7:.75,close?2.5:4.2,close?5:13.2);camera.lookAt(close?-.7:.75,close?1.25:1.45,0);camera.updateProjectionMatrix();renderer.render(scene,camera);$('time').value=at*1000;const stats=effects.getDamageStats();$('readout').textContent=`${at.toFixed(3)} с · ${stats.sparkActive} искр · ${stats.electricalActive} дуг`;}
+requestAnimationFrame(render);
+</script></body></html>

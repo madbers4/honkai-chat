@@ -1,0 +1,1382 @@
+{
+  "version": 1,
+  "atlas": "/assets/posters/belobog-posters.webp",
+  "atlasSize": [
+    1024,
+    1536
+  ],
+  "sourceArtwork": "HoYoverse game artwork and separate user-supplied illustrations; no ownership transfer claimed",
+  "psd": {
+    "source": "Без названия738_20260419141116.psd",
+    "sourceSha256": "fa87164580a35be4a66e0ecd7fb9478adab2157f0445fe39d03ded303a254cfc",
+    "dimensions": [
+      8192,
+      6144
+    ],
+    "layers": [
+      {
+        "name": "Слой 1",
+        "kind": "pixel",
+        "visible": true,
+        "bbox": [
+          0,
+          0,
+          8192,
+          6144
+        ]
+      }
+    ],
+    "finding": "The PSD is flattened: one visible full-canvas pixel layer. Separate source posters are supplied in the nine Chap01 render atlases. No invented hidden layers or generated artwork.",
+    "extractedComposite": "assets-source/posters/psd-composite.webp"
+  },
+  "assets": [
+    {
+      "id": "mining-helmet",
+      "label": "mining-helmet",
+      "origin": "provided-game-atlas",
+      "source": "Chap01_Prop_Under_Poster_05_render.png",
+      "sourceSha256": "89617e0e557cd41afed55aec751a41c025e6941d971786882d916a347116d0b2",
+      "sourceCrop": [
+        0,
+        0,
+        343,
+        495
+      ],
+      "originalSize": [
+        338,
+        473
+      ],
+      "size": [
+        170,
+        238
+      ],
+      "aspect": 0.7142857142857143,
+      "atlasRect": [
+        43,
+        8,
+        170,
+        238
+      ]
+    },
+    {
+      "id": "geomarrow",
+      "label": "geomarrow",
+      "origin": "provided-game-atlas",
+      "source": "Chap01_Prop_Under_Poster_05_render.png",
+      "sourceSha256": "89617e0e557cd41afed55aec751a41c025e6941d971786882d916a347116d0b2",
+      "sourceCrop": [
+        344,
+        500,
+        686,
+        1024
+      ],
+      "originalSize": [
+        338,
+        473
+      ],
+      "size": [
+        170,
+        238
+      ],
+      "aspect": 0.7142857142857143,
+      "atlasRect": [
+        299,
+        8,
+        170,
+        238
+      ]
+    },
+    {
+      "id": "warning",
+      "label": "warning",
+      "origin": "provided-game-atlas",
+      "source": "Chap01_Prop_Under_Poster_05_render.png",
+      "sourceSha256": "89617e0e557cd41afed55aec751a41c025e6941d971786882d916a347116d0b2",
+      "sourceCrop": [
+        0,
+        500,
+        343,
+        1024
+      ],
+      "originalSize": [
+        338,
+        473
+      ],
+      "size": [
+        170,
+        238
+      ],
+      "aspect": 0.7142857142857143,
+      "atlasRect": [
+        555,
+        8,
+        170,
+        238
+      ]
+    },
+    {
+      "id": "bottles",
+      "label": "bottles",
+      "origin": "provided-game-atlas",
+      "source": "Chap01_Prop_Under_Poster_05_render.png",
+      "sourceSha256": "89617e0e557cd41afed55aec751a41c025e6941d971786882d916a347116d0b2",
+      "sourceCrop": [
+        344,
+        0,
+        686,
+        495
+      ],
+      "originalSize": [
+        338,
+        475
+      ],
+      "size": [
+        169,
+        238
+      ],
+      "aspect": 0.7100840336134454,
+      "atlasRect": [
+        811,
+        8,
+        169,
+        238
+      ]
+    },
+    {
+      "id": "workshop-glass",
+      "label": "workshop-glass",
+      "origin": "provided-game-atlas",
+      "source": "Chap01_Prop_Under_Poster_05_render.png",
+      "sourceSha256": "89617e0e557cd41afed55aec751a41c025e6941d971786882d916a347116d0b2",
+      "sourceCrop": [
+        688,
+        500,
+        1024,
+        1024
+      ],
+      "originalSize": [
+        332,
+        474
+      ],
+      "size": [
+        167,
+        238
+      ],
+      "aspect": 0.7016806722689075,
+      "atlasRect": [
+        44,
+        264,
+        167,
+        238
+      ]
+    },
+    {
+      "id": "fight-fist",
+      "label": "fight-fist",
+      "origin": "provided-game-atlas",
+      "source": "Chap01_Prop_Under_Poster_05_render.png",
+      "sourceSha256": "89617e0e557cd41afed55aec751a41c025e6941d971786882d916a347116d0b2",
+      "sourceCrop": [
+        688,
+        0,
+        1024,
+        495
+      ],
+      "originalSize": [
+        332,
+        473
+      ],
+      "size": [
+        167,
+        238
+      ],
+      "aspect": 0.7016806722689075,
+      "atlasRect": [
+        300,
+        264,
+        167,
+        238
+      ]
+    },
+    {
+      "id": "coffee",
+      "label": "coffee",
+      "origin": "provided-game-atlas",
+      "source": "Chap01_Prop_Under_Poster_02_render.png",
+      "sourceSha256": "ce758853701563381f91c717171a6b3ee2ae73115ef188970c72a475670f57d6",
+      "sourceCrop": [
+        344,
+        516,
+        686,
+        1024
+      ],
+      "originalSize": [
+        336,
+        473
+      ],
+      "size": [
+        169,
+        238
+      ],
+      "aspect": 0.7100840336134454,
+      "atlasRect": [
+        555,
+        264,
+        169,
+        238
+      ]
+    },
+    {
+      "id": "sewing-machine",
+      "label": "sewing-machine",
+      "origin": "provided-game-atlas",
+      "source": "Chap01_Prop_Under_Poster_02_render.png",
+      "sourceSha256": "ce758853701563381f91c717171a6b3ee2ae73115ef188970c72a475670f57d6",
+      "sourceCrop": [
+        344,
+        0,
+        686,
+        508
+      ],
+      "originalSize": [
+        337,
+        473
+      ],
+      "size": [
+        170,
+        238
+      ],
+      "aspect": 0.7142857142857143,
+      "atlasRect": [
+        811,
+        264,
+        170,
+        238
+      ]
+    },
+    {
+      "id": "medical",
+      "label": "medical",
+      "origin": "provided-game-atlas",
+      "source": "Chap01_Prop_Under_Poster_06_render.png",
+      "sourceSha256": "2df0375a09455e05f37b775f9b024e02902ca56e2e8a4ab926eaff0fab86b56d",
+      "sourceCrop": [
+        94,
+        510,
+        486,
+        1024
+      ],
+      "originalSize": [
+        347,
+        470
+      ],
+      "size": [
+        176,
+        238
+      ],
+      "aspect": 0.7394957983193278,
+      "atlasRect": [
+        40,
+        520,
+        176,
+        238
+      ]
+    },
+    {
+      "id": "falling-rocks",
+      "label": "falling-rocks",
+      "origin": "provided-game-atlas",
+      "source": "Chap01_Prop_Under_Poster_06_render.png",
+      "sourceSha256": "2df0375a09455e05f37b775f9b024e02902ca56e2e8a4ab926eaff0fab86b56d",
+      "sourceCrop": [
+        555,
+        510,
+        925,
+        1024
+      ],
+      "originalSize": [
+        334,
+        469
+      ],
+      "size": [
+        169,
+        238
+      ],
+      "aspect": 0.7100840336134454,
+      "atlasRect": [
+        299,
+        520,
+        169,
+        238
+      ]
+    },
+    {
+      "id": "boxer",
+      "label": "boxer",
+      "origin": "provided-game-atlas",
+      "source": "Chap01_Prop_Under_Poster_08_render.png",
+      "sourceSha256": "8a7a5a61de7905c2df7a4a2bc1f533d88b49979e0617bc76ee6ffdea2468f770",
+      "sourceCrop": [
+        0,
+        0,
+        239,
+        367
+      ],
+      "originalSize": [
+        235,
+        366
+      ],
+      "size": [
+        153,
+        238
+      ],
+      "aspect": 0.6428571428571429,
+      "atlasRect": [
+        563,
+        520,
+        153,
+        238
+      ]
+    },
+    {
+      "id": "workshop-notice",
+      "label": "workshop-notice",
+      "origin": "provided-game-atlas",
+      "source": "Chap01_Prop_Under_Poster_01_render.png",
+      "sourceSha256": "fb45276b1372297365c63eff11a0cc2895cf84e69009a1a4f2d8474c9846ef6c",
+      "sourceCrop": [
+        170,
+        0,
+        377,
+        180
+      ],
+      "originalSize": [
+        202,
+        175
+      ],
+      "size": [
+        202,
+        175
+      ],
+      "aspect": 1.1542857142857144,
+      "atlasRect": [
+        795,
+        520,
+        202,
+        175
+      ]
+    },
+    {
+      "id": "newspaper",
+      "label": "newspaper",
+      "origin": "provided-game-atlas",
+      "source": "Chap01_Prop_Under_Poster_01_render.png",
+      "sourceSha256": "fb45276b1372297365c63eff11a0cc2895cf84e69009a1a4f2d8474c9846ef6c",
+      "sourceCrop": [
+        0,
+        128,
+        171,
+        246
+      ],
+      "originalSize": [
+        168,
+        109
+      ],
+      "size": [
+        168,
+        109
+      ],
+      "aspect": 1.5412844036697249,
+      "atlasRect": [
+        44,
+        776,
+        168,
+        109
+      ]
+    },
+    {
+      "id": "wanted-sampo-gepard",
+      "label": "wanted-sampo-gepard",
+      "origin": "web-game-capture",
+      "source": "wanted-sampo.jpg",
+      "sourceSha256": "180e3bc2effd7269dd43f78e54df038735ae09f15194f6a227b5353e4e92ae03",
+      "sourceCrop": null,
+      "originalSize": [
+        484,
+        579
+      ],
+      "sourceMaskPolygon": [
+        [
+          1245,
+          222
+        ],
+        [
+          1318,
+          200
+        ],
+        [
+          1512,
+          199
+        ],
+        [
+          1522,
+          222
+        ],
+        [
+          1531,
+          196
+        ],
+        [
+          1683,
+          195
+        ],
+        [
+          1688,
+          237
+        ],
+        [
+          1665,
+          251
+        ],
+        [
+          1687,
+          258
+        ],
+        [
+          1699,
+          387
+        ],
+        [
+          1683,
+          395
+        ],
+        [
+          1704,
+          410
+        ],
+        [
+          1709,
+          671
+        ],
+        [
+          1704,
+          712
+        ],
+        [
+          1710,
+          768
+        ],
+        [
+          1686,
+          773
+        ],
+        [
+          1659,
+          752
+        ],
+        [
+          1650,
+          770
+        ],
+        [
+          1570,
+          763
+        ],
+        [
+          1537,
+          752
+        ],
+        [
+          1475,
+          769
+        ],
+        [
+          1417,
+          754
+        ],
+        [
+          1397,
+          770
+        ],
+        [
+          1384,
+          751
+        ],
+        [
+          1371,
+          771
+        ],
+        [
+          1276,
+          771
+        ],
+        [
+          1255,
+          757
+        ],
+        [
+          1227,
+          769
+        ],
+        [
+          1228,
+          733
+        ],
+        [
+          1261,
+          722
+        ],
+        [
+          1229,
+          711
+        ],
+        [
+          1239,
+          325
+        ],
+        [
+          1240,
+          307
+        ],
+        [
+          1262,
+          296
+        ],
+        [
+          1243,
+          289
+        ]
+      ],
+      "file": "wanted-sampo.jpg",
+      "directUrl": "https://www.pockettactics.com/wp-content/sites/pockettactics/2023/05/Honkai-Star-Rail-wanted-posters-Sampo.jpg",
+      "sourcePage": "https://www.pockettactics.com/honkai-star-rail/wanted-posters",
+      "retrieved": "2026-09-24",
+      "attribution": "Honkai: Star Rail game artwork вЂ” HoYoverse; third-party game reference capture",
+      "size": [
+        199,
+        238
+      ],
+      "aspect": 0.8361344537815126,
+      "atlasRect": [
+        284,
+        776,
+        199,
+        238
+      ]
+    },
+    {
+      "id": "wanted-danheng-pela",
+      "label": "wanted-danheng-pela",
+      "origin": "web-game-capture",
+      "source": "wanted-dan-heng.jpg",
+      "sourceSha256": "e9b08cc33df64f47c2d20236784f2a645c26f1d67c028f4472e5e00091654961",
+      "sourceCrop": null,
+      "originalSize": [
+        522,
+        633
+      ],
+      "sourceMaskPolygon": [
+        [
+          242,
+          210
+        ],
+        [
+          284,
+          194
+        ],
+        [
+          529,
+          185
+        ],
+        [
+          543,
+          217
+        ],
+        [
+          553,
+          190
+        ],
+        [
+          711,
+          192
+        ],
+        [
+          716,
+          260
+        ],
+        [
+          697,
+          271
+        ],
+        [
+          719,
+          282
+        ],
+        [
+          725,
+          662
+        ],
+        [
+          713,
+          675
+        ],
+        [
+          735,
+          689
+        ],
+        [
+          731,
+          746
+        ],
+        [
+          720,
+          761
+        ],
+        [
+          738,
+          811
+        ],
+        [
+          701,
+          811
+        ],
+        [
+          680,
+          790
+        ],
+        [
+          670,
+          815
+        ],
+        [
+          636,
+          805
+        ],
+        [
+          569,
+          815
+        ],
+        [
+          490,
+          806
+        ],
+        [
+          476,
+          817
+        ],
+        [
+          415,
+          811
+        ],
+        [
+          407,
+          792
+        ],
+        [
+          398,
+          812
+        ],
+        [
+          365,
+          806
+        ],
+        [
+          355,
+          795
+        ],
+        [
+          344,
+          815
+        ],
+        [
+          242,
+          817
+        ],
+        [
+          228,
+          804
+        ],
+        [
+          218,
+          812
+        ],
+        [
+          219,
+          775
+        ],
+        [
+          237,
+          763
+        ],
+        [
+          220,
+          750
+        ],
+        [
+          228,
+          551
+        ],
+        [
+          217,
+          537
+        ],
+        [
+          229,
+          520
+        ],
+        [
+          227,
+          305
+        ],
+        [
+          259,
+          294
+        ],
+        [
+          233,
+          286
+        ]
+      ],
+      "file": "wanted-dan-heng.jpg",
+      "directUrl": "https://www.pockettactics.com/wp-content/sites/pockettactics/2023/05/Honkai-Star-Rail-wanted-posters-Dan-Heng.jpg",
+      "sourcePage": "https://www.pockettactics.com/honkai-star-rail/wanted-posters",
+      "retrieved": "2026-09-24",
+      "attribution": "Honkai: Star Rail game artwork вЂ” HoYoverse; third-party game reference capture",
+      "size": [
+        196,
+        238
+      ],
+      "aspect": 0.8235294117647058,
+      "atlasRect": [
+        542,
+        776,
+        196,
+        238
+      ]
+    },
+    {
+      "id": "wanted-march-pela",
+      "label": "wanted-march-pela",
+      "origin": "web-game-capture",
+      "source": "wanted-march.jpg",
+      "sourceSha256": "90868a9ee7996127119852d7c3cea0458254a823f6a8b406deedb54fb16ee15d",
+      "sourceCrop": null,
+      "originalSize": [
+        534,
+        709
+      ],
+      "sourceMaskPolygon": [
+        [
+          235,
+          219
+        ],
+        [
+          281,
+          193
+        ],
+        [
+          430,
+          177
+        ],
+        [
+          480,
+          180
+        ],
+        [
+          497,
+          202
+        ],
+        [
+          506,
+          183
+        ],
+        [
+          760,
+          178
+        ],
+        [
+          762,
+          235
+        ],
+        [
+          742,
+          253
+        ],
+        [
+          762,
+          266
+        ],
+        [
+          761,
+          530
+        ],
+        [
+          748,
+          544
+        ],
+        [
+          761,
+          563
+        ],
+        [
+          761,
+          707
+        ],
+        [
+          740,
+          720
+        ],
+        [
+          761,
+          740
+        ],
+        [
+          756,
+          800
+        ],
+        [
+          738,
+          822
+        ],
+        [
+          757,
+          846
+        ],
+        [
+          755,
+          883
+        ],
+        [
+          707,
+          881
+        ],
+        [
+          692,
+          865
+        ],
+        [
+          679,
+          882
+        ],
+        [
+          551,
+          882
+        ],
+        [
+          535,
+          872
+        ],
+        [
+          479,
+          885
+        ],
+        [
+          465,
+          870
+        ],
+        [
+          410,
+          875
+        ],
+        [
+          409,
+          856
+        ],
+        [
+          399,
+          878
+        ],
+        [
+          255,
+          878
+        ],
+        [
+          235,
+          865
+        ],
+        [
+          236,
+          839
+        ],
+        [
+          265,
+          827
+        ],
+        [
+          235,
+          817
+        ],
+        [
+          233,
+          686
+        ],
+        [
+          250,
+          669
+        ],
+        [
+          234,
+          655
+        ],
+        [
+          232,
+          361
+        ],
+        [
+          251,
+          348
+        ],
+        [
+          229,
+          335
+        ]
+      ],
+      "file": "wanted-march.jpg",
+      "directUrl": "https://www.pockettactics.com/wp-content/sites/pockettactics/2023/05/Honkai-Star-Rail-wanted-posters-March.jpg",
+      "sourcePage": "https://www.pockettactics.com/honkai-star-rail/wanted-posters",
+      "retrieved": "2026-09-24",
+      "attribution": "Honkai: Star Rail game artwork вЂ” HoYoverse; third-party game reference capture",
+      "size": [
+        179,
+        238
+      ],
+      "aspect": 0.7521008403361344,
+      "atlasRect": [
+        806,
+        776,
+        179,
+        238
+      ]
+    },
+    {
+      "id": "wanted-danheng-gepard",
+      "label": "wanted-danheng-gepard",
+      "origin": "web-game-capture",
+      "source": "wanted-gallery.webp",
+      "sourceSha256": "4b0004bb259c9c6985d50b482c7f516b74277f1172852340f8e12d3099277ea9",
+      "sourceCrop": null,
+      "originalSize": [
+        180,
+        231
+      ],
+      "sourceMaskPolygon": [
+        [
+          728,
+          35
+        ],
+        [
+          766,
+          29
+        ],
+        [
+          896,
+          34
+        ],
+        [
+          897,
+          62
+        ],
+        [
+          890,
+          63
+        ],
+        [
+          894,
+          92
+        ],
+        [
+          891,
+          111
+        ],
+        [
+          899,
+          240
+        ],
+        [
+          884,
+          259
+        ],
+        [
+          739,
+          248
+        ],
+        [
+          720,
+          217
+        ]
+      ],
+      "file": "wanted-gallery.webp",
+      "directUrl": "https://cdn.starrailstation.com/assets/5313ea6d5754e0b18204d452be49e7e8cdca5aadd1ee2c63facbf88e38042764.webp",
+      "sourcePage": "https://starrailstation.com/en/book/209345",
+      "retrieved": "2026-09-24",
+      "attribution": "Honkai: Star Rail game artwork вЂ” HoYoverse; third-party game reference capture",
+      "size": [
+        180,
+        231
+      ],
+      "aspect": 0.7792207792207793,
+      "atlasRect": [
+        38,
+        1032,
+        180,
+        231
+      ]
+    },
+    {
+      "id": "wanted-sampo-pela",
+      "label": "wanted-sampo-pela",
+      "origin": "web-game-capture",
+      "source": "wanted-gallery.webp",
+      "sourceSha256": "4b0004bb259c9c6985d50b482c7f516b74277f1172852340f8e12d3099277ea9",
+      "sourceCrop": null,
+      "originalSize": [
+        179,
+        217
+      ],
+      "sourceMaskPolygon": [
+        [
+          496,
+          21
+        ],
+        [
+          516,
+          16
+        ],
+        [
+          625,
+          18
+        ],
+        [
+          631,
+          32
+        ],
+        [
+          637,
+          17
+        ],
+        [
+          663,
+          17
+        ],
+        [
+          665,
+          71
+        ],
+        [
+          658,
+          74
+        ],
+        [
+          664,
+          104
+        ],
+        [
+          666,
+          204
+        ],
+        [
+          650,
+          222
+        ],
+        [
+          623,
+          216
+        ],
+        [
+          607,
+          228
+        ],
+        [
+          499,
+          232
+        ],
+        [
+          491,
+          207
+        ],
+        [
+          494,
+          111
+        ],
+        [
+          488,
+          101
+        ],
+        [
+          493,
+          72
+        ]
+      ],
+      "file": "wanted-gallery.webp",
+      "directUrl": "https://cdn.starrailstation.com/assets/5313ea6d5754e0b18204d452be49e7e8cdca5aadd1ee2c63facbf88e38042764.webp",
+      "sourcePage": "https://starrailstation.com/en/book/209345",
+      "retrieved": "2026-09-24",
+      "attribution": "Honkai: Star Rail game artwork вЂ” HoYoverse; third-party game reference capture",
+      "size": [
+        179,
+        217
+      ],
+      "aspect": 0.8248847926267281,
+      "atlasRect": [
+        294,
+        1032,
+        179,
+        217
+      ]
+    },
+    {
+      "id": "wanted-march-gepard",
+      "label": "wanted-march-gepard",
+      "origin": "web-game-capture",
+      "source": "wanted-gallery.webp",
+      "sourceSha256": "4b0004bb259c9c6985d50b482c7f516b74277f1172852340f8e12d3099277ea9",
+      "sourceCrop": null,
+      "originalSize": [
+        190,
+        234
+      ],
+      "sourceMaskPolygon": [
+        [
+          617,
+          220
+        ],
+        [
+          666,
+          212
+        ],
+        [
+          752,
+          226
+        ],
+        [
+          778,
+          223
+        ],
+        [
+          786,
+          250
+        ],
+        [
+          772,
+          260
+        ],
+        [
+          780,
+          302
+        ],
+        [
+          774,
+          339
+        ],
+        [
+          770,
+          443
+        ],
+        [
+          746,
+          444
+        ],
+        [
+          726,
+          433
+        ],
+        [
+          686,
+          445
+        ],
+        [
+          658,
+          435
+        ],
+        [
+          635,
+          444
+        ],
+        [
+          597,
+          435
+        ],
+        [
+          602,
+          343
+        ],
+        [
+          614,
+          280
+        ]
+      ],
+      "file": "wanted-gallery.webp",
+      "directUrl": "https://cdn.starrailstation.com/assets/5313ea6d5754e0b18204d452be49e7e8cdca5aadd1ee2c63facbf88e38042764.webp",
+      "sourcePage": "https://starrailstation.com/en/book/209345",
+      "retrieved": "2026-09-24",
+      "attribution": "Honkai: Star Rail game artwork вЂ” HoYoverse; third-party game reference capture",
+      "size": [
+        190,
+        234
+      ],
+      "aspect": 0.811965811965812,
+      "atlasRect": [
+        545,
+        1032,
+        190,
+        234
+      ]
+    },
+    {
+      "id": "wanted-trailblazer-gepard",
+      "label": "wanted-trailblazer-gepard",
+      "origin": "web-game-capture",
+      "source": "wanted-gallery.webp",
+      "sourceSha256": "4b0004bb259c9c6985d50b482c7f516b74277f1172852340f8e12d3099277ea9",
+      "sourceCrop": null,
+      "originalSize": [
+        176,
+        228
+      ],
+      "sourceMaskPolygon": [
+        [
+          383,
+          226
+        ],
+        [
+          433,
+          216
+        ],
+        [
+          546,
+          219
+        ],
+        [
+          548,
+          265
+        ],
+        [
+          544,
+          276
+        ],
+        [
+          548,
+          296
+        ],
+        [
+          547,
+          348
+        ],
+        [
+          555,
+          438
+        ],
+        [
+          525,
+          439
+        ],
+        [
+          503,
+          434
+        ],
+        [
+          481,
+          443
+        ],
+        [
+          454,
+          437
+        ],
+        [
+          391,
+          441
+        ],
+        [
+          380,
+          433
+        ],
+        [
+          381,
+          414
+        ],
+        [
+          395,
+          409
+        ],
+        [
+          380,
+          405
+        ],
+        [
+          382,
+          360
+        ],
+        [
+          389,
+          341
+        ],
+        [
+          381,
+          335
+        ]
+      ],
+      "file": "wanted-gallery.webp",
+      "directUrl": "https://cdn.starrailstation.com/assets/5313ea6d5754e0b18204d452be49e7e8cdca5aadd1ee2c63facbf88e38042764.webp",
+      "sourcePage": "https://starrailstation.com/en/book/209345",
+      "retrieved": "2026-09-24",
+      "attribution": "Honkai: Star Rail game artwork вЂ” HoYoverse; third-party game reference capture",
+      "size": [
+        176,
+        228
+      ],
+      "aspect": 0.7719298245614035,
+      "atlasRect": [
+        808,
+        1032,
+        176,
+        228
+      ]
+    },
+    {
+      "id": "provided-wanted-redhair",
+      "label": "User-provided wanted-style illustration; character identity not asserted",
+      "origin": "provided-custom-art",
+      "source": "Без названия739_20260419011228.png",
+      "sourceSha256": "0d45a53ef63c01b77f7a135332eea90f95c9b94f395862e10d0eb407fcd3f70d",
+      "sourceCrop": null,
+      "originalSize": [
+        3072,
+        4096
+      ],
+      "size": [
+        178,
+        238
+      ],
+      "aspect": 0.7478991596638656,
+      "atlasRect": [
+        39,
+        1288,
+        178,
+        238
+      ]
+    },
+    {
+      "id": "provided-wanted-grayhair",
+      "label": "User-provided wanted-style illustration; character identity not asserted",
+      "origin": "provided-custom-art",
+      "source": "Без названия739_20260419094258.png",
+      "sourceSha256": "6d40e9d0b76ce7ee70435fc42c5eace9cb3b9751b9dc9a3182e944d174169b90",
+      "sourceCrop": null,
+      "originalSize": [
+        3072,
+        4096
+      ],
+      "size": [
+        178,
+        238
+      ],
+      "aspect": 0.7478991596638656,
+      "atlasRect": [
+        295,
+        1288,
+        178,
+        238
+      ]
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>Белобог · Пикирование · review</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box}body{margin:0;color:#efe5d3;background:#0b1519;font:12px Arial,sans-serif}#stage{position:fixed;inset:0}header,footer{position:fixed;left:0;right:0;padding:10px 14px;background:#08151ce8;display:flex;align-items:center;gap:7px;flex-wrap:wrap}header{top:0}footer{bottom:0}header>small{width:100%;color:#a5bfb5;letter-spacing:1px}button{background:#26373a;border:1px solid #687d74;color:#ede7d3;padding:8px 10px;cursor:pointer;font:inherit}.active{background:#dec18c;color:#182325}#scrub{flex:1;min-width:90px}#clock{width:56px;font:12px monospace}#readout{position:fixed;left:15px;top:96px;background:#07161bb8;padding:10px;font:11px/1.65 monospace;white-space:pre;pointer-events:none}.quiet header>small,.quiet header button:not(#panel),.quiet #readout{display:none}label{display:flex;gap:4px;align-items:center;font-size:10px}.check{margin-left:auto}
+@media(max-height:500px){header,footer{padding:6px;gap:5px}button{padding:6px 8px;font-size:9px}header>small{font-size:8px}#readout{top:76px;font-size:9px;padding:7px}label{font-size:9px}}
+</style><script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script></head>
+<body><div id="stage"></div><header><small>ПИКИРОВАНИЕ · НАСТОЯЩИЙ ПРЫЖОК / КОНТАКТ COMBATROOM · ПРАВИЛА БЕЗ ИЗМЕНЕНИЙ</small><div id="cases" style="display:contents"></div><button id="panel">Панель</button></header>
+<pre id="readout"></pre><footer><button id="play">Пауза</button><button id="replay">Повтор</button><button id="contact">Контакт</button><button id="compression">Сжатие</button><button id="dust">Пыль +0,15с</button><button id="facing">Развернуть</button><input id="scrub" aria-label="Кадр боя" type="range" min="0" value="0"><span id="clock"></span><label class="check"><input id="reduced" type="checkbox">Спокойно</label><label><input id="low" type="checkbox">Низкое качество</label></footer>
+<script type="module">
+import { createArena } from '/src/arena.js';
+import { buildSlamCase, SLAM_CASES } from '/scripts/slam-review.js';
+import { slamChoreography } from '/src/slam-choreography.js';
+const $=id=>document.getElementById(id), arena=await createArena($('stage'),{allowEffectReview:true});
+let data,selected='apex',at=0,playing=true,last=performance.now(),accumulator=0,seekToken=0,facing=1;
+const firstFrame=new Map();
+for(const [key,title] of Object.entries(SLAM_CASES)){const button=document.createElement('button');button.dataset.case=key;button.textContent=title;button.onclick=()=>choose(key);$('cases').append(button);}
+function show(frame,seek=false){at=Math.max(0,Math.min(data.snapshots.length-1,frame));const state=data.snapshots[at];if(seek){arena.update(null,null);seekToken++;}const events=playing?state.events.filter(event=>firstFrame.get(event.id)===at):[];
+const contact=data.contacts.find(e=>e.frame<=at),visualEffectFrame=!playing&&contact&&at-contact.frame<=60?{event:contact,state:data.snapshots[contact.frame],age:(at-contact.frame)/60}:null;
+arena.update({...state,phase:playing?state.phase:'paused',events,visualSeekToken:seekToken,visualEffectFrame},'p1');$('scrub').value=at;$('clock').textContent=(at/60).toFixed(2)+'s';
+const p=state.players[0],motion=p.variant==='slam'?slamChoreography({...p,elapsed:p.actionTime}):null;
+$('readout').textContent=state.players.map(p=>`${p.name}: ${p.action}/${p.variant||'—'}  ${p.hp}HP  Y${p.y.toFixed(2)} V${p.vy.toFixed(1)}`).join('\n')+`\nФаза: ${motion?.phase||'—'} · кадр ${at} · касание ${data.contacts[0]?.frame??'—'}`+'\n'+data.events.filter(e=>e.frame<=at&&['slam','hit','block'].includes(e.type)).map(e=>`${e.type} ${e.variant||''} ${e.damage||''}`).join('\n');}
+function choose(key){selected=key;data=buildSlamCase(key,facing);firstFrame.clear();for(const event of data.events)firstFrame.set(event.id,event.frame);$('scrub').max=data.snapshots.length-1;at=0;accumulator=0;playing=true;$('play').textContent='Пауза';arena.update(null,null);seekToken++;document.querySelectorAll('[data-case]').forEach(b=>b.classList.toggle('active',b.dataset.case===key));show(0);}
+$('play').onclick=()=>{playing=!playing;$('play').textContent=playing?'Пауза':'Продолжить';if(at>=data.snapshots.length-1&&playing)choose(selected);else show(at);};
+$('replay').onclick=()=>choose(selected);$('panel').onclick=()=>document.body.classList.toggle('quiet');
+const pose=offset=>{playing=false;$('play').textContent='Продолжить';if(data.contacts.length)show(data.contacts[0].frame+offset,true);};
+$('contact').onclick=()=>pose(0);$('compression').onclick=()=>pose(4);$('dust').onclick=()=>pose(9);
+$('facing').onclick=()=>{facing*=-1;choose(selected);};$('scrub').oninput=()=>{playing=false;$('play').textContent='Продолжить';show(Number($('scrub').value),true);};
+$('reduced').onchange=()=>arena.setReducedMotion($('reduced').checked);$('low').onchange=()=>arena.setQuality($('low').checked?'low':'high');
+choose('apex');function loop(now){const dt=Math.min(.1,Math.max(0,(now-last)/1000));last=now;if(playing){accumulator+=dt;while(accumulator>=1/60){accumulator-=1/60;if(at<data.snapshots.length-1)show(at+1);else{playing=false;$('play').textContent='Продолжить';show(at);break;}}}requestAnimationFrame(loop);}requestAnimationFrame(loop);
+</script></body></html>

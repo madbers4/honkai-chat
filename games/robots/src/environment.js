@@ -4,6 +4,12 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 import { createPaperPosters } from './posters.js';
 import { createPressureReservoirs } from './pressure-reservoir.js';
 import { applyDeckUV } from './deck-surface.js';
+import { ARENA_EDGE } from '../shared/constants.js';
+
+export const ARENA_SET = Object.freeze({
+  deckHalfWidth: Math.ceil((ARENA_EDGE + 2) / 2.3) * 2.3,
+  floorWidth: 88, floorDepth: 84, wallHalfWidth: 32, wallHeight: 22,
+});
 
 /** Authored industrial set: merged by finish, real rounded plumbing and open deck grates. */
 export function createIndustrialEnvironment(scene, wallpaper, deckSurface, posterTexture = null) {
@@ -108,29 +114,35 @@ export function createIndustrialEnvironment(scene, wallpaper, deckSurface, poste
   }
 
   // Deck panels have thickness and bevel highlights. Their top lies just below authoritative feet.
-  const floorGeometry = new THREE.PlaneGeometry(72, 42);
+  const floorGeometry = new THREE.PlaneGeometry(ARENA_SET.floorWidth, ARENA_SET.floorDepth);
   floorGeometry.rotateX(-Math.PI / 2); floorGeometry.translate(0, -.12, 1.5);
   const floor = new THREE.Mesh(keep(applyDeckUV(floorGeometry)), materials.deck);
   floor.name = 'continuous-industrial-floor';
   floor.receiveShadow = true; group.add(floor);
-  for (let x = -6.9; x < 6.8; x += 2.3) for (const z of [-1.59, -.53, .53, 1.59]) {
+  const deckEdge = ARENA_SET.deckHalfWidth, serviceCenter = deckEdge + .85;
+  for (let x = -deckEdge; x < deckEdge - .1; x += 2.3) for (const z of [-1.59, -.53, .53, 1.59]) {
     box(2.275, .10, 1.035, 'deck', x + 1.14, -.057, z, .023);
     for (const dx of [-.98, .98]) for (const dz of [-.37, .37]) cylinder(.029, .018, 'steel', x + 1.14 + dx, -.003, z + dz, 'y', .029, 6);
   }
   for (const z of [-2.21, 2.21]) {
-    box(15.1, .18, .15, 'steel', 0, -.045, z, .025);
-    box(15.25, .17, .18, 'iron', 0, -.09, z + Math.sign(z) * .14, .022);
-    for (let x = -6.8; x <= 6.8; x += .68) {
+    box(deckEdge * 2 + 1.3, .18, .15, 'steel', 0, -.045, z, .025);
+    box(deckEdge * 2 + 1.45, .17, .18, 'iron', 0, -.09, z + Math.sign(z) * .14, .022);
+    for (let x = -deckEdge + .1; x <= deckEdge - .1; x += .68) {
       box(.32, .007, .085, 'worn', x, .049, z, .001, 0);
       if (z > 0 && Math.round(x * 100) % 2 === 0) box(.23, .024, .04, x < 0 ? 'amber' : 'cyan', x, -.012, z + .088, .004);
     }
   }
   // Side drains have actual openings and shadows, not a printed grill texture.
-  for (const x of [-5.55, 5.55]) {
+  for (const x of [-ARENA_EDGE, ARENA_EDGE]) {
     box(1.76, .07, .76, 'black', x, -.015, -1.3, .02);
     for (const z of [-1.66, -.94]) box(1.8, .055, .07, 'steel', x, .029, z, .01);
     for (const dx of [-.86, .86]) box(.07, .055, .71, 'steel', x + dx, .029, -1.3, .01);
     for (let j = 0; j < 18; j++) box(.027, .047, .64, 'steel', x - .78 + j * .092, .02, -1.3, .009);
+  }
+  for (const side of [-1, 1]) {
+    box(.16, .18, 4.75, 'iron', side * (deckEdge + .28), -.045, 0, .025);
+    box(.10, .04, 4.45, 'worn', side * (deckEdge + .28), .051, 0, .008);
+    box(2.2, .15, 1.45, 'deck', side * serviceCenter, -.045, -2.39, .025);
   }
 
   const ratio = wallpaper.image.width / wallpaper.image.height;
@@ -139,8 +151,8 @@ export function createIndustrialEnvironment(scene, wallpaper, deckSurface, poste
   wall.position.set(0, 12 / ratio - .16, -3.3); group.add(wall);
   // Camera-safe masonry wings sit behind the unscaled original mural. Real steel columns cover
   // the physical joins; an airborne zoom-out reveals architecture rather than a wallpaper edge.
-  box(64, 18, .16, 'black', 0, 8.8, -3.66, .001);
-  for (let row = 0; row < 50; row++) {
+  box(ARENA_SET.wallHalfWidth * 2, ARENA_SET.wallHeight, .16, 'black', 0, ARENA_SET.wallHeight / 2 - .2, -3.66, .001);
+  for (let row = 0; row < Math.ceil((ARENA_SET.wallHeight - .2) / .36); row++) {
     const y = .20 + row * .36;
     for (let column = 0; column < 54; column++) {
       const x = -32 + column * 1.22 + (row % 2) * .61;
@@ -163,19 +175,19 @@ export function createIndustrialEnvironment(scene, wallpaper, deckSurface, poste
     box(20, .63, .14, 'iron', side * 22, .22, -3.39, .025);
   }
   // Two different service assemblies frame the supplied wall without occupying the fighting lane.
-  const receivers = createPressureReservoirs();
+  const receivers = createPressureReservoirs({ centerDistance: serviceCenter });
   group.add(receivers.group);
   for (const side of [-1, 1]) {
-    const sx = side * 7.55, tone = side < 0 ? 'amber' : 'cyan';
-    route([[sx, 2.50, -2.4], [sx, 2.81, -2.4], [side * 8.2, 2.81, -2.4], [side * 8.2, 4.97, -2.55], [side * 4.8, 4.97, -2.76]], .13, 'iron', .27);
-    flange(side * 8.2, 3.62, -2.4, .22);
+    const sx = side * serviceCenter, serviceX = offset => side * (serviceCenter + offset), tone = side < 0 ? 'amber' : 'cyan';
+    route([[sx, 2.50, -2.4], [sx, 2.81, -2.4], [serviceX(.65), 2.81, -2.4], [serviceX(.65), 4.97, -2.55], [side * 4.8, 4.97, -2.76]], .13, 'iron', .27);
+    flange(serviceX(.65), 3.62, -2.4, .22);
     for (const y of [3.1, 4.5]) {
-      torus(.15, .024, 'steel', side * 8.2, y, -2.48, 'y');
-      box(.44, .095, .1, 'iron', side * 8.2, y, -2.94, .02);
-      rod([side * 8.2, y, -2.94], [side * 8.2, y, -2.49], .038, 'steel');
+      torus(.15, .024, 'steel', serviceX(.65), y, -2.48, 'y');
+      box(.44, .095, .1, 'iron', serviceX(.65), y, -2.94, .02);
+      rod([serviceX(.65), y, -2.94], [serviceX(.65), y, -2.49], .038, 'steel');
     }
-    route([[sx - side * .48, .88, -2.35], [side * 6.63, .88, -2.35], [side * 6.63, .2, -2.35], [side * 5.5, .2, -2.35]], .064, 'copper', .15);
-    valve(side * 6.63, .87, -2.07);
+    route([[sx - side * .48, .88, -2.35], [serviceX(-.92), .88, -2.35], [serviceX(-.92), .2, -2.35], [serviceX(-2.05), .2, -2.35]], .064, 'copper', .15);
+    valve(serviceX(-.92), .87, -2.07);
     for (let j = 0; j < 3; j++) {
       const x = sx + side * (.60 + j * .08);
       const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(x, 2.1, -2.65), new THREE.Vector3(x + side * .16, 1.2, -2.5), new THREE.Vector3(x + side * .09, .3, -2.8)]);

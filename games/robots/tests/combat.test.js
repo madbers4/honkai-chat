@@ -104,6 +104,7 @@ test('block absorbs jab, heavy drains guard and a broken guard causes a long sta
   advance(room, 0.4, { p2: { block: true } });
   assert.equal(room.player('p2').hp, MAX_HP);
   assert.equal(room.player('p2').guard, 90);
+  advance(room, .15, { p2: { block: true } }); // Let the jab's optional continuation grace expire.
   room.player('p2').guard = 20;
   closeRange(room);
   input(room, 'p1', { action: 'heavy' });
@@ -164,7 +165,7 @@ test('jump leaves the ground, evades low attacks and lands with an event', () =>
   input(room, 'p1', { action: 'light' });
   advance(room, 0.25);
   assert.equal(room.player('p2').hp, MAX_HP);
-  advance(room, 0.3);
+  for (let frame = 0; frame < 90 && room.player('p2').y > 0; frame++) advance(room, 1 / 60);
   assert.equal(room.player('p2').y, 0);
   assert.equal(room.player('p2').vy, 0);
   assert.ok(room.events.some(event => event.type === 'land'));

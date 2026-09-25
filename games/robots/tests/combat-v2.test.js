@@ -2,7 +2,7 @@ import { MAX_HP, WINS_TO_MATCH } from '../shared/constants.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CombatRoom } from '../server/combat.js';
-import { ATTACKS, COMBAT_WINDOWS, VARIANT_ATTACKS } from '../shared/constants.js';
+import { ARENA_EDGE, ATTACKS, COMBAT_WINDOWS, VARIANT_ATTACKS } from '../shared/constants.js';
 
 function roomAt(distance = 2.14) {
   const room = new CombatRoom({ random: () => 0.25 });
@@ -58,7 +58,7 @@ test('a very early buffered dash follow-up waits for the cancel opening', () => 
   assert.equal(room.player('p1').variant, 'dashStrike');
 });
 
-test('only a confirmed light opens launcher, and launcher supports an actual jump/light follow-up', () => {
+test('a light series opens launcher, but only its real contact supports jump pursuit', () => {
   const room = roomAt();
   input(room, 'p1', { action: 'light' });
   advance(room, 0.14);
@@ -79,9 +79,11 @@ test('only a confirmed light opens launcher, and launcher supports an actual jum
   assert.ok(room.events.some(event => event.type === 'hit' && event.airborne && event.action === 'light'));
   const miss = roomAt(5);
   input(miss, 'p1', { action: 'light' }); advance(miss, 0.4);
-  assert.equal(miss.player('p1').launchWindow, 0);
+  assert.ok(miss.player('p1').launchWindow > 0);
+  assert.equal(miss.snapshot().players[0].jumpCancelWindow, 0);
   input(miss, 'p1', { action: 'heavy' }); advance(miss, 0.02);
-  assert.equal(miss.player('p1').variant, 'heavyDrive');
+  assert.equal(miss.player('p1').variant, 'launcher');
+  assert.equal(miss.player('p1').jumpCancelWindow, 0);
 });
 
 test('air hits scale down and repeated launchers cannot restart gravity within one airborne cycle', () => {
@@ -113,7 +115,12 @@ test('air heavy dives and hits exactly once on real landing, exposing landing-re
   assert.equal(room.player('p1').variant, 'slam');
   assert.equal(room.player('p2').hp, MAX_HP);
   assert.equal(room.player('p1').landedTime, null);
-  advance(room, 0.25);
+  // A higher voluntary jump extends the dive; damage still belongs to actual
+  // contact, never an elapsed-time substitute for touching the floor.
+  for (let frame = 0; frame < 90 && room.player('p1').y > 0; frame++) {
+    assert.equal(room.player('p2').hp, MAX_HP);
+    advance(room, 1 / 60);
+  }
   const player = room.player('p1');
   assert.equal(player.y, 0);
   assert.equal(room.player('p2').hp, MAX_HP - 28);
@@ -130,8 +137,9 @@ test('a target above the ground wave of a slam avoids the landing impact', () =>
   input(room, 'p1', { action: 'jump' }); advance(room, 0.25);
   input(room, 'p1', { action: 'heavy' });
   input(room, 'p2', { action: 'jump' });
-  advance(room, 0.35);
+  for (let frame = 0; frame < 90 && room.player('p1').y > 0; frame++) advance(room, 1 / 60);
   assert.equal(room.player('p1').y, 0);
+  assert.ok(room.player('p2').y > .65, 'the target really is above the ground impact');
   assert.equal(room.player('p2').hp, MAX_HP);
   assert.ok(room.events.some(event => event.type === 'slam'));
 });
@@ -301,7 +309,7 @@ test('extended seeded combat keeps physics, resources, cooldowns and new windows
     for (const player of room.players) {
       for (const key of ['x', 'y', 'vx', 'vy', 'hp', 'guard', 'energy', 'counterWindow', 'launchWindow', 'parryCooldown']) assert.ok(Number.isFinite(player[key]), key);
       assert.ok(player.y >= 0 && player.y < 4.5);
-      assert.ok(Math.abs(player.x) <= 5.55);
+      assert.ok(Math.abs(player.x) <= ARENA_EDGE);
       assert.ok(player.hp >= 0 && player.hp <= MAX_HP);
       assert.ok(player.guard >= 0 && player.guard <= 100);
       assert.ok(player.energy >= 0 && player.energy <= 100);

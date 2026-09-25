@@ -54,24 +54,25 @@ test('a held or repeated neutral packet never invents follow-ups; stopping after
   assert.equal(held.player('p2').hp, MAX_HP - 24, 'one press plus 30Hz held-input packets deals one hit');
 });
 
-test('holding block after the first hit breaks the earliest confirmed heavy route even at a wall', () => {
+test('holding block after the first hit avoids hit-confirm damage until the heavy ender breaks guard', () => {
   for (const facing of [1, -1]) {
     const room = fight(), a = room.player('p1'), b = room.player('p2');
     a.x = (ARENA_EDGE - 2.05) * facing; b.x = ARENA_EDGE * facing; a.facing = facing; b.facing = -facing;
     send(room, 'p1', 'heavy');
-    let hook = false, press = false, restart = false; const variants = [];
+    let hook = false, press = false; const variants = [], blocks = [];
     const emit = room.event.bind(room);
-    room.event = (...args) => { emit(...args); if (args[0] === 'hit' && args[1] === a) variants.push(args[2].variant); };
+    room.event = (...args) => { emit(...args); if (args[0] === 'hit' && args[1] === a) variants.push(args[2].variant); if (args[0] === 'block') blocks.push(args[2]); };
     for (let frame = 0; frame < 180; frame++) {
       if (b.hp < MAX_HP) send(room, 'p2', null, { block: true });
       if (!hook && a.variant === 'heavyDrive' && a.cancelWindow > 0 && a.actionTime >= .42) { send(room, 'p1', 'heavy'); hook = true; }
       if (!press && a.variant === 'heavyHook' && a.cancelWindow > 0 && a.actionTime >= .36) { send(room, 'p1', 'heavy'); press = true; }
-      if (!restart && a.variant === 'heavyPress' && a.actionTime >= .85) { send(room, 'p1', 'heavy'); restart = true; }
+      // No fourth press: the separate commitment test checks ender recovery under mashing.
       room.step(1 / 60);
       assert.ok(room.players.every(p => Math.abs(p.x) <= ARENA_EDGE));
     }
     assert.deepEqual(variants, ['heavyDrive']);
-    assert.equal(b.hp, MAX_HP - 24 - Math.ceil(28 * .12), 'hook is blocked for chip and cannot confirm a press');
+    assert.equal(b.hp, MAX_HP - 24 - Math.ceil(28 * .12) - Math.ceil(36 * .65), 'hook is blocked; the expensive ender exhausts the remaining guard');
+    assert.ok(blocks.some(e => e.variant === 'heavyPress' && e.guardBreak));
   }
 });
 
@@ -85,12 +86,13 @@ test('pre-contact buffer waits for real hit and the heavy-only cancel delay', ()
   assert.ok(attack.at - hit.at >= HEAVY_RULES.cancelAfterContact);
 });
 
-test('block, whiff and parry never open a heavy route, including guard break', () => {
+test('block and whiff expose a natural continuation window; parry interrupts the route', () => {
   for (const type of ['block', 'whiff', 'parry']) {
     const { snapshots, events } = buildHeavyCase(type);
     assert.equal(events.filter(e => e.type === 'hit').length, 0, type);
     assert.equal(events.filter(e => e.type === 'attack').length, 1, type);
-    assert.ok(snapshots.every(s => s.players[0].cancelWindow === 0), type);
+    if (type === 'parry') assert.ok(snapshots.every(s => s.players[0].cancelWindow === 0), type);
+    else { assert.ok(snapshots.some(s => s.players[0].cancelWindow > 0), type); assert.ok(snapshots.every(s => s.players[0].combo === 0)); }
     if (type !== 'whiff') assert.equal(events.filter(e => e.type === type).length, 1, type);
   }
   const room = fight(); send(room, 'p2', null, { block: true }); advance(room, .2); room.player('p2').guard = 10;
@@ -102,7 +104,8 @@ test('block, whiff and parry never open a heavy route, including guard break', (
 test('late confirmation has a defendable gap; burst interrupts a correctly linked series', () => {
   const late = buildHeavyCase('late'), burst = buildHeavyCase('burst');
   assert.ok(late.events.some(e => e.type === 'block' && e.variant === 'heavyHook'));
-  assert.ok(!late.events.some(e => e.variant === 'heavyPress'));
+  assert.ok(late.events.some(e => e.type === 'block' && e.variant === 'heavyPress'));
+  assert.ok(!late.events.some(e => e.type === 'hit' && e.variant === 'heavyPress'));
   assert.ok(burst.events.some(e => e.type === 'burst'));
   assert.ok(!burst.events.some(e => e.type === 'hit' && e.variant === 'heavyPress'));
 });

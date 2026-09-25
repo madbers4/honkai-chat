@@ -1,0 +1,106 @@
+/* Two thumb zones. Labels are passive; only the physical controls are buttons. */
+.controls {
+  --stick-size: 126px; --block-size: 76px; --attack-size: 68px; --dash-size: 80px;
+  --control-gap: 14px;
+  left: max(24px, env(safe-area-inset-left)); right: max(24px, env(safe-area-inset-right));
+  bottom: max(30px, calc(env(safe-area-inset-bottom) + 20px));
+  align-items: flex-end; gap: 16px;
+}
+.movement-controls { gap: var(--control-gap); align-items: flex-end; }
+.joystick { width: var(--stick-size); height: var(--stick-size); flex-shrink: 0; }
+.stick-nub { width: 46%; height: 46%; }
+.stick-label { font-size: 9px; letter-spacing: 2px; }
+.stick-caption { font-size: 8px; letter-spacing: 1.2px; }
+.controls .block-btn {
+  width: var(--block-size); height: var(--block-size); margin: 0 0 5px;
+  color: #dbf5f1; border: 2px solid #a2d6cfb8;
+  background: linear-gradient(145deg, #254642f2, #142c2ef2);
+  box-shadow: inset 0 0 18px #91c5b821, 0 3px 12px #0008;
+}
+.attack-controls {
+  display: grid; grid-template-columns: var(--attack-size) var(--dash-size);
+  grid-template-rows: var(--dash-size) var(--attack-size); gap: 12px 16px;
+  align-items: center; justify-items: center;
+}
+.controls .action-btn { min-width: 44px; min-height: 44px; flex-shrink: 0; }
+.controls .action-btn svg { width: 25px; height: 25px; }
+.controls .action-btn span { font-size: 8px; letter-spacing: .7px; }
+.controls .action-btn small { font-size: 8px; }
+.controls .heavy-btn { grid-column: 1; grid-row: 1; width: var(--attack-size); height: var(--attack-size); }
+.controls .light-btn { grid-column: 1; grid-row: 2; width: var(--attack-size); height: var(--attack-size); }
+.controls .special-btn { grid-column: 2; grid-row: 2; width: var(--attack-size); height: var(--attack-size); }
+.controls .dash-btn {
+  grid-column: 2; grid-row: 1; width: var(--dash-size); height: var(--dash-size); margin: 0;
+  color: #e8f7f0; border-color: #bad8c8b0;
+  background: linear-gradient(145deg, #30483bf5, #1a2c26f5);
+}
+.controls .dash-btn svg { width: 29px; height: 29px; }
+.controls .ultimate-wrap { width: clamp(126px, 18vw, 205px); margin: 0 0 4px; flex-shrink: 0; }
+.controls .ultimate-btn { height: 44px; min-height: 44px; }
+.controls .ultimate-wrap #ultimate-hint { font-size: 8px; min-height: 19px; padding-top: 5px; }
+
+/* Passive information never borrows the surface, outline or hover of a control. */
+.move-recipe, .move-recipe.active, .move-recipe[data-stage], .escape-prompt, .escape-prompt[data-kind] {
+  pointer-events: none; background: none; border: 0; box-shadow: none; border-radius: 0;
+  padding: 0; cursor: default; text-shadow: 0 2px 3px #000, 0 0 9px #000;
+}
+.move-recipe { bottom: max(112px, calc(env(safe-area-inset-bottom) + 102px)); max-width: min(33%, 370px); line-height: 1.6; font-size: 9px; color: #ddd6c4; opacity: .8; }
+.escape-prompt { bottom: max(160px, calc(env(safe-area-inset-bottom) + 150px)); width: min(28%, 250px); }
+.escape-prompt strong { font-size: 22px; }
+.escape-prompt span { font-size: 8px; }
+.escape-prompt>div { height: 2px; background: #a4d1c51f; margin-top: 6px; }
+.controls.finisher-offer .dash-btn { opacity: .12; pointer-events: none; }
+.controls.finisher-offer .ultimate-btn { box-shadow: none; }
+
+/* A single stable ring + an imperative on the actual target, without blinking. */
+.controls .action-cued {
+  --cue-color: #fff2a9; border-color: var(--cue-color) !important;
+  outline: 3px solid var(--cue-color); outline-offset: 4px;
+  box-shadow: 0 0 0 8px #fff2a914, 0 0 24px #ffd56875, inset 0 0 22px #ffe78f35 !important;
+  opacity: 1; animation: none; z-index: 3;
+}
+.controls .action-cued[data-cue-tone="escape"] { --cue-color: #b7fff0; box-shadow: 0 0 0 8px #b7fff014, 0 0 24px #8efce875, inset 0 0 22px #8efce835 !important; }
+.controls .action-cued::after {
+  content: attr(data-cue); position: absolute; left: 50%; top: -28px; transform: translateX(-50%);
+  color: var(--cue-color); font: 800 10px/1.1 'Manrope', sans-serif; letter-spacing: .6px;
+  white-space: nowrap; pointer-events: none; text-shadow: 0 2px 3px #000, 0 0 8px #000;
+}
+.controls .light-btn.action-cued::after { top: auto; bottom: -23px; }
+.controls .joystick.action-cued::after { top: -25px; }
+.stick-wrap:has(.action-cued) .stick-label { visibility: hidden; }
+.controls .joystick.action-cued { outline: none; box-shadow: none !important; border-top: 4px solid #fff2a9; }
+.controls .joystick.action-cued::before { content: '↑'; position: absolute; top: 1px; left: 50%; transform: translateX(-50%); color: #fff2a9; font-size: 24px; text-shadow: 0 0 15px #ffd568; pointer-events: none; }
+@media (max-height: 550px) and (orientation: landscape) {
+  .controls { --stick-size: 104px; --block-size: 68px; --attack-size: 57px; --dash-size: 68px; --control-gap: 14px;
+    left: max(20px, env(safe-area-inset-left)); right: max(20px, env(safe-area-inset-right)); gap: 14px;
+  }
+  .attack-controls { gap: 12px 15px; }
+  .controls .action-btn svg { width: 22px; height: 22px; }
+  .controls .dash-btn svg { width: 26px; height: 26px; }
+  .controls .action-btn span { font-size: 7px; letter-spacing: .35px; }
+  .controls .action-btn small { font-size: 7px; }
+  .controls .action-btn kbd { font-size: 6px; }
+  .controls .ultimate-wrap { margin-bottom: 0; }
+  .controls .ultimate-btn>span { font-size: 8px; }
+  .controls .ultimate-wrap #ultimate-hint { font-size: 7px; }
+  .move-recipe { bottom: max(110px, calc(env(safe-area-inset-bottom) + 100px)); max-width: 30%; font-size: 8px; line-height: 1.5; }
+  .escape-prompt { bottom: max(154px, calc(env(safe-area-inset-bottom) + 144px)); width: 27%; }
+  .escape-prompt strong { font-size: 18px; }
+  .escape-prompt span { font-size: 7px; }
+  .controls .action-cued::after { font-size: 9px; top: -24px; }
+  .controls .light-btn.action-cued::after { top: auto; bottom: -22px; }
+}
+@media (max-width: 720px) and (orientation: landscape) {
+  .controls { --stick-size: 94px; --block-size: 62px; --attack-size: 53px; --dash-size: 64px; --control-gap: 12px;
+    left: max(16px, env(safe-area-inset-left)); right: max(16px, env(safe-area-inset-right)); gap: 10px;
+  }
+  .attack-controls { gap: 12px; }
+  .controls .action-btn span { font-size: 6.5px; }
+  .controls .ultimate-wrap { width: 126px; }
+  .controls .action-cued::after { font-size: 8px; letter-spacing: .25px; }
+  .move-recipe { max-width: 27%; font-size: 7px; }
+  .escape-prompt { bottom: 158px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .controls .action-cued, .controls .action-cued::after { animation: none; transition: none; }
+}

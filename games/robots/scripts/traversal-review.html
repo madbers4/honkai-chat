@@ -1,0 +1,28 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Расширенная арена · высокий прыжок</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#101719;color:#eee5d3;font:12px system-ui}#stage{position:fixed;inset:0}#tools{position:fixed;left:8px;top:8px;z-index:3;background:#08131ce0;padding:8px;display:flex;gap:7px;align-items:center;flex-wrap:wrap;max-width:calc(100% - 16px)}button,select,input{background:#263b46;color:inherit;border:1px solid #74847d;padding:6px}#seek{width:160px}#stats{white-space:pre-line;font:10px monospace;position:fixed;bottom:8px;left:8px;background:#08131cb8;padding:6px;pointer-events:none}#tools[hidden],#stats[hidden]{display:none}#toggle{position:fixed;bottom:5px;right:5px;z-index:4}@media(max-height:500px){#tools{font-size:9px;padding:4px;gap:3px}button,select,input{font-size:10px;padding:3px}#stats{font-size:8px}}</style>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script></head><body><main id="stage"></main><aside id="tools"><select id="case" aria-label="Сценарий"></select><button id="mirror">Развернуть</button><button id="play">Воспроизвести</button><input id="seek" aria-label="Кадр" type="range" min="0" max="143" value="47"><select id="quality" aria-label="Качество"><option value="high">Высокое</option><option value="low">Низкое</option><option value="reduced">Меньше движения</option></select></aside><output id="stats">Загрузка…</output><button id="toggle">Инструменты</button><script type="module">
+import { createArena } from '/src/arena.js';
+import { buildTraversalCase, TRAVERSAL_CASES } from './traversal-review.js';
+const $ = id => document.getElementById(id), params = new URLSearchParams(location.search);
+const arena = await createArena($('stage'));
+let data, frame = Number(params.get('frame') ?? 47), facing = Number(params.get('facing') ?? 1), playing = false, seekToken = 0, time = 0, last = performance.now();
+for (const [id, label] of Object.entries(TRAVERSAL_CASES)) $('case').add(new Option(label,id));
+$('case').value = params.get('case') || 'cross';
+function show(seek = false) {
+  const state = data.snapshots[frame];
+  if (seek) seekToken++;
+  arena.update({ ...state, phase: playing ? 'fight' : 'paused', events: seek ? [] : state.events, visualSeekToken: seekToken }, 'p1');
+  $('seek').value = frame;
+  $('stats').textContent = `Кадр ${frame} · ${(frame/60).toFixed(2)} c\n` + state.players.map(p => `${p.name}: x ${p.x.toFixed(2)} · y ${p.y.toFixed(2)} · vy ${p.vy.toFixed(2)}`).join('\n');
+}
+function choose() { data = buildTraversalCase($('case').value,facing); playing = false; $('play').textContent='Воспроизвести'; arena.update(null,null); show(true); }
+$('case').onchange = choose;
+$('mirror').onclick = () => { facing *= -1; choose(); };
+$('seek').oninput = () => { playing = false; $('play').textContent='Воспроизвести'; frame=Number($('seek').value);show(true); };
+$('play').onclick = () => { if(frame===143) frame=0; playing=!playing; $('play').textContent=playing?'Пауза':'Воспроизвести';show(true); };
+$('quality').onchange = () => { arena.setQuality($('quality').value==='low'?'low':'high');arena.setReducedMotion($('quality').value==='reduced');show(true); };
+$('toggle').onclick = () => { $('tools').hidden=!$('tools').hidden;$('stats').hidden=$('tools').hidden; };
+choose();
+function loop(now) { const dt=Math.min(.1,(now-last)/1000);last=now;if(playing){time+=dt;while(time>=1/60){time-=1/60;if(frame<143){frame++;show();}else{playing=false;$('play').textContent='Воспроизвести';show(true);break;}}}requestAnimationFrame(loop); }
+requestAnimationFrame(loop);
+</script></body></html>

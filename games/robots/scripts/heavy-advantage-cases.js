@@ -23,8 +23,8 @@ export function buildHeavyAdvantageCase(type = 'series', facing = 1, { corner = 
       once('hook', a.variant === 'heavyDrive' && (late ? a.cancelWindow > 0 && ageSinceConfirm >= .23 : a.actionTime >= V5_ATTACKS.heavyDrive.startup - .05), () => send(a, 'heavy'));
       once('press', a.variant === 'heavyHook' && (late ? a.cancelWindow > 0 && ageSinceConfirm >= .23 : a.actionTime >= V5_ATTACKS.heavyHook.startup - .05), () => send(a, 'heavy'));
     }
+    if (['block', 'late'].includes(type) && b.hp < b.maxHp) send(b, null, { block: true });
     if (b.defenseOnly > 0) {
-      if (['block', 'late'].includes(type)) send(b, null, { block: true });
       if (type === 'jab') send(b, 'light');
       once('jump', type === 'jump', () => send(b, 'jump'));
       once('retreat', type === 'retreat', () => send(b, 'dash', { move: facing }));

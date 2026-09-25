@@ -85,9 +85,15 @@ test('deployment responds to remaining height and settles inside the existing re
 });
 
 test('live 30 Hz snapshots land on the actual contact without exponential lag or a final snap', t => {
-  let worstStep = 0, worstContactStep = 0, worstReconciliation = 0;
+  let worstStep = 0, worstContactStep = 0, worstReconciliation = 0, physicsStep = 0;
   for (const type of ['early', 'apex', 'late']) for (const fps of [30, 60, 120]) for (const phase of [0, 1]) {
     const data = buildSlamCase(type), contact = data.contacts[0].frame;
+    // The traversal jump starts a dive from much higher. Measure actual
+    // authoritative descent rather than assuming the old 0.21 m/tick speed.
+    for (let i = 1; i <= contact; i++) {
+      const p = data.snapshots[i].players[0], prev = data.snapshots[i - 1].players[0];
+      if (p.variant === 'slam') physicsStep = Math.max(physicsStep, Math.abs(p.y - prev.y));
+    }
     const follower = createSlamRootFollower();
     let y = 0, priorPredicted = null, priorPlayer = null, priorAge = 0;
     for (let frame = 0; frame < (contact + 8) * fps / 60; frame++) {
@@ -109,10 +115,10 @@ test('live 30 Hz snapshots land on the actual contact without exponential lag or
       y = next; priorPredicted = predicted; priorPlayer = player; priorAge = age;
     }
   }
-  // A frame of real descent can be 0.21 m at 60 fps. The same bound holds at
-  // the handoff from normal jump interpolation; no extra end-of-dive snap.
-  assert.ok(worstStep < .23, `root frame step ${worstStep}`);
-  assert.ok(worstContactStep < .22, `last contact-frame step ${worstContactStep}`);
+  // Rendering may follow the real velocity but must not add a catch-up snap
+  // larger than two centimetres on top of the fastest authoritative tick.
+  assert.ok(worstStep <= physicsStep + .02, `root frame step ${worstStep}, physics ${physicsStep}`);
+  assert.ok(worstContactStep <= physicsStep + .02, `last contact-frame step ${worstContactStep}, physics ${physicsStep}`);
   assert.ok(worstReconciliation < .025, `extra contact reconciliation ${worstReconciliation}`);
   assert.equal(slamRenderHeight({ variant: '', y: 1, vy: -10 }), null, 'ordinary jumps retain their existing interpolation');
   t.diagnostic(`At 30/60/120 fps: maximum root speed ${worstStep.toFixed(4)} m per 1/60 s; final contact step ${worstContactStep.toFixed(4)} m per 1/60 s (includes descent); residual prediction correction ${worstReconciliation.toFixed(4)} m.`);

@@ -35,7 +35,7 @@ test('air dash prompt respects the actual cancel window, landing and one dash pe
   assert.equal(actionContext({ ...player, action: 'light', variant: 'airJab', actionTime: .2, cancelWindow: .15 }).dash.ready, true);
 });
 
-test('confirmed branches distinguish launcher and crusher; a blocked or interrupted hit offers no combo', () => {
+test('bufferable branches distinguish launcher and crusher; interruption removes the combo cue', () => {
   const hit = { hp: 90, action: 'light', variant: 'jab', cancelWindow: .2, launchWindow: .2, y: 0 };
   assert.equal(actionContext(hit).heavy, 'ПОДБРОС');
   assert.equal(comboCue(hit).stage, 1);
@@ -44,7 +44,9 @@ test('confirmed branches distinguish launcher and crusher; a blocked or interrup
   const recoveredCross = { ...hit, action: 'idle', variant: '', comboRoute: 'jab-cross' };
   assert.equal(actionContext(recoveredCross).heavy, 'ДРОБИТЕЛЬ');
   assert.equal(comboCue(recoveredCross).nextLight, 'РАССЕЧЬ');
-  assert.equal(comboCue({ ...hit, cancelWindow: 0 }).open, false);
+  assert.equal(comboCue({ ...hit, cancelWindow: 0 }).open, true);
+  assert.equal(comboCue({ ...hit, action: 'hit', cancelWindow: 0 }).open, false);
+  assert.equal(comboCue({ ...hit, defenseOnly: .3 }).open, false);
   assert.equal(comboCue({ ...hit, grabbedBy: 'p2' }).open, false);
   assert.match(comboCue({ ...hit, y: 1, variant: 'airCross' }).text, /СБИТЬ ВНИЗ/);
 });

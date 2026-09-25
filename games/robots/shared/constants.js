@@ -5,11 +5,13 @@ export const ROUND_SECONDS = 75;
 export const WINS_TO_MATCH = 5;
 export const COUNTDOWN_SECONDS = 3;
 export const ROUND_BREAK_SECONDS = 3.4;
-export const ARENA_EDGE = 5.55;
+export const ARENA_EDGE = 10.8;
 export const PLAYER_RADIUS = 1;
 export const WALK_SPEED = 3.1;
+export const AIR_MOVE_SPEED = 6.2;
+export const JUMP_CLEARANCE = 3.1;
 export const GRAVITY = 23;
-export const JUMP_SPEED = 8.1;
+export const JUMP_SPEED = 14.5;
 export const INPUT_TIMEOUT_SECONDS = 0.45;
 export const COMBAT_WINDOWS = Object.freeze({
   inputBuffer: 0.30, parry: 0.14, parryCooldown: 0.70, counter: 1.20, counterDamage: 6,
@@ -36,7 +38,9 @@ export const ULTIMATE_PULSES = Object.freeze([
   { time: 1.23, damage: 55, guardDamage: 24, knockback: 0, stun: 0.42 },
   { time: 1.55, damage: 120, guardDamage: 42, knockback: 5.4, stun: 0.60 },
 ]);
-export const ULTIMATE_HOLD_SECONDS = 0.65;
+// Compatibility for external copy consumers; the control is now an immediate tap.
+export const ULTIMATE_HOLD_SECONDS = 0;
+export const ULTIMATE_ARMOR = Object.freeze({ until: 1.55, breakers: Object.freeze(['grab', 'launcher', 'shockwave', 'slam']) });
 
 export const V3_RULES = Object.freeze({
   grabStartup: 0.26, grabActive: 0.10, grabDuration: 0.95, grabRange: 2.5,

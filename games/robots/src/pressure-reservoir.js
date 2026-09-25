@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 const TAU = Math.PI * 2;
-const CENTRES = [-7.55, 7.55];
 
 /** One small, locally drawn instrument atlas; the rings and needles remain real geometry. */
 function makeInstrumentAtlas() {
@@ -43,7 +42,7 @@ function makeInstrumentAtlas() {
   texture.anisotropy = 4; texture.name = 'reservoir-two-enamel-instruments'; return texture;
 }
 
-function weatheredPaint() {
+function weatheredPaint(centerDistance) {
   const material = new THREE.MeshStandardMaterial({ color: '#4c5a53', roughness: .73, metalness: .52 });
   material.onBeforeCompile = shader => {
     shader.vertexShader = 'varying vec3 vReservoirPosition;\n' + shader.vertexShader;
@@ -55,7 +54,7 @@ function weatheredPaint() {
         return mix(mix(receiverHash(i),receiverHash(i+vec2(1,0)),f.x),mix(receiverHash(i+vec2(0,1)),receiverHash(i+vec2(1,1)),f.x),f.y);
       }\n` + shader.fragmentShader;
     shader.fragmentShader = shader.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
-      vec3 rp = vReservoirPosition; rp.x -= sign(rp.x) * 7.55; rp.z += 2.39;
+      vec3 rp = vReservoirPosition; rp.x -= sign(rp.x) * ${centerDistance.toFixed(4)}; rp.z += 2.39;
       float angle = atan(rp.x,rp.z);
       float fine = receiverNoise(vec2(angle*105.0,rp.y*130.0));
       float mottling = receiverNoise(vec2(angle*6.2,rp.y*5.8));
@@ -67,7 +66,7 @@ function weatheredPaint() {
     `);
     shader.fragmentShader = shader.fragmentShader.replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = clamp(roughnessFactor + (fine-.5)*.12 + runoff*.1, .55, .95);');
   };
-  material.customProgramCacheKey = () => 'pressure-reservoir-aged-enamel-v1';
+  material.customProgramCacheKey = () => `pressure-reservoir-aged-enamel-v2-${centerDistance}`;
   return material;
 }
 
@@ -76,12 +75,13 @@ function weatheredPaint() {
  * together by finish: seven draws for the pair, no per-bolt objects or extra lights.
  * The existing overhead pipe and lower copper outlet remain owned by environment.js.
  */
-export function createPressureReservoirs() {
+export function createPressureReservoirs({ centerDistance = 7.55 } = {}) {
+  const centres = [-centerDistance, centerDistance];
   const group = new THREE.Group(); group.name = 'Belobog — riveted pressure receivers';
   const resources = new Set(), batches = new Map(); let disposed = false;
   const keep = value => { resources.add(value); return value; };
   const materials = {
-    enamel: weatheredPaint(),
+    enamel: weatheredPaint(centerDistance),
     iron: new THREE.MeshStandardMaterial({ color: '#26302e', roughness: .7, metalness: .65 }),
     steel: new THREE.MeshStandardMaterial({ color: '#777e75', roughness: .45, metalness: .82 }),
     brass: new THREE.MeshStandardMaterial({ color: '#766044', roughness: .57, metalness: .72 }),
@@ -129,8 +129,8 @@ export function createPressureReservoirs() {
     cylinder(radius * .088, .018, 'iron', x, y, z + .020, 'z', 12);
     cylinder(radius * .04, .022, 'brass', x, y, z + .022, 'z', 10);
   }
-  for (let index = 0; index < CENTRES.length; index++) {
-    const sx = CENTRES[index], side = Math.sign(sx), z = -2.39;
+  for (let index = 0; index < centres.length; index++) {
+    const sx = centres[index], side = Math.sign(sx), z = -2.39;
     // Skid, anchored channel feet and braced saddle — there is a visible gap below the vessel.
     for (const dx of [-.54, .54]) {
       box(.18, .09, 1.12, 'iron', sx + dx, .055, z);

@@ -10,6 +10,7 @@ import { createSlamRootFollower } from './slam-choreography.js';
 import { createCameraChoreography } from './camera-choreography.js';
 import { computeFaceoffCamera, blendFaceoffCamera } from './faceoff-camera.js';
 import { createEmissionGlow } from './emission-glow.js';
+import { arenaRootPosition } from './arena-root.js';
 
 
 const clamp = THREE.MathUtils.clamp;
@@ -161,12 +162,12 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
   const hemisphere = new THREE.HemisphereLight('#d7efff', '#76736a', 2.7);
   scene.add(hemisphere);
   const key = new THREE.DirectionalLight('#fff0d9', 3.4);
-  key.position.set(-3, 7, 5);
+  key.position.set(-6, 14, 10);
   key.castShadow = true;
-  key.shadow.mapSize.set(1024, 1024);
-  key.shadow.camera.left = -9; key.shadow.camera.right = 9;
-  key.shadow.camera.top = 5; key.shadow.camera.bottom = -5;
-  key.shadow.camera.near = 0.5; key.shadow.camera.far = 22;
+  key.shadow.mapSize.set(2048, 2048);
+  key.shadow.camera.left = -17; key.shadow.camera.right = 17;
+  key.shadow.camera.top = 12; key.shadow.camera.bottom = -10;
+  key.shadow.camera.near = 0.5; key.shadow.camera.far = 42;
   key.shadow.bias = -0.0004; key.shadow.normalBias = 0.035;
   key.shadow.radius = 3;
   scene.add(key);
@@ -315,8 +316,7 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
     for (const player of players) {
       const visual = robotFor(player);
       const extrapolate = snapshot?.phase === 'fight' ? Math.min(sinceSnapshot, 0.05) : 0;
-      const targetX = clamp((player.x ?? 0) + (player.vx ?? 0) * extrapolate, -6.5, 6.5);
-      const targetY = Math.max(0, (player.y ?? 0) + (player.vy ?? 0) * extrapolate);
+      const { x: targetX, y: targetY } = arenaRootPosition(player, extrapolate);
       const poseKey = [player.x, player.y, player.facing, player.action, player.variant, player.actionTime,
         player.hp, player.guard, player.energy, player.grabTarget, player.grabbedBy,
         player.grabHoldTime, player.grabReleaseTime].join(':');

@@ -1,4 +1,4 @@
-import { ATTACKS, ULTIMATE_HOLD_SECONDS } from '../shared/constants.js';
+import { ATTACKS } from '../shared/constants.js';
 import { finishContext } from './action-context.js';
 
 export function ultimateAvailability(state, playerId) {
@@ -11,26 +11,21 @@ export function ultimateAvailability(state, playerId) {
   return { ready, immediate, key: `${state?.room ?? ''}:${state?.round ?? ''}:${state?.phase ?? ''}:${playerId}` };
 }
 
-/** Edge-triggered hold: a cancelled press cannot resume itself after a hit,
- * reconnect or round change. Each physical pointer/key press fires at most once. */
-export function createUltimateHold({ availability, commit, progress = () => {}, now = () => performance.now(), duration = ULTIMATE_HOLD_SECONDS * 1000 }) {
-  let owner = null, started = 0, key = null, fired = false;
-  function cancel() { owner = null; fired = false; key = null; progress({ active: false, amount: 0 }); }
+/** A physical press commits immediately, once. Invalid presses are consumed too:
+ * gaining energy or leaving stun while a key is held must never auto-fire. */
+export function createUltimatePress({ availability, commit, progress = () => {} }) {
+  let owner = null;
+  function cancel() { owner = null; progress({ active: false, amount: 0 }); }
   function begin(source) {
     if (owner !== null) return false;
+    owner = source;
     const state = availability();
-    if (state.immediate) { commit(); return true; }
-    if (!state.ready) return false;
-    owner = source; started = now(); key = state.key; fired = false;
-    progress({ active: true, amount: 0 }); return true;
+    if (!state.ready && !state.immediate) return false;
+    progress({ active: false, amount: 1, committed: true });
+    commit(); return true;
   }
-  function update() {
-    if (owner === null || fired) return;
-    const state = availability();
-    if (!state.ready || state.key !== key) { cancel(); return; }
-    const amount = Math.min(1, Math.max(0, (now() - started) / duration));
-    progress({ active: true, amount });
-    if (amount >= 1) { fired = true; progress({ active: false, amount: 1, committed: true }); commit(); }
-  }
-  return { begin, update, cancel, release(source) { if (owner === source) cancel(); }, active: () => owner !== null && !fired };
+  return { begin, update() {}, cancel, release(source) { if (owner === source) cancel(); }, active: () => false };
 }
+
+// Public compatibility for integrations that still import the previous name.
+export const createUltimateHold = createUltimatePress;

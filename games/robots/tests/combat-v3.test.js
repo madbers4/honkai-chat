@@ -2,7 +2,7 @@ import { MAX_HP, WINS_TO_MATCH } from '../shared/constants.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CombatRoom } from '../server/combat.js';
-import { ATTACKS, V3_RULES, canAttemptBurst, canAttemptFeint } from '../shared/constants.js';
+import { ARENA_EDGE, ATTACKS, V3_RULES, canAttemptBurst, canAttemptFeint } from '../shared/constants.js';
 
 function fight(distance = 2.15) {
   const room = new CombatRoom({ random: () => 0.8 });
@@ -158,12 +158,12 @@ test('interruption, timeout, knockout and round reset clean up both ends of a pa
 
 test('grab release and tech at arena walls preserve separation, finite coordinates and ground bounds', () => {
   for (const tech of [true, false]) {
-    const room = fight(); room.player('p1').x = 3.50; room.player('p2').x = 5.55;
+    const room = fight(); room.player('p1').x = ARENA_EDGE - 2.05; room.player('p2').x = ARENA_EDGE;
     catchTarget(room);
     if (tech) input(room, 'p2', { action: 'light' });
     advance(room, 1.8);
     assertUnpaired(room);
-    for (const player of room.players) { assert.ok(Number.isFinite(player.x)); assert.ok(Math.abs(player.x) <= 5.55); assert.ok(player.y >= 0); }
+    for (const player of room.players) { assert.ok(Number.isFinite(player.x)); assert.ok(Math.abs(player.x) <= ARENA_EDGE); assert.ok(player.y >= 0); }
     assert.ok(Math.abs(room.player('p2').x - room.player('p1').x) >= 1.999);
   }
 });

@@ -48,17 +48,19 @@ test('real ground inputs branch jab-cross-rake and jab-cross-crusher with distin
   }
 });
 
-test('missed or blocked jab cannot manufacture a branch or bypass its recovery', () => {
+test('missed or blocked jab can branch after its active period without manufacturing a hit', () => {
   for (const blocked of [false, true]) {
     const room = fight(blocked ? 2.15 : 4);
     if (blocked) advance(room, 0.2, { p2: { block: true } });
     input(room, 'p1', { action: 'light' }); advance(room, 0.17, blocked ? { p2: { block: true } } : {});
     assert.equal(room.player('p1').cancelWindow, 0);
-    input(room, 'p1', { action: 'heavy' }); advance(room, 0.17, blocked ? { p2: { block: true } } : {});
-    assert.equal(room.player('p1').variant, 'jab', 'failed jab still recovers');
+    input(room, 'p1', { action: 'heavy' }); advance(room, 0.04, blocked ? { p2: { block: true } } : {});
+    assert.equal(room.player('p1').variant, 'jab', 'unconfirmed opener cannot cancel before its active period ends');
     advance(room, 0.1, blocked ? { p2: { block: true } } : {});
     assert.equal(room.player('p1').action, 'heavy');
-    assert.equal(room.player('p1').variant, 'heavyDrive', 'buffer starts a fresh heavy route after full recovery');
+    assert.equal(room.player('p1').variant, 'launcher', 'buffer retains the requested mixed branch after the natural link window');
+    assert.equal(room.player('p1').combo, 0);
+    assert.equal(room.player('p1').jumpCancelWindow, 0);
     assert.equal(room.player('p2').hp, MAX_HP);
   }
 });
@@ -104,7 +106,8 @@ test('one zero-energy air dash shares dash cooldown, preserves gravity, and neve
   advance(room, 0.12); player.cooldowns.dash = 0;
   assert.equal(canAttemptAirDash(player), false, 'usage cap remains even when cooldown is cleared');
   press(room, 'dash', 0.05); assert.notEqual(player.variant, 'airDash');
-  advance(room, 0.6); assert.equal(player.y, 0); assert.equal(player.airDashUsed, false);
+  for (let frame = 0; frame < 90 && player.y > 0; frame++) advance(room, 1 / 60);
+  assert.equal(player.y, 0); assert.equal(player.airDashUsed, false);
   const cooldown = fight(); press(cooldown, 'jump', 0.1); cooldown.player('p1').cooldowns.dash = 0.7;
   press(cooldown, 'dash', 0.05); assert.equal(cooldown.player('p1').airDashUsed, false);
 });

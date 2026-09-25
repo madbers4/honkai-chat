@@ -1,4 +1,5 @@
 import { ATTACKS, VARIANT_ATTACKS, V3_RULES, V5_RULES, canAttemptAirDash, canAttemptBurst, canAttemptFeint } from '../shared/constants.js';
+import { continuation } from '../shared/attack-commitment.js';
 
 // One description drives the button, its resource feedback and the help prompt.
 // Legality and final choice remain authoritative on the server.
@@ -14,7 +15,7 @@ export function actionContext(player = {}, intent = {}, state = null) {
   const grab = !!intent.crouch && !airborne && !holding;
   const combo = comboCue(player);
   const crusher = !airborne && !grab && combo.stage === 2 && !combo.heavy;
-  const launcher = !airborne && !grab && !crusher && player.launchWindow > 0;
+  const launcher = !airborne && !grab && !crusher && (player.launchWindow > 0 || combo.stage === 1 && !combo.heavy);
   const ram = player.action === 'dash' && !player.variant;
   const counter = player.counterWindow > 0;
   const wave = !!intent.crouch && !airborne;
@@ -53,17 +54,18 @@ export function finishContext(state, playerId) {
 }
 
 export function comboCue(player = {}) {
-  const open = player.cancelWindow > 0 && player.hp > 0 && !player.grabbedBy && !player.grabTarget;
+  const open = Boolean((player.cancelWindow > 0 || continuation(player)) && player.hp > 0
+    && !['hit', 'ko', 'recover'].includes(player.action) && !player.grabbedBy && !player.grabTarget && !(player.defenseOnly > 0));
   const variant = player.variant || ({ jab: 'jab', 'jab-cross': 'cross', airJab: 'airJab', 'airJab-airCross': 'airCross', heavyDrive: 'heavyDrive', 'heavyDrive-heavyHook': 'heavyHook' })[player.comboRoute] || '';
   const airborne = (player.y || 0) > .08 && !player.groundHeavy;
   if (!open) return { open: false, text: '', nextLight: '', stage: 0 };
   if (!airborne && ['heavyDrive', 'heavyHook'].includes(variant)) return { open, heavy: true, stage: variant === 'heavyHook' ? 2 : 1, nextLight: '',
     nextHeavy: variant === 'heavyHook' ? 'ПРЕСС' : 'КРЮК',
-    text: variant === 'heavyHook' ? 'ТЯЖЁЛЫЙ — ПРЕСС · ФИНАЛ СЕРИИ' : 'ТЯЖЁЛЫЙ — КРЮК · ПРОДОЛЖАЙ ПО ПОПАДАНИЮ' };
+    text: variant === 'heavyHook' ? 'ТЯЖЁЛЫЙ — ПРЕСС · ФИНАЛ СЕРИИ' : 'ТЯЖЁЛЫЙ — КРЮК · ПРОДОЛЖАЙ СЕРИЮ' };
   if (airborne) return { open, stage: variant === 'airCross' ? 2 : 1,
     nextLight: variant === 'airCross' ? 'СБИТЬ' : 'ПРОДОЛЖИТЬ',
     text: variant === 'airCross' ? 'УДАР — СБИТЬ ВНИЗ · ТЯЖЁЛЫЙ — ПИКЕ' : 'УДАР — ВОЗДУШНАЯ СЕРИЯ · РЫВОК — ДОГНАТЬ' };
   if (variant === 'cross') return { open, stage: 2, nextLight: 'РАССЕЧЬ', text: 'УДАР — РАССЕЧЕНИЕ · ТЯЖЁЛЫЙ — ДРОБИТЕЛЬ' };
-  if (variant === 'jab') return { open, stage: 1, nextLight: 'КРОСС', text: 'УДАР — КРОСС · ТЯЖЁЛЫЙ — ПОДБРОС' };
+  if (['jab', 'dashStrike'].includes(variant)) return { open, stage: 1, nextLight: 'КРОСС', text: 'УДАР — КРОСС · ТЯЖЁЛЫЙ — ПОДБРОС' };
   return { open: false, text: '', nextLight: '', stage: 0 };
 }

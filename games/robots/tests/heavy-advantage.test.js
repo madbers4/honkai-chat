@@ -15,7 +15,12 @@ for (const facing of [-1, 1]) for (const late of [false, true]) {
       const hits = data.events.filter(event => event.type === 'hit' && event.player === 'p1');
       assert.equal(hits[0]?.variant, 'heavyDrive', type);
       if (['series', 'jab'].includes(type)) assert.deepEqual(hits.map(event => event.damage), [24, 28, 36]);
-      else assert.equal(hits.length, 1, `${type}: the follow-up must be avoided`);
+      else {
+        assert.ok(!hits.some(event => event.variant === 'heavyHook'), `${type}: the second strike must be avoided`);
+        assert.equal(hits.length, 1, `${type}: the high jump or retreat can clear both follow-ups`);
+        if (type === 'jump' && !late) assert.deepEqual(data.events.filter(event => event.type === 'attack' && event.player === 'p1').map(event => event.variant),
+          ['heavyDrive', 'heavyHook', 'heavyPress'], 'both missed follow-ups still execute while the defender clears them');
+      }
       if (type === 'block') {
         assert.ok(data.events.some(event => event.type === 'block' && event.variant === 'heavyHook'));
         assert.ok(!data.events.some(event => event.type === 'parry'), 'recovery block cannot manufacture a staggering counter');
@@ -65,12 +70,14 @@ test('defense-only discards every attack queue, then requires a fresh press; dis
 test('corner defense and terminal recovery prevent a new heavy loop', () => {
   for (const facing of [-1, 1]) for (const type of ['block', 'jump']) {
     const data = buildHeavyAdvantageCase(type, facing, { corner: true });
-    assert.equal(data.events.filter(event => event.type === 'hit').length, 1, type);
-    assert.ok(data.snapshots.at(-1).players.every(player => player.defenseOnly === 0 && player.action === 'idle'));
+    assert.ok(!data.events.some(event => event.type === 'hit' && event.variant === 'heavyHook'), type);
+    assert.ok(data.events.filter(event => event.type === 'attack' && event.player === 'p1').length <= 3, 'no fourth strike without a new press');
+    assert.ok(data.snapshots.at(-1).players.every(player => player.defenseOnly === 0 && ['idle', 'block'].includes(player.action)));
   }
   const whiff = buildHeavyAdvantageCase('whiff');
   assert.ok(!whiff.events.some(event => event.type === 'hit'));
-  assert.ok(whiff.snapshots.every(state => state.players[0].cancelWindow === 0));
+  assert.ok(whiff.snapshots.some(state => state.players[0].cancelWindow > 0));
+  assert.ok(whiff.snapshots.every(state => state.players[0].combo === 0));
   const { room, a, b } = setup(); a.x = -3; b.x = 3; send(room, a, 'heavy'); step(room, 37);
   assert.ok(room.isWhiffRecovery(a));
   room.damage(b, a, V5_ATTACKS.jab, 'light', b.x, { variant: 'jab' });

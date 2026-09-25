@@ -6,7 +6,7 @@ const input = (room, id, patch = {}) => room.input(id, { seq: room.player(id).la
 function step(room, seconds, holds = {}) { for (let i = 0; i < Math.ceil(seconds * 60); i++) { for (const [id, patch] of Object.entries(holds)) input(room, id, patch); room.step(1 / 60); } }
 function fight(distance = 4) { const room = new CombatRoom({ random: () => .8 }); room.addPlayer(); room.addPlayer(); room.ready('p1'); room.ready('p2'); step(room, 3); room.player('p1').x = -distance / 2; room.player('p2').x = distance / 2; room.player('p1').energy = 80; return room; }
 
-test('80-energy overload has an interruptible .95s windup and a lethal 220 damage sequence', () => {
+test('80-energy overload has an armored .95s windup and a lethal 220 damage sequence', () => {
   const room = fight(), a = room.player('p1'), b = room.player('p2');
   a.energy = 79; assert.equal(room.beginAction(a, 'ultimate'), false);
   a.energy = 80; assert.equal(room.beginAction(a, 'ultimate'), true); assert.equal(a.energy, 0);
@@ -34,8 +34,8 @@ test('leaving marked range, stepping behind or interrupting windup all defeat th
   const behind = fight(); behind.beginAction(behind.player('p1'), 'ultimate'); behind.player('p2').x = -4.6;
   step(behind, 1.7); assert.equal(behind.player('p2').hp, MAX_HP);
   const interrupted = fight(2.1); interrupted.beginAction(interrupted.player('p1'), 'ultimate');
-  step(interrupted, .35); input(interrupted, 'p2', { action: 'light' }); step(interrupted, 1.4);
-  assert.equal(interrupted.player('p2').hp, MAX_HP); assert.ok(interrupted.player('p1').hp < MAX_HP);
+  step(interrupted, .35); input(interrupted, 'p2', { action: 'heavy', crouch: true }); step(interrupted, 1.4);
+  assert.equal(interrupted.player('p2').hp, MAX_HP); assert.ok(interrupted.events.some(e => e.type === 'grab'), 'a committed close-range grab breaks reactor armor');
   assert.equal(interrupted.events.filter(e => e.type === 'ultimatePulse').length, 0);
 });
 

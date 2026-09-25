@@ -1,12 +1,14 @@
 import {
   ACTIONS, ARENA_EDGE, ATTACKS, COMBAT_WINDOWS, COUNTDOWN_SECONDS, GRAVITY, INPUT_TIMEOUT_SECONDS, MAX_HP,
   JUMP_SPEED, PLAYER_RADIUS, ROUND_BREAK_SECONDS, ROUND_SECONDS, ULTIMATE_PULSES, V3_RULES, V5_ATTACKS, V5_RULES, FINISH_RULES, WINS_TO_MATCH, VARIANT_ATTACKS, WALK_SPEED,
-  canAttemptAirDash, canAttemptBurst, canAttemptFeint, clamp, HEAVY_RULES,
+  canAttemptAirDash, canAttemptBurst, canAttemptFeint, clamp, HEAVY_RULES, AIR_MOVE_SPEED,
 } from '../shared/constants.js';
 import { cleanCharacter } from '../shared/fighter-profile.js';
 import { normalizeCustomization } from '../shared/robot-customization.js';
 import { isGroundHeavy, offenseLocked, isDefensiveAction, grantHeavyAdvantage, applySlamBounce } from '../shared/heavy-advantage.js';
 import { healthFraction } from '../shared/health.js';
+import { continuation, acceptsContinuation, ultimateArmored } from '../shared/attack-commitment.js';
+import { resolveTraversalContact } from './traversal.js';
 
 const LOCKED_ACTIONS = new Set(['light', 'heavy', 'special', 'ultimate', 'dash', 'hit', 'ko', 'victory', 'recover', 'finisher', 'defeated', 'destroyed']);
 const neutralInput = () => ({ move: 0, block: false, crouch: false });
@@ -25,9 +27,10 @@ function makePlayer(id, name, bot = false, character = '', customization) {
     actionDuration: 0, variant: '', combo: 0, cooldowns: { dash: 0, special: 0, ultimate: 0, burst: 0 },
     counterWindow: 0, launchWindow: 0, parryWindow: 0, parryCooldown: 0,
     defenseOnly: 0, groundHeavy: false, heavyHopStarted: false, slamBounceUsed: false,
+    traversalJump: false, traversalSide: 0, traversalLandingSide: 0,
     dashFollowWindow: 0, jumpCancelWindow: 0, airLaunchUsed: false, airHits: 0,
     skin: id === 'p1' ? 'amber' : 'cyan', input: neutralInput(), inputAge: 0,
-    lastSeq: -1, queued: null, comboExpiry: 0, chain: 0, chainExpiry: 0,
+    lastSeq: -1, queued: null, followup: null, comboExpiry: 0, chain: 0, chainExpiry: 0,
     hitTargets: new Set(), ultimatePulses: new Set(), projectileLaunched: false, dashDirection: 1, rematch: false,
     slamLanded: false, slamPending: false, landedTime: null, brainTimer: 0.4, brainSerial: 0, botBlockTimer: 0, botCrouchTimer: 0, botRetreatTimer: 0,
     grabTarget: null, grabbedBy: null, grabTechWindow: 0, grabHoldTime: 0, grabCatchTime: null, grabReleaseTime: null,
@@ -86,11 +89,12 @@ export class CombatRoom {
     player.connected = connected;
     player.input = neutralInput();
     player.queued = null;
+    player.followup = null;
     player.lastSeq = -1;
     if (!connected && ['countdown', 'fight', 'roundOver', 'finishing'].includes(this.phase)) {
       this.pausedFrom = this.phase;
       this.phase = 'paused';
-      for (const fighter of this.players) { fighter.input = neutralInput(); fighter.queued = null; fighter.parryWindow = 0; }
+      for (const fighter of this.players) { fighter.input = neutralInput(); fighter.queued = null; fighter.followup = null; fighter.parryWindow = 0; }
     } else if (connected && this.phase === 'paused' && this.players.length === 2 && this.players.every(p => p.connected)) {
       if (this.pausedFrom === 'fight') {
         this.resumePhase = 'fight';
@@ -171,8 +175,16 @@ export class CombatRoom {
       this.grabInput(player, input.action, input.move);
       return true;
     }
-    if (input.action && offenseLocked(player) && !isDefensiveAction(input.action)) player.queued = null;
-    else if (input.action) player.queued = { action: input.action, crouch: input.crouch, expires: this.combatTime + COMBAT_WINDOWS.inputBuffer };
+    if (input.action && offenseLocked(player) && !isDefensiveAction(input.action)) player.queued = player.followup = null;
+    else if (input.action) {
+      const queued = { action: input.action, crouch: input.crouch, expires: this.combatTime + COMBAT_WINDOWS.inputBuffer };
+      // Two physical taps can arrive before one simulation tick. Preserve the
+      // starter plus ONE next intent; repeated taps cannot build a macro queue.
+      if (!LOCKED_ACTIONS.has(player.action) && ['light', 'heavy'].includes(player.queued?.action)
+        && ['light', 'heavy'].includes(input.action)
+        && !(input.action === 'heavy' && input.crouch) && !(player.queued.action === 'heavy' && player.queued.crouch)) player.followup = queued;
+      else { player.followup = null; player.queued = queued; this.extendContinuationBuffer(player); }
+    }
     return true;
   }
 
@@ -191,6 +203,7 @@ export class CombatRoom {
     if (player.action === 'hit' && action !== 'hit') player.grabImmunity = Math.max(player.grabImmunity, V3_RULES.postHitGrabImmunity);
     player.action = action;
     player.variant = variant;
+    if (!['light', 'heavy'].includes(action)) player.followup = null;
     player.groundHeavy = action === 'heavy' && isGroundHeavy(variant);
     player.heavyHopStarted = false;
     if (['ko', 'recover', 'defeated', 'destroyed'].includes(action)) player.defenseOnly = 0;
@@ -218,6 +231,12 @@ export class CombatRoom {
     }
   }
 
+  extendContinuationBuffer(player) {
+    if (!player.queued || !acceptsContinuation(player, player.queued.action, player.queued.crouch)) return;
+    const route = continuation(player);
+    player.queued.expires = Math.max(player.queued.expires, this.combatTime + Math.max(0, route.open - player.actionTime) + .08);
+  }
+
   beginAction(player, action, crouch = player.input.crouch) {
     if (player.grabTarget || player.grabbedBy) return false;
     const defenseOnly = offenseLocked(player);
@@ -237,11 +256,12 @@ export class CombatRoom {
     }
     if (LOCKED_ACTIONS.has(player.action)) {
       const previousAttack = this.attackProperties(player);
+      const naturalLink = player.cancelWindow > 0 && player.actionTime >= (continuation(player)?.open ?? Infinity);
       const confirmed = player.cancelWindow > 0 && player.actionTime >= (previousAttack?.startup ?? 1) + V5_RULES.cancelAfterContact;
       const lightChain = player.action === 'light' && action === 'light' && confirmed && ['jab', 'cross', 'airJab', 'airCross', 'dashStrike'].includes(player.variant);
       const heavyChain = player.action === 'heavy' && action === 'heavy' && !crouch && (player.y <= 0.08 || player.groundHeavy)
         && player.cancelWindow > 0 && ['heavyDrive', 'heavyHook'].includes(player.variant)
-        && player.cancelWindow <= HEAVY_RULES.cancelWindow - HEAVY_RULES.cancelAfterContact;
+        && (naturalLink || player.cancelWindow <= HEAVY_RULES.cancelWindow - HEAVY_RULES.cancelAfterContact);
       const dashStrike = player.action === 'dash' && !player.variant && action === 'light' && player.actionTime >= COMBAT_WINDOWS.dashCancel;
       const confirmedLauncher = player.action === 'light' && action === 'heavy' && !crouch && confirmed && ['jab', 'cross', 'dashStrike', 'airJab', 'airCross'].includes(player.variant);
       const launcherJump = player.variant === 'launcher' && action === 'jump' && player.jumpCancelWindow > 0 && player.actionTime >= COMBAT_WINDOWS.launcherJumpCancel;
@@ -252,6 +272,9 @@ export class CombatRoom {
     if (action === 'jump') {
       if (player.y > 0.01) return false;
       const pursuit = player.jumpCancelWindow > 0;
+      player.traversalJump = !pursuit;
+      player.traversalSide = Math.sign(player.x - opponent.x) || -player.facing;
+      player.traversalLandingSide = 0;
       player.vy = pursuit ? V5_RULES.pursuitJumpSpeed : JUMP_SPEED;
       player.pursuitWindow = pursuit ? V5_RULES.pursuitDuration : 0;
       if (player.bot && pursuit) player.brainTimer = 0.10;
@@ -578,9 +601,10 @@ export class CombatRoom {
     if (counter) attacker.counterWindow = 0;
     if (punish) target.punishConsumed = true;
     target.hp = Math.max(0, target.hp - dealt);
-    target.vx = direction * attack.knockback;
-    grantHeavyAdvantage(target, variant);
-    const slamBounce = applySlamBounce(target, variant);
+    const armored = ultimateArmored(target, kind, variant, metadata);
+    if (!armored) target.vx = direction * attack.knockback;
+    if (!armored) grantHeavyAdvantage(target, variant);
+    const slamBounce = !armored && applySlamBounce(target, variant);
     const empLaunch = variant === 'shockwave' && target.y < VARIANT_ATTACKS.shockwave.hitHeight && !target.airLaunchUsed;
     const launch = (variant === 'launcher' || empLaunch) && !target.airLaunchUsed;
     if (launch) {
@@ -590,7 +614,7 @@ export class CombatRoom {
       target.airHits = 1;
       if (!empLaunch) attacker.jumpCancelWindow = 0.60;
     } else if (airborneBefore) target.airHits++;
-    if (variant === 'airFinish') target.vy = Math.min(target.vy, -V5_ATTACKS.airFinish.downwardSpeed);
+    if (!armored && variant === 'airFinish') target.vy = Math.min(target.vy, -V5_ATTACKS.airFinish.downwardSpeed);
     // Follow-up hits never add vertical velocity: gravity bounds every air combo.
     target.energy = clamp(target.energy + 6, 0, 100);
     attacker.energy = clamp(attacker.energy + (kind === 'ultimate' ? 0 : 9), 0, 100);
@@ -610,14 +634,16 @@ export class CombatRoom {
       if (attacker.bot) attacker.brainTimer = Math.min(attacker.brainTimer, 0.14);
     }
     target.combo = 0;
-    target.chain = 0;
-    target.launchWindow = 0;
-    target.jumpCancelWindow = 0;
-    target.dashFollowWindow = 0;
-    target.queued = null;
+    if (!armored) {
+      target.chain = 0;
+      target.launchWindow = 0;
+      target.jumpCancelWindow = 0;
+      target.dashFollowWindow = 0;
+      target.queued = null;
+    }
     const stun = kind === 'ultimate' ? attack.stun : airborneBefore && target.airHits > V5_RULES.airHitLimit ? 0.05 : airborneBefore && !launch ? Math.min(attack.stun, 0.24) : attack.stun;
-    this.setAction(target, 'hit', stun, kind === 'ultimate' ? 'overloadHit' : metadata.throw ? 'thrown' : empLaunch ? 'empLift' : variant === 'bolt' ? 'electrified' : launch ? 'launched' : slamBounce ? 'slamBounce' : isGroundHeavy(variant) ? 'heavyStagger' : '');
-    this.event('hit', attacker, { x: target.x, y: target.y + 1.15, target: target.id, damage: dealt, combo: attacker.combo, action: kind, variant, counter, punish, airborne: airborneBefore || launch });
+    if (!armored) this.setAction(target, 'hit', stun, kind === 'ultimate' ? 'overloadHit' : metadata.throw ? 'thrown' : empLaunch ? 'empLift' : variant === 'bolt' ? 'electrified' : launch ? 'launched' : slamBounce ? 'slamBounce' : isGroundHeavy(variant) ? 'heavyStagger' : '');
+    this.event('hit', attacker, { x: target.x, y: target.y + 1.15, target: target.id, damage: dealt, combo: attacker.combo, action: kind, variant, counter, punish, armored, airborne: airborneBefore || launch });
     if (launch) this.event('launch', attacker, { x: target.x, y: target.y + 1.15, target: target.id, variant, velocity: target.vy });
     this.lastHit = { player: attacker.id, target: target.id, variant, combo: attacker.combo, at: this.combatTime };
     return true;
@@ -690,22 +716,31 @@ export class CombatRoom {
     if (!player.input.block && player.action !== 'hit') player.guard = clamp(player.guard + 15 * dt, 0, 100);
     if (player.comboExpiry < this.combatTime) player.combo = 0;
     player.actionTime += dt;
+    const route = continuation(player);
+    if (route && player.cancelWindow <= 0 && player.actionTime + 1e-8 >= route.open && player.actionTime < route.close) {
+      player.routeStage = route.stage;
+      player.cancelWindow = route.close - player.actionTime;
+      player.launchWindow = route.heavy || player.variant.startsWith('air') ? 0 : player.cancelWindow;
+    }
     if (player.throwFlight) player.throwFlightTime += dt;
     if (player.grabTarget || player.grabbedBy) { player.vx = 0; player.vy = 0; player.queued = null; return; }
     if (LOCKED_ACTIONS.has(player.action) && player.actionTime >= player.actionDuration && !(player.variant === 'slam' && !player.slamLanded)) {
-      if ((!player.attackConnected || player.cancelWindow <= 0) && ['light', 'heavy'].includes(player.action)) { player.cancelWindow = player.launchWindow = 0; player.routeStage = 0; player.chain = 0; player.comboRoute = ''; }
+      if (player.cancelWindow <= 0 && ['light', 'heavy'].includes(player.action)) { player.cancelWindow = player.launchWindow = 0; player.routeStage = 0; player.chain = 0; player.comboRoute = ''; }
       this.setAction(player, 'idle');
     }
     if (player.variant === 'parry' && player.actionTime > player.actionDuration) player.variant = '';
     if (player.queued && player.queued.expires < this.combatTime) player.queued = null;
     if (player.queued && offenseLocked(player) && !isDefensiveAction(player.queued.action)) player.queued = null;
-    if (player.queued && this.beginAction(player, player.queued.action, player.queued.crouch)) player.queued = null;
+    if (player.queued && this.beginAction(player, player.queued.action, player.queued.crouch)) {
+      player.queued = player.followup; player.followup = null; this.extendContinuationBuffer(player);
+    }
     if (!LOCKED_ACTIONS.has(player.action)) {
       player.facing = this.opponent(player).x >= player.x ? 1 : -1;
       const next = player.y > 0.02 ? 'jump' : player.input.block ? 'block' : player.input.crouch ? 'crouch' : Math.abs(player.input.move) > 0.05 ? 'walk' : 'idle';
       if (player.action !== next) this.setAction(player, next);
       const speed = player.input.block ? 0.26 : player.input.crouch ? 0.3 : 1;
-      player.vx = player.pursuitWindow > 0 ? player.facing * V5_RULES.pursuitSpeed : player.input.move * WALK_SPEED * speed;
+      const travelSpeed = player.traversalJump && (player.y > .02 || player.vy > 0) ? AIR_MOVE_SPEED : WALK_SPEED;
+      player.vx = player.pursuitWindow > 0 ? player.facing * V5_RULES.pursuitSpeed : player.input.move * travelSpeed * speed;
     } else if (player.action === 'dash' && player.variant === 'feint') {
       if (player.actionTime < 0.20) player.vx = player.dashDirection * V3_RULES.feintSpeed;
       else player.vx *= Math.exp(-14 * dt);
@@ -721,6 +756,7 @@ export class CombatRoom {
       // Lift the actual 2.4m beetle above the holder before the horizontal toss begins.
       player.vx = player.throwFlightTime < 0.16 ? 0 : player.grabThrowDirection * 10.5;
     }
+    player.traversalPreviousX = player.x;
     player.x = clamp(player.x + player.vx * dt, -ARENA_EDGE, ARENA_EDGE);
     const hop = player.groundHeavy && V5_ATTACKS[player.variant];
     if (hop && !player.heavyHopStarted && player.actionTime >= hop.hopStart && player.y <= .02) {
@@ -735,6 +771,8 @@ export class CombatRoom {
       if (player.y <= 0) {
         player.y = 0;
         player.vy = 0;
+        player.traversalJump = false;
+        player.traversalSide = player.traversalLandingSide = 0;
         player.airLaunchUsed = false;
         player.airHits = 0;
         player.airActions = 0;
@@ -819,6 +857,7 @@ export class CombatRoom {
       }
       return;
     }
+    if (resolveTraversalContact(one, two, dt)) return;
     if (Math.abs(one.y - two.y) > 1.15) return;
     const delta = two.x - one.x;
     const overlap = PLAYER_RADIUS * 2 - Math.abs(delta);
@@ -862,7 +901,7 @@ export class CombatRoom {
       if (nearX && nearY) {
         if (this.damage(attacker, target, ATTACKS.special, 'special', oldX, { projectile: true, variant: projectile.variant })) projectile.life = 0;
       }
-      if (Math.abs(projectile.x) > 7) projectile.life = 0;
+      if (Math.abs(projectile.x) > ARENA_EDGE + 1.5) projectile.life = 0;
     }
     this.projectiles = this.projectiles.filter(projectile => projectile.life > 0);
   }
@@ -1029,7 +1068,8 @@ export class CombatRoom {
         x: roundNumber(player.x), y: roundNumber(player.y), vx: roundNumber(player.vx), vy: roundNumber(player.vy), facing: player.facing,
         hp: roundNumber(player.hp), maxHp: player.maxHp, energy: roundNumber(player.energy), guard: roundNumber(player.guard), wins: player.wins,
         action: player.action, variant: player.variant, actionTime: roundNumber(player.actionTime), actionDuration: player.actionDuration,
-        counterWindow: roundNumber(player.counterWindow), launchWindow: roundNumber(player.launchWindow), parryCooldown: roundNumber(player.parryCooldown),
+        ultimateArmor: ultimateArmored(player, 'light', 'jab'),
+        counterWindow: roundNumber(player.counterWindow), launchWindow: roundNumber(player.launchWindow), jumpCancelWindow: roundNumber(player.jumpCancelWindow), parryCooldown: roundNumber(player.parryCooldown),
         defenseOnly: roundNumber(player.defenseOnly), groundHeavy: player.groundHeavy, slamBounceUsed: player.slamBounceUsed,
         landedTime: player.landedTime,
         grabTarget: player.grabTarget, grabbedBy: player.grabbedBy, grabTechWindow: roundNumber(player.grabTechWindow),

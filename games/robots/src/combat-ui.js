@@ -1,3 +1,4 @@
+import { planActionCue } from './action-cues.js';
 import { actionContext, actionResource } from './action-context.js';
 import { V3_RULES, V5_RULES, FINISH_RULES, ROUND_SECONDS } from '../shared/constants.js';
 
@@ -6,6 +7,18 @@ const setText = (element, text) => { if (element.textContent !== text) element.t
 // Existing buttons acquire contextual moves; the player never needs a third thumb.
 export function createCombatUI() {
   const actionButtons = Object.fromEntries([...document.querySelectorAll('[data-action]')].map(button => [button.dataset.action, button]));
+  const joystick = document.getElementById('joystick');
+  const cueTargets = { ...actionButtons, jump: joystick };
+  function showCue(cue) {
+    for (const [target, element] of Object.entries(cueTargets)) {
+      if (!element) continue;
+      const active = cue?.target === target;
+      element.classList.toggle('action-cued', active);
+      element.dataset.cue = active ? cue.text : '';
+      element.dataset.cueTone = active ? cue.tone : '';
+      element.setAttribute('aria-description', active ? cue.text : '');
+    }
+  }
   const banner = document.getElementById('combat-callout');
   const title = document.getElementById('callout-title');
   const subtitle = document.getElementById('callout-subtitle');
@@ -28,7 +41,7 @@ export function createCombatUI() {
   const recipes = [
     'ТЯЖЁЛЫЙ → ТЯЖЁЛЫЙ → ТЯЖЁЛЫЙ — ПРОБОЙ / КРЮК / ПРЕСС',
     'УДАР → УДАР → ТЯЖЁЛЫЙ — ДРОБИТЕЛЬ',
-    'ПОПАДАНИЕ ОТКРЫВАЕТ СЛЕДУЮЩИЙ УДАР',
+    'ПОДСВЕТИЛАСЬ КНОПКА? ПРОДОЛЖАЙ СЕРИЮ',
     'ВНИЗ + ТЯЖЁЛЫЙ — ЗАХВАТ ПРОТИВ БЛОКА',
     'ПОПАЛ В СЕРИЮ? РЫВОК — СБРОС ЗА 50 ⚡',
     'ТЯЖЁЛЫЙ → РЫВОК В ЗАМАХЕ — ОБМАН',
@@ -55,9 +68,10 @@ export function createCombatUI() {
       clearTimeout(calloutTimer); clearTimeout(comboTimer);
     }
     const player = state.players.find(p => p.id === playerId);
-    if (!player) return;
+    if (!player) { showCue(null); return; }
     const fighting = state.phase === 'fight';
     const moves = actionContext(player, intent, state);
+    const actionCue = planActionCue(state, playerId, intent);
     const { defenseOnly, airborne, launcher, crusher, counter, ram, wave, tech, holding, pummelReady, strikeCount, burst, feint, grab, dash, airDash, finish, combo: cue } = moves;
     setText(actionButtons.heavy.querySelector('span'), moves.heavy);
     setText(actionButtons.light.querySelector('span'), moves.light);
@@ -69,18 +83,13 @@ export function createCombatUI() {
     actionButtons.light.setAttribute('aria-label', tech ? 'Разорвать захват' : holding ? 'Ударить в захвате' : 'Быстрый удар');
     actionButtons.heavy.setAttribute('aria-label', finish.canTrigger ? 'Добивание: сорвать ядро' : holding ? 'Бросить соперника' : grab ? 'Захват' : 'Тяжёлый удар');
     actionButtons.dash.classList.toggle('unavailable', !dash.ready);
-    actionButtons.dash.classList.toggle('opportunity', fighting && (burst || feint || airDash) && dash.ready);
-    actionButtons.dash.classList.toggle('escape-ready', fighting && burst && dash.ready);
-    actionButtons.heavy.classList.toggle('opportunity', finish.canTrigger || fighting && (airborne || launcher || crusher || grab || holding || cue.heavy));
-    actionButtons.light.classList.toggle('opportunity', fighting && (counter || ram || tech || pummelReady || cue.open && !cue.heavy));
     actionButtons.light.classList.toggle('unavailable', holding && !pummelReady);
-    actionButtons.light.classList.toggle('escape-ready', fighting && tech);
     actionButtons.special.classList.toggle('wave-mode', wave);
     actionButtons.block.classList.toggle('parry-ready', !defenseOnly && !(player.parryCooldown > 0) && fighting);
     recipe.classList.toggle('active', fighting && (defenseOnly || counter || launcher || airborne || grab || feint || holding || cue.open));
     recipe.dataset.stage = cue.open ? String(cue.stage) : '';
-    recipe.hidden = !fighting;
-    const tip = tech ? 'ТЕБЯ СХВАТИЛИ — НАЖМИ УДАР!' : holding ? `ДОЖИМ ${strikeCount}/${V5_RULES.grabStrikeLimit} · ТЯЖЁЛЫЙ — БРОСОК · НАЗАД — ЗА СПИНУ` : burst ? (dash.ready ? 'СБРОС РАЗОРВЁТ СЕРИЮ. ЦЕНА — 50 ⚡' : dash.cooldown > 0 ? 'СБРОС ПЕРЕЗАРЯЖАЕТСЯ' : 'ДЛЯ СБРОСА НУЖНО 50 ⚡') : cue.open ? cue.text : feint ? 'РЫВОК СЕЙЧАС — ОТМЕНА ЗАМАХА ЗА 12 ⚡' : grab ? 'ЗАХВАТ ОБХОДИТ БЛОК. ДЕРЖИСЬ БЛИЗКО.' : counter ? 'ОКНО КОНТРАТАКИ — НАНЕСИ УДАР!' : launcher ? 'ТЯЖЁЛЫЙ УДАР ПОДБРОСИТ СОПЕРНИКА' : airborne ? (player.airDashUsed ? 'ВОЗДУШНЫЙ РЫВОК ИСПОЛЬЗОВАН · ТЯЖЁЛЫЙ — ВНИЗ' : 'УДАР — СЕРИЯ · РЫВОК — ДОГНАТЬ · ТЯЖЁЛЫЙ — ВНИЗ') : recipes[Math.max(0, Math.floor((ROUND_SECONDS - state.time) / 8) + (state.round - 1)) % recipes.length];
+    recipe.hidden = !fighting || player.hp <= 0;
+    const tip = actionCue?.key === 'pursue' ? 'СОПЕРНИК ПОДБРОШЕН · МОЖНО ДОГНАТЬ' : tech ? 'ТЕБЯ СХВАТИЛИ — НАЖМИ УДАР!' : holding ? `ДОЖИМ ${strikeCount}/${V5_RULES.grabStrikeLimit} · ТЯЖЁЛЫЙ — БРОСОК · НАЗАД — ЗА СПИНУ` : burst ? (dash.ready ? 'СБРОС РАЗОРВЁТ СЕРИЮ. ЦЕНА — 50 ⚡' : dash.cooldown > 0 ? 'СБРОС ПЕРЕЗАРЯЖАЕТСЯ' : 'ДЛЯ СБРОСА НУЖНО 50 ⚡') : cue.open ? cue.text : feint ? 'РЫВОК СЕЙЧАС — ОТМЕНА ЗАМАХА ЗА 12 ⚡' : grab ? 'ЗАХВАТ ОБХОДИТ БЛОК. ДЕРЖИСЬ БЛИЗКО.' : counter ? 'ОКНО КОНТРАТАКИ — НАНЕСИ УДАР!' : launcher ? 'ТЯЖЁЛЫЙ УДАР ПОДБРОСИТ СОПЕРНИКА' : airborne ? (player.airDashUsed ? 'ВОЗДУШНЫЙ РЫВОК ИСПОЛЬЗОВАН · ТЯЖЁЛЫЙ — ВНИЗ' : 'УДАР — СЕРИЯ · РЫВОК — ДОГНАТЬ · ТЯЖЁЛЫЙ — ВНИЗ') : recipes[Math.max(0, Math.floor((ROUND_SECONDS - state.time) / 8) + (state.round - 1)) % recipes.length];
     setText(recipe, defenseOnly ? 'БЛОК / ПРЫЖОК / НАЗАД · АТАКА ВОССТАНАВЛИВАЕТСЯ' : tip);
     escape.hidden = !fighting || !(tech || holding || burst && dash.ready);
     escape.dataset.kind = tech ? 'tech' : holding ? 'hold' : 'burst';
@@ -91,16 +100,17 @@ export function createCombatUI() {
     finisher.dataset.stage = state.finish?.stage || '';
     setText(finisherKicker, finish.executing ? 'БЕЛОБОГ ЗАПОМНИТ' : finish.mine ? 'ПОБЕДА В МАТЧЕ · ПОСЛЕДНИЙ ХОД' : 'БОЕВОЙ КОНТУР РАЗРУШЕН');
     setText(finisherTitle, finish.executing ? finish.type === 'brutality' ? 'БРУТАЛИТИ' : finish.type === 'coreRip' ? 'СОРВАННОЕ ЯДРО' : 'КРИТИЧЕСКИЙ ОТКАЗ' : finish.mine ? 'СОРВИ ЯДРО' : 'ЯДРО НЕСТАБИЛЬНО');
-    setText(finisherDetail, finish.executing ? '' : finish.canTrigger ? 'НАЖМИ ТЯЖЁЛЫЙ ИЛИ ПЕРЕГРУЗКУ' : 'АВТОМАТОН БОЛЬШЕ НЕ МОЖЕТ СРАЖАТЬСЯ');
+    setText(finisherDetail, finish.executing ? '' : finish.canTrigger ? 'НАЖМИ ПОДСВЕЧЕННУЮ КНОПКУ «ДОБИТЬ»' : 'АВТОМАТОН БОЛЬШЕ НЕ МОЖЕТ СРАЖАТЬСЯ');
     finisherTime.style.transform = `scaleX(${Math.min(1, finish.remaining / FINISH_RULES.offerDuration)})`;
     for (const [action, button] of Object.entries(actionButtons)) button.disabled = !fighting && !(finish.canTrigger && ['heavy', 'ultimate'].includes(action))
       || fighting && defenseOnly && ['light', 'heavy', 'special', 'ultimate'].includes(action);
     setText(actionButtons.ultimate.querySelector('span'), finish.canTrigger ? 'ДОБИВАНИЕ' : 'ПЕРЕГРУЗКА');
-    actionButtons.ultimate.setAttribute('aria-label', finish.canTrigger ? 'Добивание: сорвать ядро' : 'Перегрузка: зажми 0,65 секунды, нужно 80 энергии');
+    actionButtons.ultimate.setAttribute('aria-label', finish.canTrigger ? 'Добивание: сорвать ядро' : 'Перегрузка: нажми один раз, нужно 80 энергии');
     if (finish.canTrigger) {
       actionButtons.ultimate.classList.add('charged'); actionButtons.ultimate.classList.remove('unavailable');
     }
     actionButtons.heavy.classList.toggle('finish-ready', finish.canTrigger);
+    showCue(actionCue);
     if (!fighting) banner.classList.remove('visible');
   }
   function event(event, playerId, state) {
@@ -141,7 +151,7 @@ export function createCombatUI() {
     else if (event.type === 'ultimate') callout('ПЕРЕГРУЗКА', mine ? 'ТРИ ЗАЛПА. ПОЛНЫЙ РАЗРЯД.' : 'ОТОЙДИ ИЛИ ДЕРЖИ БЛОК', mine ? 'amber' : 'danger', 5, 1400);
   }
   function reset() {
-    clearTimeout(calloutTimer); clearTimeout(comboTimer); context = ''; priority = 0;
+    clearTimeout(calloutTimer); clearTimeout(comboTimer); context = ''; priority = 0; showCue(null);
     stats = { bestCombo: 0, parries: 0, damage: 0, escapes: 0, throws: 0, punishes: 0 };
     banner.classList.remove('visible'); combo.classList.remove('visible'); recipe.hidden = true; escape.hidden = true; finisher.hidden = true;
   }

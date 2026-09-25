@@ -1,9 +1,10 @@
 // Camera-only presentation. Never changes simulation time, player roots or input.
+import { ARENA_EDGE } from '../shared/constants.js';
 const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
 const mix = (a, b, t) => a + (b - a) * t;
 const radians = Math.PI / 180;
 const REST = { x: 0, y: 3.8, z: 10.7, tx: 0, ty: 1.5, tz: -.2 };
-export const CAMERA_LIMITS = Object.freeze({ x: .14, y: .10, z: .28, slots: 6, age: .72, maxDistance: 34 });
+export const CAMERA_LIMITS = Object.freeze({ x: .14, y: .10, z: .28, slots: 6, age: .72, maxDistance: 42 });
 
 /** Screen projection used by the safety frame and regression tests. */
 export function projectCameraPoint(point, frame, aspect, fov = 36) {
@@ -22,13 +23,16 @@ function pointsFor(players, anticipation = true) {
     // Broad chassis/feet envelope, including the incoming side of a throw.
     const x = p.x ?? 0, y = Math.max(0, p.y ?? 0);
     const leadX = anticipation ? clamp((p.vx ?? 0) * .12, -.7, .7) : 0;
-    const headroom = ['topHat', 'propeller', 'crown'].includes(p.customization?.accessory) ? 3.2 : 2.75;
+    const headroom = ['topHat', 'propeller', 'crown', 'colander'].includes(p.customization?.accessory) ? 3.2 : 2.75;
     const top = y + headroom + (anticipation ? Math.max(0, p.vy ?? 0) * .12 : 0);
-    for (const px of [x - 1.45 + Math.min(0, leadX), x + 1.45 + Math.max(0, leadX)]) {
-      for (const py of [Math.max(-.06, y - .08), top]) {
-        for (const z of [-.85, .85]) points.push({ x: px, y: py, z });
-      }
-    }
+    // Toes reach z±1.82, while the hat is a narrow object above the turret.
+    // Split the silhouette so high jumps fit without inflating a 3.2m-tall box
+    // across the whole stance and needlessly shrinking close-range fights.
+    for (const box of [
+      { halfX: 1.82, bottom: Math.max(-.06, y - .08), top: y + 1.35, depth: 2.02 },
+      { halfX: 1.12, bottom: y + .8, top, depth: .90 },
+    ]) for (const px of [x - box.halfX + Math.min(0, leadX), x + box.halfX + Math.max(0, leadX)])
+      for (const py of [box.bottom, box.top]) for (const z of [-box.depth, box.depth]) points.push({ x: px, y: py, z });
   }
   return points;
 }
@@ -53,9 +57,10 @@ function safeFrame(frame, players, aspect, fov, anticipation = true) {
 function desiredFrame(players, { aspect, fov, inLobby, intro = 0, charge = 0, finish = 0, reduced = false }) {
   if (inLobby) return { x: .55, y: 3.5, z: Math.max(11.9, 12.2 / (2 * Math.tan(fov * radians / 2) * aspect)), tx: .4675, ty: 1.42, tz: -.2 };
   const min = Math.min(...players.map(p => p.x ?? 0)), max = Math.max(...players.map(p => p.x ?? 0));
-  const mid = clamp((min + max) / 2, -3.9, 3.9);
+  const mid = clamp((min + max) / 2, -ARENA_EDGE, ARENA_EDGE);
   const airborne = Math.max(0, ...players.map(p => (p.y ?? 0) + Math.max(0, p.vy ?? 0) * .12));
-  const ty = 1.5 + Math.min(1.4, airborne * .33);
+  const lowest = Math.min(...players.map(p => Math.max(0, p.y ?? 0)));
+  const ty = 1.5 + (lowest + airborne) * .5;
   const spread = Math.max(8.8, max - min + 3.8);
   const z = Math.max(10.7, spread / (2 * Math.tan(fov * radians / 2) * aspect));
   const room = Math.max(0, z - 10.25);

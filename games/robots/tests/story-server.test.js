@@ -45,6 +45,26 @@ async function ready({ one, two }) {
 }
 const tick = (app, seconds) => { for (let n = 0; n < Math.ceil(seconds * 60); n++) app.tick(); };
 
+let barrierSerial = 0;
+async function drainSnapshots(app) {
+  const marker = `snapshot-barrier-${++barrierSerial}`;
+  await Promise.all([...app.wss.clients].filter(socket => socket.readyState === WebSocket.OPEN).map(socket => new Promise((resolve, reject) => {
+    const finish = error => {
+      clearTimeout(timer); socket.off('pong', onPong); socket.off('close', onClose); socket.off('error', finish);
+      if (error) reject(error); else resolve();
+    };
+    const onPong = data => { if (data.toString() === marker) finish(); };
+    const onClose = () => finish(new Error('Socket closed before queued snapshots reached the client'));
+    const timer = setTimeout(() => finish(new Error('Queued snapshots did not reach the client')), 2500);
+    socket.on('pong', onPong); socket.once('close', onClose); socket.once('error', finish);
+    // Control ping is queued behind the prior state frames on this transport;
+    // unlike the JSON ping response, it cannot be skipped by the 256 KiB cap.
+    // Matching pong proves that the peer read the queue, not merely that an
+    // arbitrary wall-clock delay expired. autoTick:false keeps it drained.
+    socket.ping(marker, error => { if (error) finish(error); });
+  })));
+}
+
 test('workshop profiles are validated, replicated and preserved through rounds and cannot change once ready', async t => {
   const f = await setup(t);
   f.one.sendPacket({ type: 'profile', name: ' <Царь>\u202e\n болтов ', character: '<Вежливый>\u0001', customization: { body: 'ruby', core: 'violet', accessory: 'crown', shader: 'bad' } });
@@ -127,11 +147,36 @@ test('real clients read shared rules and synchronize faceoff; referee disconnect
   assert.equal(f.room.game.phase, 'waiting', 'reconnect cannot bypass the faceoff');
   tick(f.app, FACE_OFF_DURATION - sceneTime + 1);
   // A synthetic tight loop can fill the deliberate socket backpressure cap.
-  // Let transport drain, then inspect the same authoritative final frame.
-  await new Promise(resolve => setTimeout(resolve, 30)); f.app.broadcast(f.room);
+  // A skipped final state is not retried when autoTick:false: first prove all
+  // queued frames reached the clients, then publish the authoritative frame.
+  await drainSnapshots(f.app); f.app.broadcast(f.room);
   const combat = (await restored.take(state(s => s.story.stage === 'roundIntro'))).state;
   assert.equal(combat.phase, 'story'); assert.equal(f.room.game.phase, 'countdown'); assert.equal(f.room.game.round, 1);
   assert.ok(Number.isFinite(combat.elapsed));
+});
+
+test('snapshot barrier waits through actual outbound backpressure before publishing the latest state', async t => {
+  const f = await setup(t);
+  const serverSocket = f.room.sessions.get('p2').socket;
+  // Hold real writes, not a mocked bufferedAmount. This reproduces the CI
+  // queue saturation independently of OS socket-buffer size or machine speed.
+  serverSocket._socket.cork();
+  t.after(() => serverSocket._socket?.uncork());
+  for (let i = 0; i < 512 && serverSocket.bufferedAmount < 256 * 1024; i++) f.app.broadcast(f.room);
+  assert.ok(serverSocket.bufferedAmount >= 256 * 1024, 'exercise the real application backpressure guard');
+  f.room.game.player('p1').name = 'После очереди';
+  f.app.broadcast(f.room);
+  let drained = false;
+  const barrier = drainSnapshots(f.app).then(() => { drained = true; });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(drained, false, 'a barrier cannot finish while earlier frames are held');
+  serverSocket._socket.uncork();
+  await barrier;
+  assert.equal(f.two.messages.some(p => p.type === 'state' && p.state.players[0].name === 'После очереди'), false, 'the capped final snapshot was actually skipped');
+  assert.equal(serverSocket.bufferedAmount, 0, 'the transport has drained before retrying the snapshot');
+  f.app.broadcast(f.room);
+  const latest = (await f.two.take(state(s => s.players[0].name === 'После очереди'))).state;
+  assert.equal(latest.players[1].id, 'p2');
 });
 
 test('training story needs only its human; a referee cannot keep an abandoned room alive', async t => {

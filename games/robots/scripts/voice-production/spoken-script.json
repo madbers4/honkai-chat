@@ -1,0 +1,2748 @@
+{
+  "schemaVersion": 1,
+  "id": "club-spoken-rerecord-v1",
+  "language": "ru-RU",
+  "sourceRevision": "c5b72ef",
+  "status": "script-only-no-synthesis-no-runtime-integration",
+  "purpose": "Полная перезапись автоматической разговорной озвучки кат-сцены и всех предраундовых пар. Авторские новые реплики, а не дословная транскрипция референсов.",
+  "counts": {
+    "faceoffUtterances": 9,
+    "roundExchanges": 12,
+    "roundSemanticLines": 24,
+    "roundRecordings": 48,
+    "totalRecordings": 57,
+    "p1Recordings": 28,
+    "p2Recordings": 29,
+    "narratorRecordings": 0
+  },
+  "scope": {
+    "include": [
+      "7 текущих аудиофайлов кат-сцены, включая все 5 исходных диалоговых записей",
+      "9 речевых ходов кат-сцены; greeting разделён на 3 хода p2→p1→p2",
+      "24 смысловые строки 12 предраундовых пар, каждая записана голосами p1 и p2"
+    ],
+    "exclude": [
+      "210 реплик живого рефери",
+      "Авторский устав и карточки правил",
+      "Боевые ORA/MUDA, атаки, суператака, взрыв",
+      "Имена игроков и другие пользовательские данные",
+      "Немые вводные/именные/финальные титры"
+    ],
+    "preservedAssetIds": [
+      "explosion",
+      "jotaro-attack-1",
+      "jotaro-attack-2",
+      "jotaro-attack-3",
+      "duo-super",
+      "dio-attack-1",
+      "dio-attack-2"
+    ]
+  },
+  "productionRules": {
+    "textIsExactSpokenPayload": true,
+    "directionsMustNeverBeSpoken": true,
+    "playerNamesInAudio": false,
+    "playerNameDisplay": "Имя остаётся в существующей карточке говорящего. Текст субтитра равен text выбранной записи; нет обещания озвучить выбранное имя.",
+    "aliases": "Джотаро/Дио появляются только в двух соседних репликах старого пакета пафоса; следующая строка объясняет, что имена роботов собственные.",
+    "faceoffClock": "Это план записи. Не вставлять новые MP3 в прежний 48-секундный монтаж без измерения длительностей и нового распределения кадров; три части greeting станут отдельными beats.",
+    "roundClock": {
+      "beatDuration": 3.4,
+      "introDuration": 6.8,
+      "maxRecordingDuration": 2.95,
+      "startupGrace": 0.38,
+      "minimumRemainder": 0.07
+    },
+    "referenceJudgement": "Референсы и фрагменты — кандидаты по исходным файлам/ранее выполненному ASR/измерениям. В этом задании прослушивание и актёрское сравнение не проводились.",
+    "takes": "Для пилота и выбранного финального дубля сохранять неизменённый WAV, seed/model/settings, фактическую длительность. Не запихивать длинную реплику в лимит обрезкой начала/конца.",
+    "roundSelection": "Сначала выбрать пару существующим детерминированным deck, затем setup/reply и голос. Нечётный: setup.p1 → reply.p2; чётный: setup.p2 → reply.p1. Нельзя выбирать только clips.a/b.",
+    "referee": "При подключённом рефери предраундовая автоозвучка отключена. Суфлёр читает те же setupText/replyText выбранной пары, не старый и не переставленный текст.",
+    "approval": "После пилота проверить целые слова и смысл на слух, характер подачи относительно референса, затем измерить громкость и длительность. Ни embedding, ни ASR не подтверждают художественное сходство."
+  },
+  "voices": {
+    "p1": {
+      "runtimeSeat": 0,
+      "label": "Первая машина",
+      "primaryReference": "p1-conversation",
+      "direction": "Короткое начало на выдохе, затем ясный нажим на ключевое слово. В ответах сухая точка; не читать всё одинаковым басовым гулом. Крик только в отдельном «Дио!».",
+      "identity": "Голос всегда принадлежит p1, независимо от очередности реплики, положения на арене и выбранного имени."
+    },
+    "p2": {
+      "runtimeSeat": 1,
+      "label": "Вторая машина",
+      "primaryReference": "p2-conversation",
+      "direction": "Обращается прямо к сопернику: короткий разбег, пауза перед насмешкой, смысловой конец открыто вперёд. Не растягивать каждый слог и не превращать все строки в крик.",
+      "identity": "Голос всегда принадлежит p2, независимо от очередности реплики, положения на арене и выбранного имени."
+    }
+  },
+  "references": {
+    "p1-conversation": {
+      "clip": "jotaro-not-simple",
+      "path": "public/assets/voices/jotaro-not-simple.mp3",
+      "original": "звуки/Джот - Похоже ты и правда не прост.mp3",
+      "preferredFragment": {
+        "start": 1.25,
+        "end": 4.05,
+        "status": "candidate-from-existing-asr-not-listening-approved"
+      },
+      "purpose": "Русская разговорная часть без начального междометия; основной кандидат для разговорного голоса p1.",
+      "evidence": "C:/Temp/hsr-jojo-tts/expressive-pilot/references-asr.json: Russian phrase starts near 1.36 s, last word ends near 3.78 s.",
+      "listeningApproved": false
+    },
+    "p1-exclamation": {
+      "clip": "jotaro-dio",
+      "path": "public/assets/voices/jotaro-dio.mp3",
+      "original": "звуки/Джот - Ублюдок, ДЫО.mp3",
+      "preferredFragment": {
+        "start": 2.6,
+        "end": 4.1,
+        "status": "candidate-from-existing-asr-not-listening-approved"
+      },
+      "purpose": "Только исполнительский ориентир для краткого «Дио!». Слишком короток как единственный тембровый референс.",
+      "evidence": "Existing ASR places the final name at 2.66–3.76 s.",
+      "listeningApproved": false
+    },
+    "p2-conversation": {
+      "clip": "dio-hero",
+      "path": "public/assets/voices/dio-hero.mp3",
+      "original": "звуки/Дио - Ха, ну вперед, Герой.mp3",
+      "preferredFragment": {
+        "start": 0.23,
+        "end": 3.19,
+        "status": "existing-measured-trim-not-listening-approved"
+      },
+      "purpose": "Основной кандидат для разговорного голоса p2; короткий смешок и обращение.",
+      "evidence": "docs/generated-voice-pack-analysis.json references.dio.trim",
+      "listeningApproved": false
+    },
+    "p2-challenge": {
+      "clip": "greeting",
+      "path": "public/assets/voices/greeting.mp3",
+      "original": "звуки/Приветствие.mp3",
+      "preferredFragment": {
+        "start": 0,
+        "end": 3.9,
+        "status": "candidate-from-existing-asr-not-listening-approved"
+      },
+      "purpose": "Исполнительский ориентир для первого вызова p2. Не подавать полный greeting как один чистый speaker sample: в нём два актёра.",
+      "evidence": "Current faceoff split; existing ASR places the first greeting at 0–3.56 s, the other actor at 4.58–5.26 s.",
+      "listeningApproved": false
+    },
+    "p2-taunt": {
+      "clip": "dio-angry",
+      "path": "public/assets/voices/dio-angry.mp3",
+      "original": "звуки/Дио - Похоже ты Зол, Джотаро.mp3",
+      "preferredFragment": {
+        "start": 1.25,
+        "end": 5.8,
+        "status": "candidate-from-existing-asr-not-listening-approved"
+      },
+      "purpose": "Исполнительский ориентир для вопроса с насмешкой, без длинного начального возгласа.",
+      "evidence": "Existing ASR places the main question at approximately 1.32–5.46 s; words and name are unreliable.",
+      "listeningApproved": false
+    }
+  },
+  "inventory": {
+    "basis": [
+      "shared/faceoff-script.js",
+      "shared/round-intro.js",
+      "shared/club-story.js",
+      "shared/voice-clips.js",
+      "shared/generated-voice-clips.js",
+      "src/story-voice.js",
+      "src/club-journey.js",
+      "public/assets/voices/manifest.json"
+    ],
+    "faceoff": {
+      "duration": 48,
+      "files": [
+        {
+          "id": "greeting",
+          "file": "Приветствие.mp3",
+          "duration": 11.448,
+          "action": "replace-with-three-separate-utterances",
+          "turns": [
+            "p2",
+            "p1",
+            "p2"
+          ],
+          "currentStart": 13,
+          "notes": "Один MP3, три хода разговора двух актёров. Смена титра в 17.1 и 18.25 с не запускает новый файл. Последний титр — пояснение, не транскрипция."
+        },
+        {
+          "id": "jotaro-dio",
+          "file": "Джот - Ублюдок, ДЫО.mp3",
+          "duration": 4.296,
+          "action": "replace",
+          "turns": [
+            "p1"
+          ],
+          "currentStart": 24.848,
+          "notes": "Титр «ДИО.» не является полной транскрипцией файла."
+        },
+        {
+          "id": "dio-angry",
+          "file": "Дио - Похоже ты Зол, Джотаро.mp3",
+          "duration": 6,
+          "action": "replace",
+          "turns": [
+            "p2"
+          ],
+          "currentStart": 29.494,
+          "notes": "Титр «Протокол дипломатии: отклонён.» — авторская аннотация, не spoken text."
+        },
+        {
+          "id": "jotaro-not-simple",
+          "file": "Джот - Похоже ты и правда не прост.mp3",
+          "duration": 4.128,
+          "action": "replace",
+          "turns": [
+            "p1"
+          ],
+          "currentStart": 35.894,
+          "notes": "Титр «Сложность соперника недооценена.» — авторская аннотация. Не использовать ошибочную ASR как финальный текст."
+        },
+        {
+          "id": "dio-hero",
+          "file": "Дио - Ха, ну вперед, Герой.mp3",
+          "duration": 3.696,
+          "action": "replace",
+          "turns": [
+            "p2"
+          ],
+          "currentStart": 40.372,
+          "notes": "Финальный вызов, заменяется целиком."
+        },
+        {
+          "id": "jotaro-mode",
+          "file": "generated/jotaro-mode.mp3",
+          "duration": 3.2,
+          "action": "regenerate",
+          "turns": [
+            "p1"
+          ],
+          "currentStart": 6.4,
+          "text": "Боевой режим: кабачковое противостояние!"
+        },
+        {
+          "id": "dio-mode",
+          "file": "generated/dio-mode.mp3",
+          "duration": 2.55,
+          "action": "regenerate",
+          "turns": [
+            "p2"
+          ],
+          "currentStart": 9.9,
+          "text": "Твой гарантийный талон уже мёртв."
+        }
+      ],
+      "silentCaptions": [
+        {
+          "at": 0,
+          "speaker": "narrator",
+          "text": "БЕЛОБОГ. ПОДПОЛЬЕ. ГАРАНТИЯ ЗАКОНЧИЛАСЬ НА ВХОДЕ."
+        },
+        {
+          "at": 2,
+          "speaker": "p1",
+          "text": "<имя первого робота>. Претензии принимаются после боя."
+        },
+        {
+          "at": 4.2,
+          "speaker": "p2",
+          "text": "<имя второго робота>. Запасных деталей не обещает."
+        },
+        {
+          "at": 44.518,
+          "speaker": "narrator",
+          "text": "ПАФОС ЗАГРУЖЕН. ТЕПЕРЬ ПОКАЖИТЕ, ЧТО УМЕЕТЕ."
+        }
+      ],
+      "greetingTurns": [
+        {
+          "speaker": "p2",
+          "sourceRange": [
+            0,
+            4.1
+          ],
+          "evidence": "Current subtitle plus existing ASR",
+          "transcriptStatus": "first line known in runtime; not listening-verified here"
+        },
+        {
+          "speaker": "p1",
+          "sourceRange": [
+            4.1,
+            5.25
+          ],
+          "evidence": "Current shot boundary; ASR locates spoken name at 4.58–5.26, so this is NOT a safe extraction range",
+          "transcriptStatus": "short name reply; not listening-verified here"
+        },
+        {
+          "speaker": "p2",
+          "sourceRange": [
+            5.25,
+            11.448
+          ],
+          "evidence": "Current shot and existing ASR",
+          "transcriptStatus": "runtime shows annotation, not source transcript; intentionally rewritten"
+        }
+      ]
+    },
+    "rounds": {
+      "recordedExchangeIds": [
+        "warranty",
+        "spares"
+      ],
+      "recordingsBeingReplaced": [
+        "jotaro-round-1",
+        "jotaro-round-2",
+        "dio-round-1",
+        "dio-round-2"
+      ],
+      "otherPairs": "10 пар / 20 строк сейчас доступны только через opt-in local TTS; новым набором озвучиваются все 12 пар.",
+      "semanticIssue": "Существующие recorded clips привязаны к seat; в чётных раундах reply проигрывается перед setup. Будущая интеграция должна использовать utterances[turn][speaker].",
+      "currentExchanges": [
+        {
+          "id": "warranty",
+          "setup": "Обмен гарантийными обязательствами",
+          "first": "{a}: «Подойди. Проверим твою сборку.»",
+          "reply": "{b}: «Я отменяю твою гарантию!»",
+          "clips": {
+            "a": "jotaro-round-1",
+            "b": "dio-round-2"
+          }
+        },
+        {
+          "id": "quiet",
+          "setup": "Проверка режима тишины",
+          "first": "{a}: «Я работаю бесшумно».",
+          "reply": "{b}: «Тогда треск будет мой. Очень удобно»."
+        },
+        {
+          "id": "manual",
+          "setup": "Разногласия по инструкции",
+          "first": "{a}: «Я изучил все твои слабости».",
+          "reply": "{b}: «Это инструкция от чайника. Но две страницы совпадают»."
+        },
+        {
+          "id": "spares",
+          "setup": "Обмен искрами",
+          "first": "{a}: «Меньше пафоса. Лови искру!»",
+          "reply": "{b}: «Твоя зарядка закончилась!»",
+          "clips": {
+            "a": "jotaro-round-2",
+            "b": "dio-round-1"
+          }
+        },
+        {
+          "id": "rust",
+          "setup": "Спор об отделке",
+          "first": "{a}: «На тебе ржавчина».",
+          "reply": "{b}: «Это выдержка. Я коллекционная модель»."
+        },
+        {
+          "id": "floor",
+          "setup": "Знакомство с ареной",
+          "first": "{a}: «Пол уже знает моё имя».",
+          "reply": "{b}: «Я постараюсь познакомить вас поближе»."
+        },
+        {
+          "id": "calculate",
+          "setup": "Точность прогноза",
+          "first": "{a}: «Я рассчитал исход этого боя».",
+          "reply": "{b}: «Оставь место для исправлений карандашом»."
+        },
+        {
+          "id": "music",
+          "setup": "Настройка выхода",
+          "first": "{a}: «Где моя победная музыка?»",
+          "reply": "{b}: «Пока включили вентиляцию. Начни с неё»."
+        },
+        {
+          "id": "polite",
+          "setup": "Обмен любезностями",
+          "first": "{a}: «Я дам тебе фору».",
+          "reply": "{b}: «Лучше дай розетку. Фора у меня своя»."
+        },
+        {
+          "id": "fear",
+          "setup": "Последняя проверка систем",
+          "first": "{a}: «Мой процессор не знает страха».",
+          "reply": "{b}: «Обновление придёт без предупреждения»."
+        },
+        {
+          "id": "champion",
+          "setup": "Заявка на титул",
+          "first": "{a}: «Перед тобой будущий чемпион».",
+          "reply": "{b}: «А перед тобой проверка настоящего времени»."
+        },
+        {
+          "id": "bolts",
+          "setup": "Техническое напутствие",
+          "first": "{a}: «Держись крепче».",
+          "reply": "{b}: «Это я своим болтам уже сказал»."
+        }
+      ]
+    }
+  },
+  "faceoffOrder": [
+    "faceoff-mode-p1",
+    "faceoff-mode-p2",
+    "faceoff-greeting-open",
+    "faceoff-greeting-answer",
+    "faceoff-greeting-package",
+    "faceoff-challenge-p1",
+    "faceoff-taunt-p2",
+    "faceoff-resolve-p1",
+    "faceoff-fight-p2"
+  ],
+  "roundExchanges": [
+    {
+      "id": "warranty",
+      "title": "Обмен гарантийными обязательствами",
+      "setupText": "Подойди. Проверим твою сборку.",
+      "replyText": "Я отменяю твою гарантию!",
+      "utterances": {
+        "setup": {
+          "p1": "round-warranty-setup-p1",
+          "p2": "round-warranty-setup-p2"
+        },
+        "reply": {
+          "p1": "round-warranty-reply-p1",
+          "p2": "round-warranty-reply-p2"
+        }
+      },
+      "playOrder": {
+        "odd": [
+          "round-warranty-setup-p1",
+          "round-warranty-reply-p2"
+        ],
+        "even": [
+          "round-warranty-setup-p2",
+          "round-warranty-reply-p1"
+        ]
+      }
+    },
+    {
+      "id": "quiet",
+      "title": "Проверка режима тишины",
+      "setupText": "Я работаю бесшумно.",
+      "replyText": "Тогда трещать буду я. Удобно!",
+      "utterances": {
+        "setup": {
+          "p1": "round-quiet-setup-p1",
+          "p2": "round-quiet-setup-p2"
+        },
+        "reply": {
+          "p1": "round-quiet-reply-p1",
+          "p2": "round-quiet-reply-p2"
+        }
+      },
+      "playOrder": {
+        "odd": [
+          "round-quiet-setup-p1",
+          "round-quiet-reply-p2"
+        ],
+        "even": [
+          "round-quiet-setup-p2",
+          "round-quiet-reply-p1"
+        ]
+      }
+    },
+    {
+      "id": "manual",
+      "title": "Разногласия по инструкции",
+      "setupText": "Я изучил все твои слабости.",
+      "replyText": "Это инструкция от чайника.",
+      "utterances": {
+        "setup": {
+          "p1": "round-manual-setup-p1",
+          "p2": "round-manual-setup-p2"
+        },
+        "reply": {
+          "p1": "round-manual-reply-p1",
+          "p2": "round-manual-reply-p2"
+        }
+      },
+      "playOrder": {
+        "odd": [
+          "round-manual-setup-p1",
+          "round-manual-reply-p2"
+        ],
+        "even": [
+          "round-manual-setup-p2",
+          "round-manual-reply-p1"
+        ]
+      }
+    },
+    {
+      "id": "spares",
+      "title": "Обмен искрами",
+      "setupText": "Меньше пафоса. Лови искру!",
+      "replyText": "Слабовато. Добавь пафоса!",
+      "utterances": {
+        "setup": {
+          "p1": "round-spares-setup-p1",
+          "p2": "round-spares-setup-p2"
+        },
+        "reply": {
+          "p1": "round-spares-reply-p1",
+          "p2": "round-spares-reply-p2"
+        }
+      },
+      "playOrder": {
+        "odd": [
+          "round-spares-setup-p1",
+          "round-spares-reply-p2"
+        ],
+        "even": [
+          "round-spares-setup-p2",
+          "round-spares-reply-p1"
+        ]
+      }
+    },
+    {
+      "id": "rust",
+      "title": "Спор об отделке",
+      "setupText": "На тебе ржавчина.",
+      "replyText": "Это выдержка. Я коллекционный!",
+      "utterances": {
+        "setup": {
+          "p1": "round-rust-setup-p1",
+          "p2": "round-rust-setup-p2"
+        },
+        "reply": {
+          "p1": "round-rust-reply-p1",
+          "p2": "round-rust-reply-p2"
+        }
+      },
+      "playOrder": {
+        "odd": [
+          "round-rust-setup-p1",
+          "round-rust-reply-p2"
+        ],
+        "even": [
+          "round-rust-setup-p2",
+          "round-rust-reply-p1"
+        ]
+      }
+    },
+    {
+      "id": "floor",
+      "title": "Знакомство с ареной",
+      "setupText": "Пол уже знает моё имя.",
+      "replyText": "Сейчас познакомитесь поближе.",
+      "utterances": {
+        "setup": {
+          "p1": "round-floor-setup-p1",
+          "p2": "round-floor-setup-p2"
+        },
+        "reply": {
+          "p1": "round-floor-reply-p1",
+          "p2": "round-floor-reply-p2"
+        }
+      },
+      "playOrder": {
+        "odd": [
+          "round-floor-setup-p1",
+          "round-floor-reply-p2"
+        ],
+        "even": [
+          "round-floor-setup-p2",
+          "round-floor-reply-p1"
+        ]
+      }
+    },
+    {
+      "id": "calculate",
+      "title": "Точность прогноза",
+      "setupText": "Я рассчитал исход боя.",
+      "replyText": "Готовь ластик. Будешь исправлять.",
+      "utterances": {
+        "setup": {
+          "p1": "round-calculate-setup-p1",
+          "p2": "round-calculate-setup-p2"
+        },
+        "reply": {
+          "p1": "round-calculate-reply-p1",
+          "p2": "round-calculate-reply-p2"
+        }
+      },
+      "playOrder": {
+        "odd": [
+          "round-calculate-setup-p1",
+          "round-calculate-reply-p2"
+        ],
+        "even": [
+          "round-calculate-setup-p2",
+          "round-calculate-reply-p1"
+        ]
+      }
+    },
+    {
+      "id": "music",
+      "title": "Настройка выхода",
+      "setupText": "Где моя победная музыка?",
+      "replyText": "Пока вентилятор. Танцуй!",
+      "utterances": {
+        "setup": {
+          "p1": "round-music-setup-p1",
+          "p2": "round-music-setup-p2"
+        },
+        "reply": {
+          "p1": "round-music-reply-p1",
+          "p2": "round-music-reply-p2"
+        }
+      },
+      "playOrder": {
+        "odd": [
+          "round-music-setup-p1",
+          "round-music-reply-p2"
+        ],
+        "even": [
+          "round-music-setup-p2",
+          "round-music-reply-p1"
+        ]
+      }
+    },
+    {
+      "id": "polite",
+      "title": "Обмен любезностями",
+      "setupText": "Я дам тебе фору.",
+      "replyText": "Лучше розетку. Фора своя.",
+      "utterances": {
+        "setup": {
+          "p1": "round-polite-setup-p1",
+          "p2": "round-polite-setup-p2"
+        },
+        "reply": {
+          "p1": "round-polite-reply-p1",
+          "p2": "round-polite-reply-p2"
+        }
+      },
+      "playOrder": {
+        "odd": [
+          "round-polite-setup-p1",
+          "round-polite-reply-p2"
+        ],
+        "even": [
+          "round-polite-setup-p2",
+          "round-polite-reply-p1"
+        ]
+      }
+    },
+    {
+      "id": "fear",
+      "title": "Последняя проверка систем",
+      "setupText": "Мой процессор не знает страха.",
+      "replyText": "Обновление придёт без спроса.",
+      "utterances": {
+        "setup": {
+          "p1": "round-fear-setup-p1",
+          "p2": "round-fear-setup-p2"
+        },
+        "reply": {
+          "p1": "round-fear-reply-p1",
+          "p2": "round-fear-reply-p2"
+        }
+      },
+      "playOrder": {
+        "odd": [
+          "round-fear-setup-p1",
+          "round-fear-reply-p2"
+        ],
+        "even": [
+          "round-fear-setup-p2",
+          "round-fear-reply-p1"
+        ]
+      }
+    },
+    {
+      "id": "champion",
+      "title": "Заявка на титул",
+      "setupText": "Перед тобой будущий чемпион.",
+      "replyText": "До будущего ещё дожить надо.",
+      "utterances": {
+        "setup": {
+          "p1": "round-champion-setup-p1",
+          "p2": "round-champion-setup-p2"
+        },
+        "reply": {
+          "p1": "round-champion-reply-p1",
+          "p2": "round-champion-reply-p2"
+        }
+      },
+      "playOrder": {
+        "odd": [
+          "round-champion-setup-p1",
+          "round-champion-reply-p2"
+        ],
+        "even": [
+          "round-champion-setup-p2",
+          "round-champion-reply-p1"
+        ]
+      }
+    },
+    {
+      "id": "bolts",
+      "title": "Техническое напутствие",
+      "setupText": "Держись крепче.",
+      "replyText": "Я своим болтам уже сказал.",
+      "utterances": {
+        "setup": {
+          "p1": "round-bolts-setup-p1",
+          "p2": "round-bolts-setup-p2"
+        },
+        "reply": {
+          "p1": "round-bolts-reply-p1",
+          "p2": "round-bolts-reply-p2"
+        }
+      },
+      "playOrder": {
+        "odd": [
+          "round-bolts-setup-p1",
+          "round-bolts-reply-p2"
+        ],
+        "even": [
+          "round-bolts-setup-p2",
+          "round-bolts-reply-p1"
+        ]
+      }
+    }
+  ],
+  "utterances": [
+    {
+      "id": "faceoff-mode-p1",
+      "speaker": "p1",
+      "text": "Боевой режим: кабачковое противостояние!",
+      "emotionalDirection": {
+        "pace": "Начать собранно, вторую половину ускорить одним броском.",
+        "pauses": [
+          {
+            "after": "режим",
+            "milliseconds": 100
+          }
+        ],
+        "emphasis": [
+          "кабачковое",
+          "противостояние"
+        ],
+        "arc": "Официальный запуск переходит в вызов; смешное название произносить всерьёз."
+      },
+      "reference": {
+        "id": "p1-conversation",
+        "clip": "jotaro-not-simple",
+        "preferredFragment": {
+          "start": 1.25,
+          "end": 4.05,
+          "status": "candidate-from-existing-asr-not-listening-approved"
+        }
+      },
+      "semanticGroup": "mode",
+      "sequence": {
+        "kind": "faceoff",
+        "order": 1
+      },
+      "maxDuration": 3.6,
+      "outputFile": "faceoff-mode-p1.mp3",
+      "replaces": {
+        "clip": "jotaro-mode",
+        "part": null
+      },
+      "status": "script-only"
+    },
+    {
+      "id": "faceoff-mode-p2",
+      "speaker": "p2",
+      "text": "Твоя гарантия уже мертва.",
+      "emotionalDirection": {
+        "pace": "Неторопливое начало, последние два слова слитно.",
+        "pauses": [
+          {
+            "after": "гарантия",
+            "milliseconds": 130
+          }
+        ],
+        "emphasis": [
+          "твоя",
+          "мертва"
+        ],
+        "arc": "Уверенно сообщает плохую новость именно сопернику; конец с ухмылкой, без смеха поверх слова."
+      },
+      "reference": {
+        "id": "p2-conversation",
+        "clip": "dio-hero",
+        "preferredFragment": {
+          "start": 0.23,
+          "end": 3.19,
+          "status": "existing-measured-trim-not-listening-approved"
+        }
+      },
+      "semanticGroup": "mode",
+      "sequence": {
+        "kind": "faceoff",
+        "order": 2
+      },
+      "maxDuration": 2.65,
+      "outputFile": "faceoff-mode-p2.mp3",
+      "replaces": {
+        "clip": "dio-mode",
+        "part": null
+      },
+      "status": "script-only"
+    },
+    {
+      "id": "faceoff-greeting-open",
+      "speaker": "p2",
+      "text": "Вот мы и встретились, Джотаро!",
+      "emotionalDirection": {
+        "pace": "Разбег в первых четырёх словах; имя — один яркий акцент.",
+        "pauses": [
+          {
+            "after": "встретились",
+            "milliseconds": 160
+          }
+        ],
+        "emphasis": [
+          "встретились",
+          "Джотаро"
+        ],
+        "arc": "Узнавание переходит в торжествующий вызов. Произношение: Джо́таро."
+      },
+      "reference": {
+        "id": "p2-challenge",
+        "clip": "greeting",
+        "preferredFragment": {
+          "start": 0,
+          "end": 3.9,
+          "status": "candidate-from-existing-asr-not-listening-approved"
+        }
+      },
+      "semanticGroup": "legacy-package",
+      "sequence": {
+        "kind": "faceoff",
+        "order": 3
+      },
+      "maxDuration": 4,
+      "outputFile": "faceoff-greeting-open.mp3",
+      "replaces": {
+        "clip": "greeting",
+        "part": "greeting-open"
+      },
+      "status": "script-only"
+    },
+    {
+      "id": "faceoff-greeting-answer",
+      "speaker": "p1",
+      "text": "Дио!",
+      "emotionalDirection": {
+        "pace": "Один выдох; два слога, без длинного разгона.",
+        "pauses": [],
+        "emphasis": [
+          "Дио"
+        ],
+        "arc": "Резкое узнавание, открытый нажим на первый слог: Ди́о. Хвост голоса сохранить."
+      },
+      "reference": {
+        "id": "p1-exclamation",
+        "clip": "jotaro-dio",
+        "preferredFragment": {
+          "start": 2.6,
+          "end": 4.1,
+          "status": "candidate-from-existing-asr-not-listening-approved"
+        }
+      },
+      "semanticGroup": "legacy-package",
+      "sequence": {
+        "kind": "faceoff",
+        "order": 4
+      },
+      "maxDuration": 1.2,
+      "outputFile": "faceoff-greeting-answer.mp3",
+      "replaces": {
+        "clip": "greeting",
+        "part": "greeting-answer"
+      },
+      "status": "script-only"
+    },
+    {
+      "id": "faceoff-greeting-package",
+      "speaker": "p2",
+      "text": "Пакет пафоса старый. Имена — наши!",
+      "emotionalDirection": {
+        "pace": "Первую фразу сказать быстро, вторую чуть раздельнее.",
+        "pauses": [
+          {
+            "after": "старый",
+            "milliseconds": 180
+          }
+        ],
+        "emphasis": [
+          "пафоса",
+          "наши"
+        ],
+        "arc": "На миг признаёт сбой, сразу возвращает уверенность. Не изображать системного диктора."
+      },
+      "reference": {
+        "id": "p2-conversation",
+        "clip": "dio-hero",
+        "preferredFragment": {
+          "start": 0.23,
+          "end": 3.19,
+          "status": "existing-measured-trim-not-listening-approved"
+        }
+      },
+      "semanticGroup": "legacy-package",
+      "sequence": {
+        "kind": "faceoff",
+        "order": 5
+      },
+      "maxDuration": 3.5,
+      "outputFile": "faceoff-greeting-package.mp3",
+      "replaces": {
+        "clip": "greeting",
+        "part": "greeting-package"
+      },
+      "status": "script-only"
+    },
+    {
+      "id": "faceoff-challenge-p1",
+      "speaker": "p1",
+      "text": "Хватит пафоса. Покажи, на что способен.",
+      "emotionalDirection": {
+        "pace": "Коротко оборвать первую фразу; вторую направить в соперника.",
+        "pauses": [
+          {
+            "after": "пафоса",
+            "milliseconds": 140
+          }
+        ],
+        "emphasis": [
+          "хватит",
+          "покажи"
+        ],
+        "arc": "Из раздражения — в собранную угрозу; без повторного чужого имени."
+      },
+      "reference": {
+        "id": "p1-conversation",
+        "clip": "jotaro-not-simple",
+        "preferredFragment": {
+          "start": 1.25,
+          "end": 4.05,
+          "status": "candidate-from-existing-asr-not-listening-approved"
+        }
+      },
+      "semanticGroup": "personal-challenge",
+      "sequence": {
+        "kind": "faceoff",
+        "order": 6
+      },
+      "maxDuration": 3.5,
+      "outputFile": "faceoff-challenge-p1.mp3",
+      "replaces": {
+        "clip": "jotaro-dio",
+        "part": null
+      },
+      "status": "script-only"
+    },
+    {
+      "id": "faceoff-taunt-p2",
+      "speaker": "p2",
+      "text": "Злишься? А я ещё не начинал!",
+      "emotionalDirection": {
+        "pace": "Первое слово отдельно, дальше ускорение к последнему.",
+        "pauses": [
+          {
+            "after": "Злишься",
+            "milliseconds": 160
+          }
+        ],
+        "emphasis": [
+          "ещё",
+          "начинал"
+        ],
+        "arc": "Поддеть вопросом и добить хвастовством; конец выше и сильнее начала."
+      },
+      "reference": {
+        "id": "p2-taunt",
+        "clip": "dio-angry",
+        "preferredFragment": {
+          "start": 1.25,
+          "end": 5.8,
+          "status": "candidate-from-existing-asr-not-listening-approved"
+        }
+      },
+      "semanticGroup": "personal-challenge",
+      "sequence": {
+        "kind": "faceoff",
+        "order": 7
+      },
+      "maxDuration": 2.8,
+      "outputFile": "faceoff-taunt-p2.mp3",
+      "replaces": {
+        "clip": "dio-angry",
+        "part": null
+      },
+      "status": "script-only"
+    },
+    {
+      "id": "faceoff-resolve-p1",
+      "speaker": "p1",
+      "text": "Похоже, ты и правда не прост.",
+      "emotionalDirection": {
+        "pace": "Первое слово с короткой оценочной паузой, остаток ровно.",
+        "pauses": [
+          {
+            "after": "Похоже",
+            "milliseconds": 130
+          }
+        ],
+        "emphasis": [
+          "правда",
+          "не прост"
+        ],
+        "arc": "Признание силы без испуга; последнее слово опустить, не распевать."
+      },
+      "reference": {
+        "id": "p1-conversation",
+        "clip": "jotaro-not-simple",
+        "preferredFragment": {
+          "start": 1.25,
+          "end": 4.05,
+          "status": "candidate-from-existing-asr-not-listening-approved"
+        }
+      },
+      "semanticGroup": "personal-challenge",
+      "sequence": {
+        "kind": "faceoff",
+        "order": 8
+      },
+      "maxDuration": 3.2,
+      "outputFile": "faceoff-resolve-p1.mp3",
+      "replaces": {
+        "clip": "jotaro-not-simple",
+        "part": null
+      },
+      "status": "script-only"
+    },
+    {
+      "id": "faceoff-fight-p2",
+      "speaker": "p2",
+      "text": "Ха! Ну вперёд, герой!",
+      "emotionalDirection": {
+        "pace": "Одно короткое «Ха», затем вызов на одном дыхании.",
+        "pauses": [
+          {
+            "after": "Ха",
+            "milliseconds": 120
+          },
+          {
+            "after": "вперёд",
+            "milliseconds": 80
+          }
+        ],
+        "emphasis": [
+          "вперёд",
+          "герой"
+        ],
+        "arc": "Сначала удовольствие от перепалки, затем приглашение подойти. Никакого добавленного смеха в конце."
+      },
+      "reference": {
+        "id": "p2-conversation",
+        "clip": "dio-hero",
+        "preferredFragment": {
+          "start": 0.23,
+          "end": 3.19,
+          "status": "existing-measured-trim-not-listening-approved"
+        }
+      },
+      "semanticGroup": "ready",
+      "sequence": {
+        "kind": "faceoff",
+        "order": 9
+      },
+      "maxDuration": 2.6,
+      "outputFile": "faceoff-fight-p2.mp3",
+      "replaces": {
+        "clip": "dio-hero",
+        "part": null
+      },
+      "status": "script-only"
+    },
+    {
+      "id": "round-warranty-setup-p1",
+      "speaker": "p1",
+      "text": "Подойди. Проверим твою сборку.",
+      "emotionalDirection": {
+        "pace": "Две короткие фразы; вторую произнести чуть быстрее.",
+        "pauses": [
+          {
+            "after": "Подойди",
+            "milliseconds": 140
+          }
+        ],
+        "emphasis": [
+          "подойди",
+          "сборку"
+        ],
+        "arc": "Не просьба, а спокойное обещание разобрать соперника."
+      },
+      "reference": {
+        "id": "p1-conversation",
+        "clip": "jotaro-not-simple",
+        "preferredFragment": {
+          "start": 1.25,
+          "end": 4.05,
+          "status": "candidate-from-existing-asr-not-listening-approved"
+        }
+      },
+      "semanticGroup": "warranty",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "warranty",
+        "turn": "setup",
+        "order": 1
+      },
+      "maxDuration": 2.85,
+      "outputFile": "round-warranty-setup-p1.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-warranty-setup-p2",
+      "speaker": "p2",
+      "text": "Подойди. Проверим твою сборку.",
+      "emotionalDirection": {
+        "pace": "Две короткие фразы; вторую произнести чуть быстрее.",
+        "pauses": [
+          {
+            "after": "Подойди",
+            "milliseconds": 140
+          }
+        ],
+        "emphasis": [
+          "подойди",
+          "сборку"
+        ],
+        "arc": "Не просьба, а спокойное обещание разобрать соперника."
+      },
+      "reference": {
+        "id": "p2-conversation",
+        "clip": "dio-hero",
+        "preferredFragment": {
+          "start": 0.23,
+          "end": 3.19,
+          "status": "existing-measured-trim-not-listening-approved"
+        }
+      },
+      "semanticGroup": "warranty",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "warranty",
+        "turn": "setup",
+        "order": 1
+      },
+      "maxDuration": 2.85,
+      "outputFile": "round-warranty-setup-p2.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-warranty-reply-p1",
+      "speaker": "p1",
+      "text": "Я отменяю твою гарантию!",
+      "emotionalDirection": {
+        "pace": "Начать сразу, ударение перенести на конец.",
+        "pauses": [],
+        "emphasis": [
+          "отменяю",
+          "твою"
+        ],
+        "arc": "Ответить угрозой на угрозу, с удовольствием от собственной наглости."
+      },
+      "reference": {
+        "id": "p1-conversation",
+        "clip": "jotaro-not-simple",
+        "preferredFragment": {
+          "start": 1.25,
+          "end": 4.05,
+          "status": "candidate-from-existing-asr-not-listening-approved"
+        }
+      },
+      "semanticGroup": "warranty",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "warranty",
+        "turn": "reply",
+        "order": 2
+      },
+      "maxDuration": 2.7,
+      "outputFile": "round-warranty-reply-p1.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-warranty-reply-p2",
+      "speaker": "p2",
+      "text": "Я отменяю твою гарантию!",
+      "emotionalDirection": {
+        "pace": "Начать сразу, ударение перенести на конец.",
+        "pauses": [],
+        "emphasis": [
+          "отменяю",
+          "твою"
+        ],
+        "arc": "Ответить угрозой на угрозу, с удовольствием от собственной наглости."
+      },
+      "reference": {
+        "id": "p2-conversation",
+        "clip": "dio-hero",
+        "preferredFragment": {
+          "start": 0.23,
+          "end": 3.19,
+          "status": "existing-measured-trim-not-listening-approved"
+        }
+      },
+      "semanticGroup": "warranty",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "warranty",
+        "turn": "reply",
+        "order": 2
+      },
+      "maxDuration": 2.7,
+      "outputFile": "round-warranty-reply-p2.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-quiet-setup-p1",
+      "speaker": "p1",
+      "text": "Я работаю бесшумно.",
+      "emotionalDirection": {
+        "pace": "Негромко, отчётливо, без шёпота.",
+        "pauses": [],
+        "emphasis": [
+          "бесшумно"
+        ],
+        "arc": "Хвастается техническим превосходством, будто сообщил доказанный факт."
+      },
+      "reference": {
+        "id": "p1-conversation",
+        "clip": "jotaro-not-simple",
+        "preferredFragment": {
+          "start": 1.25,
+          "end": 4.05,
+          "status": "candidate-from-existing-asr-not-listening-approved"
+        }
+      },
+      "semanticGroup": "quiet",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "quiet",
+        "turn": "setup",
+        "order": 1
+      },
+      "maxDuration": 2.2,
+      "outputFile": "round-quiet-setup-p1.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-quiet-setup-p2",
+      "speaker": "p2",
+      "text": "Я работаю бесшумно.",
+      "emotionalDirection": {
+        "pace": "Негромко, отчётливо, без шёпота.",
+        "pauses": [],
+        "emphasis": [
+          "бесшумно"
+        ],
+        "arc": "Хвастается техническим превосходством, будто сообщил доказанный факт."
+      },
+      "reference": {
+        "id": "p2-conversation",
+        "clip": "dio-hero",
+        "preferredFragment": {
+          "start": 0.23,
+          "end": 3.19,
+          "status": "existing-measured-trim-not-listening-approved"
+        }
+      },
+      "semanticGroup": "quiet",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "quiet",
+        "turn": "setup",
+        "order": 1
+      },
+      "maxDuration": 2.2,
+      "outputFile": "round-quiet-setup-p2.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-quiet-reply-p1",
+      "speaker": "p1",
+      "text": "Тогда трещать буду я. Удобно!",
+      "emotionalDirection": {
+        "pace": "Ответ подхватить быстро; последнее слово отдельно.",
+        "pauses": [
+          {
+            "after": "я",
+            "milliseconds": 140
+          }
+        ],
+        "emphasis": [
+          "трещать",
+          "удобно"
+        ],
+        "arc": "Делает чужое хвастовство поводом для собственной шутки."
+      },
+      "reference": {
+        "id": "p1-conversation",
+        "clip": "jotaro-not-simple",
+        "preferredFragment": {
+          "start": 1.25,
+          "end": 4.05,
+          "status": "candidate-from-existing-asr-not-listening-approved"
+        }
+      },
+      "semanticGroup": "quiet",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "quiet",
+        "turn": "reply",
+        "order": 2
+      },
+      "maxDuration": 2.7,
+      "outputFile": "round-quiet-reply-p1.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-quiet-reply-p2",
+      "speaker": "p2",
+      "text": "Тогда трещать буду я. Удобно!",
+      "emotionalDirection": {
+        "pace": "Ответ подхватить быстро; последнее слово отдельно.",
+        "pauses": [
+          {
+            "after": "я",
+            "milliseconds": 140
+          }
+        ],
+        "emphasis": [
+          "трещать",
+          "удобно"
+        ],
+        "arc": "Делает чужое хвастовство поводом для собственной шутки."
+      },
+      "reference": {
+        "id": "p2-conversation",
+        "clip": "dio-hero",
+        "preferredFragment": {
+          "start": 0.23,
+          "end": 3.19,
+          "status": "existing-measured-trim-not-listening-approved"
+        }
+      },
+      "semanticGroup": "quiet",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "quiet",
+        "turn": "reply",
+        "order": 2
+      },
+      "maxDuration": 2.7,
+      "outputFile": "round-quiet-reply-p2.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-manual-setup-p1",
+      "speaker": "p1",
+      "text": "Я изучил все твои слабости.",
+      "emotionalDirection": {
+        "pace": "Ровный разбег, притормозить на предпоследнем слове.",
+        "pauses": [],
+        "emphasis": [
+          "все",
+          "слабости"
+        ],
+        "arc": "Уверенный доклад о подготовке, без вопросительной интонации."
+      },
+      "reference": {
+        "id": "p1-conversation",
+        "clip": "jotaro-not-simple",
+        "preferredFragment": {
+          "start": 1.25,
+          "end": 4.05,
+          "status": "candidate-from-existing-asr-not-listening-approved"
+        }
+      },
+      "semanticGroup": "manual",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "manual",
+        "turn": "setup",
+        "order": 1
+      },
+      "maxDuration": 2.8,
+      "outputFile": "round-manual-setup-p1.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-manual-setup-p2",
+      "speaker": "p2",
+      "text": "Я изучил все твои слабости.",
+      "emotionalDirection": {
+        "pace": "Ровный разбег, притормозить на предпоследнем слове.",
+        "pauses": [],
+        "emphasis": [
+          "все",
+          "слабости"
+        ],
+        "arc": "Уверенный доклад о подготовке, без вопросительной интонации."
+      },
+      "reference": {
+        "id": "p2-conversation",
+        "clip": "dio-hero",
+        "preferredFragment": {
+          "start": 0.23,
+          "end": 3.19,
+          "status": "existing-measured-trim-not-listening-approved"
+        }
+      },
+      "semanticGroup": "manual",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "manual",
+        "turn": "setup",
+        "order": 1
+      },
+      "maxDuration": 2.8,
+      "outputFile": "round-manual-setup-p2.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-manual-reply-p1",
+      "speaker": "p1",
+      "text": "Это инструкция от чайника.",
+      "emotionalDirection": {
+        "pace": "Начать буднично, слово-разоблачение оставить на конец.",
+        "pauses": [
+          {
+            "after": "инструкция",
+            "milliseconds": 100
+          }
+        ],
+        "emphasis": [
+          "чайника"
+        ],
+        "arc": "Не смеяться заранее: комизм в том, насколько спокойно исправляет соперника."
+      },
+      "reference": {
+        "id": "p1-conversation",
+        "clip": "jotaro-not-simple",
+        "preferredFragment": {
+          "start": 1.25,
+          "end": 4.05,
+          "status": "candidate-from-existing-asr-not-listening-approved"
+        }
+      },
+      "semanticGroup": "manual",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "manual",
+        "turn": "reply",
+        "order": 2
+      },
+      "maxDuration": 2.55,
+      "outputFile": "round-manual-reply-p1.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-manual-reply-p2",
+      "speaker": "p2",
+      "text": "Это инструкция от чайника.",
+      "emotionalDirection": {
+        "pace": "Начать буднично, слово-разоблачение оставить на конец.",
+        "pauses": [
+          {
+            "after": "инструкция",
+            "milliseconds": 100
+          }
+        ],
+        "emphasis": [
+          "чайника"
+        ],
+        "arc": "Не смеяться заранее: комизм в том, насколько спокойно исправляет соперника."
+      },
+      "reference": {
+        "id": "p2-conversation",
+        "clip": "dio-hero",
+        "preferredFragment": {
+          "start": 0.23,
+          "end": 3.19,
+          "status": "existing-measured-trim-not-listening-approved"
+        }
+      },
+      "semanticGroup": "manual",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "manual",
+        "turn": "reply",
+        "order": 2
+      },
+      "maxDuration": 2.55,
+      "outputFile": "round-manual-reply-p2.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-spares-setup-p1",
+      "speaker": "p1",
+      "text": "Меньше пафоса. Лови искру!",
+      "emotionalDirection": {
+        "pace": "Первую фразу отрезать, вторую резко бросить вперёд.",
+        "pauses": [
+          {
+            "after": "пафоса",
+            "milliseconds": 120
+          }
+        ],
+        "emphasis": [
+          "меньше",
+          "лови"
+        ],
+        "arc": "Раздражение становится азартом; это реплика перед раундом, не сигнал реального попадания."
+      },
+      "reference": {
+        "id": "p1-conversation",
+        "clip": "jotaro-not-simple",
+        "preferredFragment": {
+          "start": 1.25,
+          "end": 4.05,
+          "status": "candidate-from-existing-asr-not-listening-approved"
+        }
+      },
+      "semanticGroup": "spares",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "spares",
+        "turn": "setup",
+        "order": 1
+      },
+      "maxDuration": 2.6,
+      "outputFile": "round-spares-setup-p1.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-spares-setup-p2",
+      "speaker": "p2",
+      "text": "Меньше пафоса. Лови искру!",
+      "emotionalDirection": {
+        "pace": "Первую фразу отрезать, вторую резко бросить вперёд.",
+        "pauses": [
+          {
+            "after": "пафоса",
+            "milliseconds": 120
+          }
+        ],
+        "emphasis": [
+          "меньше",
+          "лови"
+        ],
+        "arc": "Раздражение становится азартом; это реплика перед раундом, не сигнал реального попадания."
+      },
+      "reference": {
+        "id": "p2-conversation",
+        "clip": "dio-hero",
+        "preferredFragment": {
+          "start": 0.23,
+          "end": 3.19,
+          "status": "existing-measured-trim-not-listening-approved"
+        }
+      },
+      "semanticGroup": "spares",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "spares",
+        "turn": "setup",
+        "order": 1
+      },
+      "maxDuration": 2.6,
+      "outputFile": "round-spares-setup-p2.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-spares-reply-p1",
+      "speaker": "p1",
+      "text": "Слабовато. Добавь пафоса!",
+      "emotionalDirection": {
+        "pace": "Короткая оценка, пауза, затем ответный вызов.",
+        "pauses": [
+          {
+            "after": "Слабовато",
+            "milliseconds": 160
+          }
+        ],
+        "emphasis": [
+          "добавь",
+          "пафоса"
+        ],
+        "arc": "Возвращает противнику его же слово; закончить вызывающе."
+      },
+      "reference": {
+        "id": "p1-conversation",
+        "clip": "jotaro-not-simple",
+        "preferredFragment": {
+          "start": 1.25,
+          "end": 4.05,
+          "status": "candidate-from-existing-asr-not-listening-approved"
+        }
+      },
+      "semanticGroup": "spares",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "spares",
+        "turn": "reply",
+        "order": 2
+      },
+      "maxDuration": 2.5,
+      "outputFile": "round-spares-reply-p1.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-spares-reply-p2",
+      "speaker": "p2",
+      "text": "Слабовато. Добавь пафоса!",
+      "emotionalDirection": {
+        "pace": "Короткая оценка, пауза, затем ответный вызов.",
+        "pauses": [
+          {
+            "after": "Слабовато",
+            "milliseconds": 160
+          }
+        ],
+        "emphasis": [
+          "добавь",
+          "пафоса"
+        ],
+        "arc": "Возвращает противнику его же слово; закончить вызывающе."
+      },
+      "reference": {
+        "id": "p2-conversation",
+        "clip": "dio-hero",
+        "preferredFragment": {
+          "start": 0.23,
+          "end": 3.19,
+          "status": "existing-measured-trim-not-listening-approved"
+        }
+      },
+      "semanticGroup": "spares",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "spares",
+        "turn": "reply",
+        "order": 2
+      },
+      "maxDuration": 2.5,
+      "outputFile": "round-spares-reply-p2.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-rust-setup-p1",
+      "speaker": "p1",
+      "text": "На тебе ржавчина.",
+      "emotionalDirection": {
+        "pace": "Сразу к замечанию, небольшой акцент на последнем слове.",
+        "pauses": [],
+        "emphasis": [
+          "ржавчина"
+        ],
+        "arc": "Замечает недостаток, как опытный механик на осмотре."
+      },
+      "reference": {
+        "id": "p1-conversation",
+        "clip": "jotaro-not-simple",
+        "preferredFragment": {
+          "start": 1.25,
+          "end": 4.05,
+          "status": "candidate-from-existing-asr-not-listening-approved"
+        }
+      },
+      "semanticGroup": "rust",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "rust",
+        "turn": "setup",
+        "order": 1
+      },
+      "maxDuration": 2.1,
+      "outputFile": "round-rust-setup-p1.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-rust-setup-p2",
+      "speaker": "p2",
+      "text": "На тебе ржавчина.",
+      "emotionalDirection": {
+        "pace": "Сразу к замечанию, небольшой акцент на последнем слове.",
+        "pauses": [],
+        "emphasis": [
+          "ржавчина"
+        ],
+        "arc": "Замечает недостаток, как опытный механик на осмотре."
+      },
+      "reference": {
+        "id": "p2-conversation",
+        "clip": "dio-hero",
+        "preferredFragment": {
+          "start": 0.23,
+          "end": 3.19,
+          "status": "existing-measured-trim-not-listening-approved"
+        }
+      },
+      "semanticGroup": "rust",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "rust",
+        "turn": "setup",
+        "order": 1
+      },
+      "maxDuration": 2.1,
+      "outputFile": "round-rust-setup-p2.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-rust-reply-p1",
+      "speaker": "p1",
+      "text": "Это выдержка. Я коллекционный!",
+      "emotionalDirection": {
+        "pace": "Первую фразу — поправка; вторую с заметным подъёмом.",
+        "pauses": [
+          {
+            "after": "выдержка",
+            "milliseconds": 130
+          }
+        ],
+        "emphasis": [
+          "выдержка",
+          "коллекционный"
+        ],
+        "arc": "Обида на миг, затем гордая защита собственного вида."
+      },
+      "reference": {
+        "id": "p1-conversation",
+        "clip": "jotaro-not-simple",
+        "preferredFragment": {
+          "start": 1.25,
+          "end": 4.05,
+          "status": "candidate-from-existing-asr-not-listening-approved"
+        }
+      },
+      "semanticGroup": "rust",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "rust",
+        "turn": "reply",
+        "order": 2
+      },
+      "maxDuration": 2.8,
+      "outputFile": "round-rust-reply-p1.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-rust-reply-p2",
+      "speaker": "p2",
+      "text": "Это выдержка. Я коллекционный!",
+      "emotionalDirection": {
+        "pace": "Первую фразу — поправка; вторую с заметным подъёмом.",
+        "pauses": [
+          {
+            "after": "выдержка",
+            "milliseconds": 130
+          }
+        ],
+        "emphasis": [
+          "выдержка",
+          "коллекционный"
+        ],
+        "arc": "Обида на миг, затем гордая защита собственного вида."
+      },
+      "reference": {
+        "id": "p2-conversation",
+        "clip": "dio-hero",
+        "preferredFragment": {
+          "start": 0.23,
+          "end": 3.19,
+          "status": "existing-measured-trim-not-listening-approved"
+        }
+      },
+      "semanticGroup": "rust",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "rust",
+        "turn": "reply",
+        "order": 2
+      },
+      "maxDuration": 2.8,
+      "outputFile": "round-rust-reply-p2.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-floor-setup-p1",
+      "speaker": "p1",
+      "text": "Пол уже знает моё имя.",
+      "emotionalDirection": {
+        "pace": "Произнести как легенду о себе, без длинного распева.",
+        "pauses": [],
+        "emphasis": [
+          "уже",
+          "моё"
+        ],
+        "arc": "Хвастовство опытом; выбранное имя не произносится."
+      },
+      "reference": {
+        "id": "p1-conversation",
+        "clip": "jotaro-not-simple",
+        "preferredFragment": {
+          "start": 1.25,
+          "end": 4.05,
+          "status": "candidate-from-existing-asr-not-listening-approved"
+        }
+      },
+      "semanticGroup": "floor",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "floor",
+        "turn": "setup",
+        "order": 1
+      },
+      "maxDuration": 2.7,
+      "outputFile": "round-floor-setup-p1.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-floor-setup-p2",
+      "speaker": "p2",
+      "text": "Пол уже знает моё имя.",
+      "emotionalDirection": {
+        "pace": "Произнести как легенду о себе, без длинного распева.",
+        "pauses": [],
+        "emphasis": [
+          "уже",
+          "моё"
+        ],
+        "arc": "Хвастовство опытом; выбранное имя не произносится."
+      },
+      "reference": {
+        "id": "p2-conversation",
+        "clip": "dio-hero",
+        "preferredFragment": {
+          "start": 0.23,
+          "end": 3.19,
+          "status": "existing-measured-trim-not-listening-approved"
+        }
+      },
+      "semanticGroup": "floor",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "floor",
+        "turn": "setup",
+        "order": 1
+      },
+      "maxDuration": 2.7,
+      "outputFile": "round-floor-setup-p2.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-floor-reply-p1",
+      "speaker": "p1",
+      "text": "Сейчас познакомитесь поближе.",
+      "emotionalDirection": {
+        "pace": "Небольшой нажим в начале, плавно довести до конца.",
+        "pauses": [],
+        "emphasis": [
+          "сейчас",
+          "поближе"
+        ],
+        "arc": "Спокойно обещает уронить соперника; не комментирует ещё не случившееся падение."
+      },
+      "reference": {
+        "id": "p1-conversation",
+        "clip": "jotaro-not-simple",
+        "preferredFragment": {
+          "start": 1.25,
+          "end": 4.05,
+          "status": "candidate-from-existing-asr-not-listening-approved"
+        }
+      },
+      "semanticGroup": "floor",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "floor",
+        "turn": "reply",
+        "order": 2
+      },
+      "maxDuration": 2.75,
+      "outputFile": "round-floor-reply-p1.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-floor-reply-p2",
+      "speaker": "p2",
+      "text": "Сейчас познакомитесь поближе.",
+      "emotionalDirection": {
+        "pace": "Небольшой нажим в начале, плавно довести до конца.",
+        "pauses": [],
+        "emphasis": [
+          "сейчас",
+          "поближе"
+        ],
+        "arc": "Спокойно обещает уронить соперника; не комментирует ещё не случившееся падение."
+      },
+      "reference": {
+        "id": "p2-conversation",
+        "clip": "dio-hero",
+        "preferredFragment": {
+          "start": 0.23,
+          "end": 3.19,
+          "status": "existing-measured-trim-not-listening-approved"
+        }
+      },
+      "semanticGroup": "floor",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "floor",
+        "turn": "reply",
+        "order": 2
+      },
+      "maxDuration": 2.75,
+      "outputFile": "round-floor-reply-p2.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-calculate-setup-p1",
+      "speaker": "p1",
+      "text": "Я рассчитал исход боя.",
+      "emotionalDirection": {
+        "pace": "Строго, по делу; не замедлять каждое слово.",
+        "pauses": [],
+        "emphasis": [
+          "рассчитал",
+          "исход"
+        ],
+        "arc": "Подаёт собственную победу как готовый расчёт."
+      },
+      "reference": {
+        "id": "p1-conversation",
+        "clip": "jotaro-not-simple",
+        "preferredFragment": {
+          "start": 1.25,
+          "end": 4.05,
+          "status": "candidate-from-existing-asr-not-listening-approved"
+        }
+      },
+      "semanticGroup": "calculate",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "calculate",
+        "turn": "setup",
+        "order": 1
+      },
+      "maxDuration": 2.55,
+      "outputFile": "round-calculate-setup-p1.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-calculate-setup-p2",
+      "speaker": "p2",
+      "text": "Я рассчитал исход боя.",
+      "emotionalDirection": {
+        "pace": "Строго, по делу; не замедлять каждое слово.",
+        "pauses": [],
+        "emphasis": [
+          "рассчитал",
+          "исход"
+        ],
+        "arc": "Подаёт собственную победу как готовый расчёт."
+      },
+      "reference": {
+        "id": "p2-conversation",
+        "clip": "dio-hero",
+        "preferredFragment": {
+          "start": 0.23,
+          "end": 3.19,
+          "status": "existing-measured-trim-not-listening-approved"
+        }
+      },
+      "semanticGroup": "calculate",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "calculate",
+        "turn": "setup",
+        "order": 1
+      },
+      "maxDuration": 2.55,
+      "outputFile": "round-calculate-setup-p2.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-calculate-reply-p1",
+      "speaker": "p1",
+      "text": "Готовь ластик. Будешь исправлять.",
+      "emotionalDirection": {
+        "pace": "Первую фразу отдельно, вторую с улыбкой на конце.",
+        "pauses": [
+          {
+            "after": "ластик",
+            "milliseconds": 140
+          }
+        ],
+        "emphasis": [
+          "ластик",
+          "исправлять"
+        ],
+        "arc": "Разрушает уверенность соперника одной бытовой деталью."
+      },
+      "reference": {
+        "id": "p1-conversation",
+        "clip": "jotaro-not-simple",
+        "preferredFragment": {
+          "start": 1.25,
+          "end": 4.05,
+          "status": "candidate-from-existing-asr-not-listening-approved"
+        }
+      },
+      "semanticGroup": "calculate",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "calculate",
+        "turn": "reply",
+        "order": 2
+      },
+      "maxDuration": 2.75,
+      "outputFile": "round-calculate-reply-p1.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-calculate-reply-p2",
+      "speaker": "p2",
+      "text": "Готовь ластик. Будешь исправлять.",
+      "emotionalDirection": {
+        "pace": "Первую фразу отдельно, вторую с улыбкой на конце.",
+        "pauses": [
+          {
+            "after": "ластик",
+            "milliseconds": 140
+          }
+        ],
+        "emphasis": [
+          "ластик",
+          "исправлять"
+        ],
+        "arc": "Разрушает уверенность соперника одной бытовой деталью."
+      },
+      "reference": {
+        "id": "p2-conversation",
+        "clip": "dio-hero",
+        "preferredFragment": {
+          "start": 0.23,
+          "end": 3.19,
+          "status": "existing-measured-trim-not-listening-approved"
+        }
+      },
+      "semanticGroup": "calculate",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "calculate",
+        "turn": "reply",
+        "order": 2
+      },
+      "maxDuration": 2.75,
+      "outputFile": "round-calculate-reply-p2.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-music-setup-p1",
+      "speaker": "p1",
+      "text": "Где моя победная музыка?",
+      "emotionalDirection": {
+        "pace": "Вопрос начать с претензии, конец поднять.",
+        "pauses": [],
+        "emphasis": [
+          "моя",
+          "победная"
+        ],
+        "arc": "Уже требует церемонию, хотя бой не начался."
+      },
+      "reference": {
+        "id": "p1-conversation",
+        "clip": "jotaro-not-simple",
+        "preferredFragment": {
+          "start": 1.25,
+          "end": 4.05,
+          "status": "candidate-from-existing-asr-not-listening-approved"
+        }
+      },
+      "semanticGroup": "music",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "music",
+        "turn": "setup",
+        "order": 1
+      },
+      "maxDuration": 2.65,
+      "outputFile": "round-music-setup-p1.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-music-setup-p2",
+      "speaker": "p2",
+      "text": "Где моя победная музыка?",
+      "emotionalDirection": {
+        "pace": "Вопрос начать с претензии, конец поднять.",
+        "pauses": [],
+        "emphasis": [
+          "моя",
+          "победная"
+        ],
+        "arc": "Уже требует церемонию, хотя бой не начался."
+      },
+      "reference": {
+        "id": "p2-conversation",
+        "clip": "dio-hero",
+        "preferredFragment": {
+          "start": 0.23,
+          "end": 3.19,
+          "status": "existing-measured-trim-not-listening-approved"
+        }
+      },
+      "semanticGroup": "music",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "music",
+        "turn": "setup",
+        "order": 1
+      },
+      "maxDuration": 2.65,
+      "outputFile": "round-music-setup-p2.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-music-reply-p1",
+      "speaker": "p1",
+      "text": "Пока вентилятор. Танцуй!",
+      "emotionalDirection": {
+        "pace": "Первую часть почти как объявление; последнее слово резко.",
+        "pauses": [
+          {
+            "after": "вентилятор",
+            "milliseconds": 160
+          }
+        ],
+        "emphasis": [
+          "вентилятор",
+          "танцуй"
+        ],
+        "arc": "Подменяет фанфары шумом клуба и наслаждается ответом."
+      },
+      "reference": {
+        "id": "p1-conversation",
+        "clip": "jotaro-not-simple",
+        "preferredFragment": {
+          "start": 1.25,
+          "end": 4.05,
+          "status": "candidate-from-existing-asr-not-listening-approved"
+        }
+      },
+      "semanticGroup": "music",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "music",
+        "turn": "reply",
+        "order": 2
+      },
+      "maxDuration": 2.35,
+      "outputFile": "round-music-reply-p1.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-music-reply-p2",
+      "speaker": "p2",
+      "text": "Пока вентилятор. Танцуй!",
+      "emotionalDirection": {
+        "pace": "Первую часть почти как объявление; последнее слово резко.",
+        "pauses": [
+          {
+            "after": "вентилятор",
+            "milliseconds": 160
+          }
+        ],
+        "emphasis": [
+          "вентилятор",
+          "танцуй"
+        ],
+        "arc": "Подменяет фанфары шумом клуба и наслаждается ответом."
+      },
+      "reference": {
+        "id": "p2-conversation",
+        "clip": "dio-hero",
+        "preferredFragment": {
+          "start": 0.23,
+          "end": 3.19,
+          "status": "existing-measured-trim-not-listening-approved"
+        }
+      },
+      "semanticGroup": "music",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "music",
+        "turn": "reply",
+        "order": 2
+      },
+      "maxDuration": 2.35,
+      "outputFile": "round-music-reply-p2.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-polite-setup-p1",
+      "speaker": "p1",
+      "text": "Я дам тебе фору.",
+      "emotionalDirection": {
+        "pace": "Не спешить в начале, конец чуть вниз.",
+        "pauses": [],
+        "emphasis": [
+          "дам",
+          "фору"
+        ],
+        "arc": "Покровительственно делает ненужный подарок."
+      },
+      "reference": {
+        "id": "p1-conversation",
+        "clip": "jotaro-not-simple",
+        "preferredFragment": {
+          "start": 1.25,
+          "end": 4.05,
+          "status": "candidate-from-existing-asr-not-listening-approved"
+        }
+      },
+      "semanticGroup": "polite",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "polite",
+        "turn": "setup",
+        "order": 1
+      },
+      "maxDuration": 2.15,
+      "outputFile": "round-polite-setup-p1.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-polite-setup-p2",
+      "speaker": "p2",
+      "text": "Я дам тебе фору.",
+      "emotionalDirection": {
+        "pace": "Не спешить в начале, конец чуть вниз.",
+        "pauses": [],
+        "emphasis": [
+          "дам",
+          "фору"
+        ],
+        "arc": "Покровительственно делает ненужный подарок."
+      },
+      "reference": {
+        "id": "p2-conversation",
+        "clip": "dio-hero",
+        "preferredFragment": {
+          "start": 0.23,
+          "end": 3.19,
+          "status": "existing-measured-trim-not-listening-approved"
+        }
+      },
+      "semanticGroup": "polite",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "polite",
+        "turn": "setup",
+        "order": 1
+      },
+      "maxDuration": 2.15,
+      "outputFile": "round-polite-setup-p2.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-polite-reply-p1",
+      "speaker": "p1",
+      "text": "Лучше розетку. Фора своя.",
+      "emotionalDirection": {
+        "pace": "Перебить по смыслу первым словом; после паузы поставить точку.",
+        "pauses": [
+          {
+            "after": "розетку",
+            "milliseconds": 150
+          }
+        ],
+        "emphasis": [
+          "розетку",
+          "своя"
+        ],
+        "arc": "Практичная просьба превращается в ответное хвастовство."
+      },
+      "reference": {
+        "id": "p1-conversation",
+        "clip": "jotaro-not-simple",
+        "preferredFragment": {
+          "start": 1.25,
+          "end": 4.05,
+          "status": "candidate-from-existing-asr-not-listening-approved"
+        }
+      },
+      "semanticGroup": "polite",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "polite",
+        "turn": "reply",
+        "order": 2
+      },
+      "maxDuration": 2.5,
+      "outputFile": "round-polite-reply-p1.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-polite-reply-p2",
+      "speaker": "p2",
+      "text": "Лучше розетку. Фора своя.",
+      "emotionalDirection": {
+        "pace": "Перебить по смыслу первым словом; после паузы поставить точку.",
+        "pauses": [
+          {
+            "after": "розетку",
+            "milliseconds": 150
+          }
+        ],
+        "emphasis": [
+          "розетку",
+          "своя"
+        ],
+        "arc": "Практичная просьба превращается в ответное хвастовство."
+      },
+      "reference": {
+        "id": "p2-conversation",
+        "clip": "dio-hero",
+        "preferredFragment": {
+          "start": 0.23,
+          "end": 3.19,
+          "status": "existing-measured-trim-not-listening-approved"
+        }
+      },
+      "semanticGroup": "polite",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "polite",
+        "turn": "reply",
+        "order": 2
+      },
+      "maxDuration": 2.5,
+      "outputFile": "round-polite-reply-p2.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-fear-setup-p1",
+      "speaker": "p1",
+      "text": "Мой процессор не знает страха.",
+      "emotionalDirection": {
+        "pace": "Одна законченная фраза, уверенный низкий конец.",
+        "pauses": [],
+        "emphasis": [
+          "не знает",
+          "страха"
+        ],
+        "arc": "Настоящая бравада машины, без пародии на безэмоциональный синтезатор."
+      },
+      "reference": {
+        "id": "p1-conversation",
+        "clip": "jotaro-not-simple",
+        "preferredFragment": {
+          "start": 1.25,
+          "end": 4.05,
+          "status": "candidate-from-existing-asr-not-listening-approved"
+        }
+      },
+      "semanticGroup": "fear",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "fear",
+        "turn": "setup",
+        "order": 1
+      },
+      "maxDuration": 2.9,
+      "outputFile": "round-fear-setup-p1.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-fear-setup-p2",
+      "speaker": "p2",
+      "text": "Мой процессор не знает страха.",
+      "emotionalDirection": {
+        "pace": "Одна законченная фраза, уверенный низкий конец.",
+        "pauses": [],
+        "emphasis": [
+          "не знает",
+          "страха"
+        ],
+        "arc": "Настоящая бравада машины, без пародии на безэмоциональный синтезатор."
+      },
+      "reference": {
+        "id": "p2-conversation",
+        "clip": "dio-hero",
+        "preferredFragment": {
+          "start": 0.23,
+          "end": 3.19,
+          "status": "existing-measured-trim-not-listening-approved"
+        }
+      },
+      "semanticGroup": "fear",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "fear",
+        "turn": "setup",
+        "order": 1
+      },
+      "maxDuration": 2.9,
+      "outputFile": "round-fear-setup-p2.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-fear-reply-p1",
+      "speaker": "p1",
+      "text": "Обновление придёт без спроса.",
+      "emotionalDirection": {
+        "pace": "Предупреждение спокойно до последних двух слов.",
+        "pauses": [],
+        "emphasis": [
+          "обновление",
+          "без спроса"
+        ],
+        "arc": "Делает обычное обновление угрозой; не произносить как техническую подсказку игроку."
+      },
+      "reference": {
+        "id": "p1-conversation",
+        "clip": "jotaro-not-simple",
+        "preferredFragment": {
+          "start": 1.25,
+          "end": 4.05,
+          "status": "candidate-from-existing-asr-not-listening-approved"
+        }
+      },
+      "semanticGroup": "fear",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "fear",
+        "turn": "reply",
+        "order": 2
+      },
+      "maxDuration": 2.8,
+      "outputFile": "round-fear-reply-p1.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-fear-reply-p2",
+      "speaker": "p2",
+      "text": "Обновление придёт без спроса.",
+      "emotionalDirection": {
+        "pace": "Предупреждение спокойно до последних двух слов.",
+        "pauses": [],
+        "emphasis": [
+          "обновление",
+          "без спроса"
+        ],
+        "arc": "Делает обычное обновление угрозой; не произносить как техническую подсказку игроку."
+      },
+      "reference": {
+        "id": "p2-conversation",
+        "clip": "dio-hero",
+        "preferredFragment": {
+          "start": 0.23,
+          "end": 3.19,
+          "status": "existing-measured-trim-not-listening-approved"
+        }
+      },
+      "semanticGroup": "fear",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "fear",
+        "turn": "reply",
+        "order": 2
+      },
+      "maxDuration": 2.8,
+      "outputFile": "round-fear-reply-p2.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-champion-setup-p1",
+      "speaker": "p1",
+      "text": "Перед тобой будущий чемпион.",
+      "emotionalDirection": {
+        "pace": "Развернуть фразу к собеседнику, титул подчеркнуть.",
+        "pauses": [],
+        "emphasis": [
+          "будущий",
+          "чемпион"
+        ],
+        "arc": "Торжественно объявляет себя, но реального победителя не назначает."
+      },
+      "reference": {
+        "id": "p1-conversation",
+        "clip": "jotaro-not-simple",
+        "preferredFragment": {
+          "start": 1.25,
+          "end": 4.05,
+          "status": "candidate-from-existing-asr-not-listening-approved"
+        }
+      },
+      "semanticGroup": "champion",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "champion",
+        "turn": "setup",
+        "order": 1
+      },
+      "maxDuration": 2.8,
+      "outputFile": "round-champion-setup-p1.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-champion-setup-p2",
+      "speaker": "p2",
+      "text": "Перед тобой будущий чемпион.",
+      "emotionalDirection": {
+        "pace": "Развернуть фразу к собеседнику, титул подчеркнуть.",
+        "pauses": [],
+        "emphasis": [
+          "будущий",
+          "чемпион"
+        ],
+        "arc": "Торжественно объявляет себя, но реального победителя не назначает."
+      },
+      "reference": {
+        "id": "p2-conversation",
+        "clip": "dio-hero",
+        "preferredFragment": {
+          "start": 0.23,
+          "end": 3.19,
+          "status": "existing-measured-trim-not-listening-approved"
+        }
+      },
+      "semanticGroup": "champion",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "champion",
+        "turn": "setup",
+        "order": 1
+      },
+      "maxDuration": 2.8,
+      "outputFile": "round-champion-setup-p2.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-champion-reply-p1",
+      "speaker": "p1",
+      "text": "До будущего ещё дожить надо.",
+      "emotionalDirection": {
+        "pace": "Начать с подхвата слова противника, конец с нажимом.",
+        "pauses": [],
+        "emphasis": [
+          "будущего",
+          "дожить"
+        ],
+        "arc": "Коротко возвращает хвастуна в настоящий момент; угроза относится к роботу."
+      },
+      "reference": {
+        "id": "p1-conversation",
+        "clip": "jotaro-not-simple",
+        "preferredFragment": {
+          "start": 1.25,
+          "end": 4.05,
+          "status": "candidate-from-existing-asr-not-listening-approved"
+        }
+      },
+      "semanticGroup": "champion",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "champion",
+        "turn": "reply",
+        "order": 2
+      },
+      "maxDuration": 2.9,
+      "outputFile": "round-champion-reply-p1.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-champion-reply-p2",
+      "speaker": "p2",
+      "text": "До будущего ещё дожить надо.",
+      "emotionalDirection": {
+        "pace": "Начать с подхвата слова противника, конец с нажимом.",
+        "pauses": [],
+        "emphasis": [
+          "будущего",
+          "дожить"
+        ],
+        "arc": "Коротко возвращает хвастуна в настоящий момент; угроза относится к роботу."
+      },
+      "reference": {
+        "id": "p2-conversation",
+        "clip": "dio-hero",
+        "preferredFragment": {
+          "start": 0.23,
+          "end": 3.19,
+          "status": "existing-measured-trim-not-listening-approved"
+        }
+      },
+      "semanticGroup": "champion",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "champion",
+        "turn": "reply",
+        "order": 2
+      },
+      "maxDuration": 2.9,
+      "outputFile": "round-champion-reply-p2.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-bolts-setup-p1",
+      "speaker": "p1",
+      "text": "Держись крепче.",
+      "emotionalDirection": {
+        "pace": "Два слова с прямым нажимом, без затяжной паузы.",
+        "pauses": [],
+        "emphasis": [
+          "крепче"
+        ],
+        "arc": "Предупреждает соперника перед рывком."
+      },
+      "reference": {
+        "id": "p1-conversation",
+        "clip": "jotaro-not-simple",
+        "preferredFragment": {
+          "start": 1.25,
+          "end": 4.05,
+          "status": "candidate-from-existing-asr-not-listening-approved"
+        }
+      },
+      "semanticGroup": "bolts",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "bolts",
+        "turn": "setup",
+        "order": 1
+      },
+      "maxDuration": 1.65,
+      "outputFile": "round-bolts-setup-p1.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-bolts-setup-p2",
+      "speaker": "p2",
+      "text": "Держись крепче.",
+      "emotionalDirection": {
+        "pace": "Два слова с прямым нажимом, без затяжной паузы.",
+        "pauses": [],
+        "emphasis": [
+          "крепче"
+        ],
+        "arc": "Предупреждает соперника перед рывком."
+      },
+      "reference": {
+        "id": "p2-conversation",
+        "clip": "dio-hero",
+        "preferredFragment": {
+          "start": 0.23,
+          "end": 3.19,
+          "status": "existing-measured-trim-not-listening-approved"
+        }
+      },
+      "semanticGroup": "bolts",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "bolts",
+        "turn": "setup",
+        "order": 1
+      },
+      "maxDuration": 1.65,
+      "outputFile": "round-bolts-setup-p2.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-bolts-reply-p1",
+      "speaker": "p1",
+      "text": "Я своим болтам уже сказал.",
+      "emotionalDirection": {
+        "pace": "Подхватить сразу; перед последними словами едва задержаться.",
+        "pauses": [
+          {
+            "after": "болтам",
+            "milliseconds": 90
+          }
+        ],
+        "emphasis": [
+          "болтам",
+          "уже"
+        ],
+        "arc": "Шутит над собой, но не сдаётся; произнести с уверенностью."
+      },
+      "reference": {
+        "id": "p1-conversation",
+        "clip": "jotaro-not-simple",
+        "preferredFragment": {
+          "start": 1.25,
+          "end": 4.05,
+          "status": "candidate-from-existing-asr-not-listening-approved"
+        }
+      },
+      "semanticGroup": "bolts",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "bolts",
+        "turn": "reply",
+        "order": 2
+      },
+      "maxDuration": 2.7,
+      "outputFile": "round-bolts-reply-p1.mp3",
+      "status": "script-only"
+    },
+    {
+      "id": "round-bolts-reply-p2",
+      "speaker": "p2",
+      "text": "Я своим болтам уже сказал.",
+      "emotionalDirection": {
+        "pace": "Подхватить сразу; перед последними словами едва задержаться.",
+        "pauses": [
+          {
+            "after": "болтам",
+            "milliseconds": 90
+          }
+        ],
+        "emphasis": [
+          "болтам",
+          "уже"
+        ],
+        "arc": "Шутит над собой, но не сдаётся; произнести с уверенностью."
+      },
+      "reference": {
+        "id": "p2-conversation",
+        "clip": "dio-hero",
+        "preferredFragment": {
+          "start": 0.23,
+          "end": 3.19,
+          "status": "existing-measured-trim-not-listening-approved"
+        }
+      },
+      "semanticGroup": "bolts",
+      "sequence": {
+        "kind": "round",
+        "exchangeId": "bolts",
+        "turn": "reply",
+        "order": 2
+      },
+      "maxDuration": 2.7,
+      "outputFile": "round-bolts-reply-p2.mp3",
+      "status": "script-only"
+    }
+  ]
+}

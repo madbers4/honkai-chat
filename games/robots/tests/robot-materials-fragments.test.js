@@ -1,17 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs/promises';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { withRobotAssetFixture } from './robot-asset-fixture.js';
 
 // The real GLB, rig and fragment builder; decoding pixel data does not require
 // a GPU for these material ownership and destruction lifecycle assertions.
 globalThis.self = globalThis;
 globalThis.createImageBitmap = async () => ({ width: 1024, height: 1024, close() {} });
 globalThis.ProgressEvent = class { constructor(type, properties) { Object.assign(this, properties); this.type = type; } };
-const bytes = await fs.readFile(new URL('../public/assets/automaton.glb', import.meta.url));
-const gltfLoad = GLTFLoader.prototype.loadAsync, textureLoad = THREE.TextureLoader.prototype.loadAsync;
-GLTFLoader.prototype.loadAsync = function () { return this.parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), ''); };
+const textureLoad = THREE.TextureLoader.prototype.loadAsync;
 const highResolutionSources = [];
 THREE.TextureLoader.prototype.loadAsync = async function (url) {
   const size = url.includes('base-color') ? 2048 : 1024;
@@ -19,8 +16,9 @@ THREE.TextureLoader.prototype.loadAsync = async function (url) {
   highResolutionSources.push(texture); return texture;
 };
 const { loadRobotAssets, createRobot } = await import('../src/robot.js');
-const template = await loadRobotAssets();
-GLTFLoader.prototype.loadAsync = gltfLoad; THREE.TextureLoader.prototype.loadAsync = textureLoad;
+let template;
+try { template = await withRobotAssetFixture(loadRobotAssets); }
+finally { THREE.TextureLoader.prototype.loadAsync = textureLoad; }
 
 const counter = resource => {
   let count = 0; resource.addEventListener('dispose', () => count++); return () => count;

@@ -22,6 +22,8 @@ import { robotPresentation } from '../shared/robot-presentation.js';
 import { WINS_TO_MATCH, MAX_HP, ROUND_SECONDS } from '../shared/constants.js';
 import { installMenuViewport } from './menu-viewport.js';
 import './mobile-layout.css';
+import { retryableLoad, arenaFailureMessage } from './asset-loading.js';
+import './load-recovery.css';
 
 const icons = {
   robot: '<path d="m5 7 7-4 7 4v10l-7 4-7-4Z"/><path d="M8 9h8v7H8zm2 3h.01M14 12h.01M12 3V1"/>',
@@ -65,8 +67,9 @@ document.getElementById('app').innerHTML = `
         <label class="name-field"><span>ИМЯ РОБОТА</span><input id="player-name" maxlength="20" placeholder="Как зовут твоего бойца?" autocomplete="nickname" aria-label="Имя робота" /></label>
         <button id="create-btn" class="button primary" disabled><span>${joinedRoom ? 'ПРИНЯТЬ ВЫЗОВ' : 'ВЫЗВАТЬ ДРУГА'}</span>${icon('arrow')}</button>
         <div class="secondary-actions"><button id="training-btn" class="button secondary" disabled>${icon('bolt')}ТРЕНИРОВКА</button><button id="join-btn" class="text-btn">ВВЕСТИ КОД ${icon('arrow')}</button></div>
+        <button id="load-retry-btn" class="button secondary load-retry" hidden>ПОВТОРИТЬ ЗАГРУЗКУ ${icon('arrow')}</button>
       </div>
-      <div id="load-progress" class="load-progress"><span id="load-text">Подготавливаем автоматонов…</span><div><i id="load-bar"></i></div></div>
+      <div id="load-progress" class="load-progress" role="status" aria-live="polite"><span id="load-text">Подготавливаем автоматонов…</span><div><i id="load-bar"></i></div></div>
     </div>
     <div class="specimen-label"><span class="specimen-line"></span><p>АВТОМАТОН «ЖУК»<small>БОЕВАЯ ЕДИНИЦА / ГОТОВ К АКТИВАЦИИ</small></p><span class="specimen-number">№ 07</span></div>
     <footer class="lobby-footer"><span><i></i>КОРОТКИЕ ИСТОРИИ БЕЛОБОГА</span><button class="text-btn" id="guide-btn">КАК ИГРАТЬ ${icon('arrow')}</button><span class="fan-label">Honkai: Star Rail · фан-проект</span></footer>
@@ -393,7 +396,14 @@ setInterval(() => { if (connected) send({type:'ping',t:Date.now()}); }, 2500);
 showView('lobby');
 fetch(appPaths.path('api/info')).then(r => r.ok ? r.json() : null).then(info => { serverInfo = info; if (room) updateInvite(); }).catch(() => {});
 
-async function boot() {
+const boot = retryableLoad(async () => {
+  $('load-retry-btn').disabled = true;
+  $('load-retry-btn').hidden = true;
+  $('load-progress').classList.remove('complete');
+  delete $('load-progress').dataset.failed;
+  setText('load-text', 'Подготавливаем автоматонов…');
+  setConnection('АРЕНА ЗАГРУЖАЕТСЯ', false);
+  $('load-bar').style.width = '5%';
   try {
     arena = await createArena($('arena'), { onLoadProgress: progress => {
       const value = typeof progress === 'number' ? progress : (progress?.loaded / progress?.total || .3);
@@ -401,15 +411,31 @@ async function boot() {
     } });
     assetsReady = true; $('load-bar').style.width = '100%'; setText('load-text','АВТОМАТОНЫ ГОТОВЫ'); setConnection('АРЕНА ГОТОВА', true);
     $('create-btn').disabled = false; $('training-btn').disabled = false;
-    setTimeout(() => $('load-progress').classList.add('complete'), 1200);
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) arena.setReducedMotion?.(true);
+  } catch (error) {
+    arena?.dispose(); arena = undefined; assetsReady = false;
+    $('create-btn').disabled = $('training-btn').disabled = true;
+    console.error('Arena initialization failed:', error);
+    setText('load-text', arenaFailureMessage(error)); setConnection('ОШИБКА ЗАГРУЗКИ', false);
+    $('load-progress').dataset.failed = 'true';
+    $('load-retry-btn').hidden = false;
+    $('load-retry-btn').disabled = false;
+    throw error;
+  }
+  setTimeout(() => $('load-progress').classList.add('complete'), 1200);
+  // A saved-room/network error is independent from successful asset boot. It
+  // must not discard a live renderer or start another initialization attempt.
+  try {
     const saved = JSON.parse(sessionStorage.getItem('belobog-session') || 'null');
     if (saved?.room && saved?.token && (!joinedRoom || joinedRoom === saved.room)) {
       ({room,token,playerId,mode} = saved); connect({type:'join',room,token,name:name()});
     }
   } catch (error) {
-    console.error('Arena initialization failed:',error); setText('load-text','Не удалось загрузить арену. Обнови страницу.'); setConnection('ОШИБКА ЗАГРУЗКИ',false);
-    toast('Для арены нужен браузер с WebGL. Попробуй обновить страницу или открыть её в Chrome / Safari.');
+    console.warn('Saved club session could not be restored:', error);
+    toast('Арена загружена. Не удалось восстановить комнату — войди по коду или создай новую.');
   }
-}
-boot();
+  return arena;
+});
+const retryBoot = () => { boot().catch(() => {}); };
+$('load-retry-btn').addEventListener('click', retryBoot);
+retryBoot();

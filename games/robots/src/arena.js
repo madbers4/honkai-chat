@@ -12,6 +12,7 @@ import { computeFaceoffCamera, blendFaceoffCamera } from './faceoff-camera.js';
 import { createEmissionGlow } from './emission-glow.js';
 import { arenaRootPosition } from './arena-root.js';
 import { GRAPHICS_PRESETS, graphicsPreset, graphicsPixelRatio, readGraphicsPreference, observeGraphicsPreference } from './graphics-quality.js';
+import { ArenaLoadError, loadArenaAssets } from './asset-loading.js';
 
 
 const clamp = THREE.MathUtils.clamp;
@@ -127,11 +128,9 @@ function makeAtmosphere(scene, texture) {
   };
 }
 
-async function loadWallpaper() {
+async function loadWallpaper(url) {
   const loader = new THREE.TextureLoader();
-  let result;
-  try { result = await loader.loadAsync(assetUrl('/assets/belobog-arena.png')); }
-  catch { result = await loader.loadAsync(assetUrl('/assets/belobog-original.png')); }
+  const result = await loader.loadAsync(assetUrl(url));
   result.colorSpace = THREE.SRGBColorSpace;
   result.anisotropy = 4;
   return result;
@@ -142,7 +141,11 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
   let loadProgress = 0;
   const reportProgress = value => { loadProgress = Math.max(loadProgress, value); onLoadProgress?.(loadProgress); };
   reportProgress(0.05);
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
+  let renderer;
+  try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' }); }
+  catch (cause) { throw new ArenaLoadError('graphics', 'WebGL renderer could not start', cause); }
+  const startupCleanup = [() => { renderer.dispose(); renderer.forceContextLoss(); renderer.domElement.remove(); }];
+  try {
   renderer.setClearColor('#141a20');
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -185,25 +188,27 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
   const impactLight = new THREE.PointLight('#ffe8bd', 0, 6, 2);
   impactLight.position.set(0, 1.2, 1.4); scene.add(impactLight);
 
-  let wallpaper, posterTexture;
-  const posterLoad = loadPosterAtlas();
-  try {
-    [wallpaper, posterTexture] = await Promise.all([
-      loadWallpaper().then(texture => { reportProgress(0.3); return texture; }),
-      posterLoad,
-      loadRobotAssets().then(() => { reportProgress(0.78); }),
-    ]);
-  } catch (error) {
-    posterLoad.then(texture => texture?.dispose());
-    renderer.dispose(); renderer.domElement.remove();
-    throw error;
-  }
+  const { wallpaper, posterTexture } = await loadArenaAssets({
+    wallpaper: () => loadWallpaper('/assets/belobog-arena.png'),
+    fallbackWallpaper: () => loadWallpaper('/assets/belobog-original.png'),
+    posters: loadPosterAtlas,
+    robot: () => loadRobotAssets().then(() => { reportProgress(0.78); }),
+  });
+  let posterOwnedByEnvironment = false;
+  startupCleanup.push(() => wallpaper.dispose(), () => { if (!posterOwnedByEnvironment) posterTexture?.dispose(); });
   const environment = buildEnvironment(scene, wallpaper, posterTexture);
+  posterOwnedByEnvironment = true;
+  startupCleanup.push(() => environment.dispose());
   const emissionGlow = createEmissionGlow(renderer);
+  startupCleanup.push(() => emissionGlow.dispose());
   const softTexture = makeSoftTexture();
+  startupCleanup.push(() => softTexture.dispose());
   const contactTexture = makeContactTexture();
+  startupCleanup.push(() => contactTexture.dispose());
   const atmosphere = makeAtmosphere(scene, softTexture);
+  startupCleanup.push(() => atmosphere.dispose());
   const effects = createCombatEffects(scene);
+  startupCleanup.push(() => effects.dispose());
   const robots = new Map();
   const seenEvents = new Set();
   const eventQueue = [];
@@ -232,7 +237,9 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
   let cameraSeek = false;
   let lastFaceoffFrame = null;
   const shadowGeometry = new THREE.PlaneGeometry(1, 1);
+  startupCleanup.push(() => shadowGeometry.dispose());
   const markerGeometry = new THREE.RingGeometry(0.57, 0.6, 40);
+  startupCleanup.push(() => markerGeometry.dispose());
 
   function robotFor(player) {
     let robot = robots.get(player.id);
@@ -287,6 +294,7 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
     camera.updateProjectionMatrix();
   }
   const resizeObserver = new ResizeObserver(resize);
+  startupCleanup.push(() => resizeObserver.disconnect());
   resizeObserver.observe(container);
   function applyQuality(value) {
     graphicsMode = graphicsPreset(value);
@@ -299,6 +307,7 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
   }
   applyQuality(graphicsMode);
   const stopWatchingGraphics = observeGraphicsPreference(applyQuality);
+  startupCleanup.push(stopWatchingGraphics);
 
   function onVisibilityChange() {
     // Returning to a tab must not replay damage accumulated while it was hidden.
@@ -306,6 +315,7 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
     previousTime = performance.now();
   }
   document.addEventListener('visibilitychange', onVisibilityChange);
+  startupCleanup.push(() => document.removeEventListener('visibilitychange', onVisibilityChange));
 
   function animate(now) {
     if (disposed) return;
@@ -467,8 +477,10 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
 
   }
   frame = requestAnimationFrame(animate);
+  startupCleanup.push(() => cancelAnimationFrame(frame));
   reportProgress(1);
 
+  startupCleanup.length = 0;
   return {
     update(state, playerId) {
       if (disposed) return;
@@ -526,4 +538,8 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
       emissionGlow.dispose(); key.shadow.map?.dispose(); renderer.dispose(); renderer.domElement.remove();
     },
   };
+  } catch (error) {
+    for (const cleanup of startupCleanup.reverse()) { try { cleanup(); } catch { /* Finish releasing the rest of this failed attempt. */ } }
+    throw error;
+  }
 }

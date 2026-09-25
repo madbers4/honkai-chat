@@ -1,16 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs/promises';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { withRobotAssetFixture } from './robot-asset-fixture.js';
 import { buildOverloadCase } from '../scripts/overload-review-cases.js';
 globalThis.self = globalThis;
 globalThis.createImageBitmap = async () => ({ width: 1024, height: 1024, close() {} });
 globalThis.ProgressEvent = class { constructor(type, props) { this.type = type; Object.assign(this, props); } };
-const bytes = await fs.readFile(new URL('../public/assets/automaton.glb', import.meta.url));
-const original = GLTFLoader.prototype.loadAsync;
-GLTFLoader.prototype.loadAsync = function () { return this.parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), ''); };
-const { loadRobotAssets, createRobot } = await import('../src/robot.js'); await loadRobotAssets(); GLTFLoader.prototype.loadAsync = original;
+const { loadRobotAssets, createRobot } = await import('../src/robot.js'); await withRobotAssetFixture(loadRobotAssets);
 function bounds(robot) {
   robot.group.updateMatrixWorld(true); const box = new THREE.Box3(), point = new THREE.Vector3();
   robot.group.traverse(mesh => { if (!mesh.isSkinnedMesh || !mesh.visible) return;

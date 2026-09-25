@@ -1,20 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs/promises';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { withRobotAssetFixture } from './robot-asset-fixture.js';
 import { robotPresentation } from '../shared/robot-presentation.js';
 
 // Numeric deformation tests need no browser/GPU or decoded texture pixels.
 globalThis.self = globalThis;
 globalThis.createImageBitmap = async () => ({ width: 1024, height: 1024, close() {} });
 globalThis.ProgressEvent = class { constructor(type, properties) { this.type = type; Object.assign(this, properties); } };
-const bytes = await fs.readFile(new URL('../public/assets/automaton.glb', import.meta.url));
-const originalLoad = GLTFLoader.prototype.loadAsync;
-GLTFLoader.prototype.loadAsync = function () { return this.parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), ''); };
 const { loadRobotAssets, createRobot } = await import('../src/robot.js');
-await loadRobotAssets();
-GLTFLoader.prototype.loadAsync = originalLoad;
+await withRobotAssetFixture(loadRobotAssets);
 
 function skinBounds(robot, boneName) {
   robot.group.updateMatrixWorld(true);

@@ -1,8 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs/promises';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { withRobotAssetFixture } from './robot-asset-fixture.js';
 import { ARENA_EDGE } from '../shared/constants.js';
 import { arenaRootPosition } from '../src/arena-root.js';
 import { createCameraChoreography, projectCameraPoint } from '../src/camera-choreography.js';
@@ -13,11 +12,8 @@ import { buildTraversalCase } from '../scripts/traversal-review.js';
 globalThis.self = globalThis;
 globalThis.createImageBitmap = async () => ({ width: 1024, height: 1024, close() {} });
 globalThis.ProgressEvent = class { constructor(type, properties) { Object.assign(this, properties); } };
-const bytes = await fs.readFile(new URL('../public/assets/automaton.glb', import.meta.url));
-const originalLoad = GLTFLoader.prototype.loadAsync;
-GLTFLoader.prototype.loadAsync = function () { return this.parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), ''); };
 const { createRobot, loadRobotAssets } = await import('../src/robot.js');
-await loadRobotAssets(); GLTFLoader.prototype.loadAsync = originalLoad;
+await withRobotAssetFixture(loadRobotAssets);
 
 function eachSolidVertex(robot, callback) {
   const point = new THREE.Vector3();

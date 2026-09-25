@@ -1,19 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs/promises';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { withRobotAssetFixture } from './robot-asset-fixture.js';
 import { ACCESSORIES } from '../shared/robot-customization.js';
 import { frameCustomizationPreview } from '../src/customization-preview.js';
 
 globalThis.self=globalThis;
 globalThis.createImageBitmap=async()=>({width:1024,height:1024,close(){}});
 globalThis.ProgressEvent=class{constructor(type,properties){Object.assign(this,properties);}};
-const bytes=await fs.readFile(new URL('../public/assets/automaton.glb',import.meta.url));
-const originalLoad=GLTFLoader.prototype.loadAsync;
-GLTFLoader.prototype.loadAsync=function(){return this.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');};
 const {loadRobotAssets,createRobot}=await import('../src/robot.js');
-await loadRobotAssets();GLTFLoader.prototype.loadAsync=originalLoad;
+await withRobotAssetFixture(loadRobotAssets);
 const base={action:'idle',actionTime:0,facing:1,x:0,y:0,hp:180,maxHp:180,energy:100,guard:100};
 const armor=robot=>{let result;robot.group.traverse(mesh=>{if(mesh.isSkinnedMesh&&!mesh.material.userData.signalChannel)result=mesh.material;});return result;};
 const shader=material=>{const result={uniforms:{},fragmentShader:'#include <map_fragment>\n#include <metalnessmap_fragment>'};material.onBeforeCompile(result);return result;};

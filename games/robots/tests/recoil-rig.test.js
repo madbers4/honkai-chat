@@ -1,20 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs/promises';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { withRobotAssetFixture } from './robot-asset-fixture.js';
 import { recoilChoreography } from '../src/recoil-choreography.js';
 import { buildRecoilCase, RECOIL_CASES } from '../scripts/recoil-review.js';
 
 globalThis.self = globalThis;
 globalThis.createImageBitmap = async () => ({ width: 1024, height: 1024, close() {} });
 globalThis.ProgressEvent = class { constructor(type, properties) { this.type = type; Object.assign(this, properties); } };
-const bytes = await fs.readFile(new URL('../public/assets/automaton.glb', import.meta.url));
-const originalLoad = GLTFLoader.prototype.loadAsync;
-GLTFLoader.prototype.loadAsync = function () { return this.parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), ''); };
 const { loadRobotAssets, createRobot } = await import('../src/robot.js');
-await loadRobotAssets();
-GLTFLoader.prototype.loadAsync = originalLoad;
+await withRobotAssetFixture(loadRobotAssets);
 
 function shape(robot) {
   robot.group.updateMatrixWorld(true);

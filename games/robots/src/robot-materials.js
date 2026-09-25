@@ -7,26 +7,46 @@ import * as THREE from 'three';
 const SURFACE_MAPS = ['map', 'normalMap', 'roughnessMap', 'metalnessMap'];
 const SURFACE_ASSETS = [assetUrl('/assets/robot-surfaces/base-color-2048.webp'), assetUrl('/assets/robot-surfaces/metallic-roughness-1024.webp')];
 
-// The GLB is always a complete fallback. A slow/failed optional image must not
-// hold entry to a match indefinitely, or leak after its timeout has elapsed.
-export function createRobotSurfaceAssetCache(loadTexture, timeoutMs = 1500) {
-  let pending, cancelPending, loaded = null, disposed = false;
+// Entry can use the complete GLB after 1.5s. HD images still get one bounded
+// opportunity to upgrade live robots; neither fallback nor failure starts retries.
+export function createRobotSurfaceAssetCache(loadTexture, timeoutMs = 1500, deadlineMs = 15000) {
+  let pending, cancelPending, loaded = null, disposed = false, terminal = false;
+  const listeners = new Set();
   function load() {
     if (disposed) return Promise.resolve(null);
+    if (loaded) return Promise.resolve(loaded);
     if (pending) return pending;
     pending = new Promise(resolve => {
-      let finished = false, received = 0;
-      const textures = [];
-      const finish = value => {
-        if (finished) return;
-        finished = true; clearTimeout(timer); loaded = value; resolve(value);
-        if (!value) textures.forEach(texture => texture?.dispose());
-        textures.length = 0;
+      let bootResolved = false, received = 0;
+      const textures = [], controller = new AbortController();
+      const resolveBoot = value => {
+        if (bootResolved) return;
+        bootResolved = true; clearTimeout(bootTimer); resolve(value);
       };
-      const timer = setTimeout(() => finish(null), timeoutMs);
+      const finish = value => {
+        if (terminal) return;
+        terminal = true; clearTimeout(bootTimer); clearTimeout(deadlineTimer);
+        loaded = value; resolveBoot(value);
+        if (!value) {
+          controller.abort();
+          for (const texture of new Set(textures)) texture?.dispose();
+        }
+        textures.length = 0;
+        if (value) for (const listener of [...listeners]) {
+          if (disposed) break;
+          if (listeners.delete(listener)) listener(value);
+        }
+        listeners.clear(); cancelPending = undefined;
+      };
+      const bootTimer = setTimeout(() => resolveBoot(null), Math.max(0, timeoutMs));
+      const deadlineTimer = setTimeout(() => finish(null), Math.max(timeoutMs, deadlineMs));
       cancelPending = () => finish(null);
-      SURFACE_ASSETS.forEach((url, index) => Promise.resolve().then(() => loadTexture(url)).then(texture => {
-        if (finished || disposed) { texture.dispose(); finish(null); return; }
+      SURFACE_ASSETS.forEach((url, index) => Promise.resolve().then(() => {
+        if (terminal || disposed) return null;
+        return loadTexture(url, { signal: controller.signal });
+      }).then(texture => {
+        if (!texture) { finish(null); return; }
+        if (terminal || disposed) { texture.dispose(); return; }
         textures[index] = texture;
         if (++received === 2) {
           const [map, packed] = textures;
@@ -44,17 +64,51 @@ export function createRobotSurfaceAssetCache(loadTexture, timeoutMs = 1500) {
     });
     return pending;
   }
+  function subscribe(listener) {
+    if (disposed) return () => {};
+    if (loaded) { listener(loaded); return () => {}; }
+    if (terminal) return () => {};
+    listeners.add(listener);
+    return () => listeners.delete(listener);
+  }
   function dispose() {
     if (disposed) return;
-    disposed = true;
-    cancelPending?.();
+    disposed = true; listeners.clear(); cancelPending?.();
     if (loaded) { loaded.map.dispose(); loaded.roughnessMap.dispose(); loaded = null; }
   }
-  return { load, dispose, get textures() { return loaded; } };
+  return { load, subscribe, dispose, get textures() { return loaded; } };
 }
 
-const assetCache = createRobotSurfaceAssetCache(url => new THREE.TextureLoader().loadAsync(url));
-export const loadRobotSurfaceAssets = () => assetCache.load();
+// TextureLoader's ordinary HTML-image request has no abort method. Keep its
+// loadAsync contract, but detach and cancel our two optional images at deadline.
+class CancellableSurfaceLoader extends THREE.TextureLoader {
+  constructor(signal) { super(); this.signal = signal; }
+  load(url, onLoad, _onProgress, onError) {
+    const image = document.createElementNS('http://www.w3.org/1999/xhtml', 'img');
+    const texture = new THREE.Texture(), signal = this.signal;
+    let finished = false;
+    const cleanup = () => {
+      image.onload = image.onerror = null;
+      signal.removeEventListener('abort', abort);
+    };
+    const fail = error => {
+      if (finished) return;
+      finished = true; cleanup(); image.removeAttribute('src'); texture.dispose(); onError?.(error);
+    };
+    const abort = () => fail(signal.reason ?? new Error('Surface image request cancelled.'));
+    image.onload = () => {
+      if (finished) return;
+      finished = true; cleanup(); texture.image = image; texture.needsUpdate = true; onLoad?.(texture);
+    };
+    image.onerror = () => fail(new Error('Optional robot surface image could not load.'));
+    image.crossOrigin = this.crossOrigin;
+    signal.addEventListener('abort', abort, { once: true });
+    if (signal.aborted) abort(); else image.src = url;
+    return texture;
+  }
+}
+const assetCache = createRobotSurfaceAssetCache((url, { signal }) => new CancellableSurfaceLoader(signal).loadAsync(url));
+export const loadRobotSurfaceAssets = (cache = assetCache) => cache.load();
 
 let sharedReflection = null, reflectionUsers = 0;
 function acquireReflection() {
@@ -100,12 +154,14 @@ function releaseReflection() {
   if (--reflectionUsers === 0) { sharedReflection.dispose(); sharedReflection = null; }
 }
 
-export function createRobotMaterialResources(surfaceAssets = assetCache.textures) {
-  const textures = new Map();
+export function createRobotMaterialResources(surfaceAssets, { cache = assetCache } = {}) {
+  const progressive = surfaceAssets === undefined;
+  surfaceAssets = progressive ? cache?.textures : surfaceAssets;
+  const textures = new Map(), upgradeSlots = new Map();
   let reflection;
   let disposed = false;
 
-  function privateTexture(source) {
+  function privateTexture(source, slot) {
     if (!source) return null;
     if (!textures.has(source)) {
       const texture = source.clone();
@@ -113,14 +169,33 @@ export function createRobotMaterialResources(surfaceAssets = assetCache.textures
       texture.anisotropy = 4;
       texture.needsUpdate = true;
       textures.set(source, texture);
+      if (slot !== 'normalMap') upgradeSlots.set(texture, slot);
     }
     return textures.get(source);
   }
 
+  function upgrade(assets) {
+    if (disposed) return;
+    surfaceAssets = assets;
+    for (const [texture, slot] of upgradeSlots) {
+      const incoming = assets[slot];
+      if (!incoming || texture.image === incoming.image) continue;
+      // WebGL2 storage has fixed dimensions. Retire the old GPU allocation while
+      // it still refers to the old Source; the same wrapper is then re-uploaded.
+      // Fragment material clones keep seeing this wrapper without being tracked.
+      texture.dispose();
+      texture.source = new THREE.Source(incoming.image);
+      for (const property of ['colorSpace', 'flipY', 'wrapS', 'wrapT', 'minFilter', 'magFilter', 'generateMipmaps', 'premultiplyAlpha', 'unpackAlignment', 'format', 'type']) texture[property] = incoming[property];
+      texture.name = incoming.name + '_Surface'; texture.anisotropy = 4; texture.needsUpdate = true;
+      textures.set(incoming, texture);
+    }
+  }
+  const unsubscribe = progressive ? cache?.subscribe(upgrade) : null;
+
   function cloneArmor(source, skin = 'amber') {
     if (disposed) throw new Error('Robot material resources have been disposed.');
     const material = source.clone();
-    for (const slot of SURFACE_MAPS) material[slot] = privateTexture(surfaceAssets?.[slot] || source[slot]);
+    for (const slot of SURFACE_MAPS) material[slot] = privateTexture(surfaceAssets?.[slot] || source[slot], slot);
     material.color.set(skin === 'cyan' ? 0xd3ecff : 0xffedcf);
     // The original B channel has 0 on paint and 1 on exposed metal. Multiplying
     // it by .74 turned every bare joint into a fictional half-metal surface.
@@ -140,8 +215,9 @@ export function createRobotMaterialResources(surfaceAssets = assetCache.textures
   function disposeTextures() {
     if (disposed) return;
     disposed = true;
-    for (const texture of textures.values()) texture.dispose();
-    textures.clear();
+    unsubscribe?.();
+    for (const texture of new Set(textures.values())) texture.dispose();
+    textures.clear(); upgradeSlots.clear();
     if (reflection) { releaseReflection(); reflection = null; }
   }
 

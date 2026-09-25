@@ -17,20 +17,27 @@ import { specialChoreography, electricalReaction } from './special-choreography.
 import { choreographOverload, choreographOverloadHit } from './overload-choreography.js';
 import { createRobotCustomization } from './robot-customization.js';
 import { choreographFaceoff } from './faceoff-choreography.js';
+import { ArenaLoadError, fetchRobotBuffer, retryableLoad } from './asset-loading.js';
 
 // The user's Automaton Beetle, repaired and rigid-skinned in prepare-model.py.
 // The four articulated leg chains use CCD toward planted feet / attack targets;
 // the turret is independently sprung, so the robot never moves as a rigid prop.
 let template;
-let loading;
+let modelAttempted = false;
+const loadTemplate = retryableLoad(async () => {
+  const fresh = modelAttempted;
+  modelAttempted = true;
+  const [buffer] = await Promise.all([
+    fetchRobotBuffer(assetUrl('/assets/automaton.glb?v=signals-v4'), { fresh }),
+    loadRobotSurfaceAssets(),
+  ]);
+  try { return (await new GLTFLoader().parseAsync(buffer, '')).scene; }
+  catch (cause) { throw new ArenaLoadError('model', 'Robot GLB could not be decoded', cause); }
+});
 export async function loadRobotAssets() {
   if (template) return template;
-  if (!loading) loading = Promise.all([
-    new GLTFLoader().loadAsync(assetUrl('/assets/automaton.glb?v=signals-v4')),
-    loadRobotSurfaceAssets(),
-  ]).then(([gltf]) => { template = gltf.scene; return template; })
-    .catch((error) => { loading = undefined; throw error; });
-  return loading;
+  template = await loadTemplate();
+  return template;
 }
 
 const clamp = THREE.MathUtils.clamp;

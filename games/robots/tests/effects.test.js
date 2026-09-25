@@ -1,3 +1,4 @@
+import { withRobotAssetFixture } from './robot-asset-fixture.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
@@ -539,21 +540,15 @@ test('damage pools stay bounded through a long critical fight and low/reduced mo
 
 test('damage emitters follow the real rig through facing, air motion and KO deformation', async t => {
   const { scene, effects, state } = setup(t);
-  const fs = await import('node:fs/promises');
-  const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
   const saved = new Map(['self', 'createImageBitmap', 'ProgressEvent'].map(key => [key, globalThis[key]]));
   globalThis.self = globalThis;
   globalThis.createImageBitmap = async () => ({ width: 1024, height: 1024, close() {} });
   globalThis.ProgressEvent = class { constructor(type, properties) { this.type = type; Object.assign(this, properties); } };
-  const bytes = await fs.readFile(new URL('../public/assets/automaton.glb', import.meta.url));
-  const originalLoad = GLTFLoader.prototype.loadAsync;
-  GLTFLoader.prototype.loadAsync = function () { return this.parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), ''); };
   t.after(() => {
-    GLTFLoader.prototype.loadAsync = originalLoad;
     for (const [key, value] of saved) { if (value === undefined) delete globalThis[key]; else globalThis[key] = value; }
   });
   const { loadRobotAssets, createRobot } = await import('../src/robot.js');
-  await loadRobotAssets(); GLTFLoader.prototype.loadAsync = originalLoad;
+  await withRobotAssetFixture(loadRobotAssets);
   const robot = createRobot(); t.after(() => robot.dispose());
   const player = damageState(state);
   robot.group.position.set(-1.7, 0, 0.1);
@@ -662,18 +657,13 @@ test('new pools remain bounded through repeated final blasts, pauses and round r
 
 test('claw ribbons sample actual GLB tip and foot trajectories instead of arbitrary circles', async t => {
   const { scene, effects, state } = setup(t);
-  const fs = await import('node:fs/promises');
-  const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
   const saved = new Map(['self', 'createImageBitmap', 'ProgressEvent'].map(key => [key, globalThis[key]]));
   globalThis.self = globalThis;
   globalThis.createImageBitmap = async () => ({ width: 1024, height: 1024, close() {} });
   globalThis.ProgressEvent = class { constructor(type, properties) { this.type = type; Object.assign(this, properties); } };
-  const bytes = await fs.readFile(new URL('../public/assets/automaton.glb', import.meta.url));
-  const originalLoad = GLTFLoader.prototype.loadAsync;
-  GLTFLoader.prototype.loadAsync = function () { return this.parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), ''); };
-  t.after(() => { GLTFLoader.prototype.loadAsync = originalLoad; for (const [key, value] of saved) { if (value === undefined) delete globalThis[key]; else globalThis[key] = value; } });
+  t.after(() => { for (const [key, value] of saved) { if (value === undefined) delete globalThis[key]; else globalThis[key] = value; } });
   const { loadRobotAssets, createRobot } = await import('../src/robot.js');
-  await loadRobotAssets(); GLTFLoader.prototype.loadAsync = originalLoad;
+  await withRobotAssetFixture(loadRobotAssets);
   const robot = createRobot(); t.after(() => robot.dispose());
   state.phase = 'fight';
   const player = state.players[0]; Object.assign(player, { action: 'heavy', variant: 'launcher', facing: 1, actionDuration: .86, hp: 100 });

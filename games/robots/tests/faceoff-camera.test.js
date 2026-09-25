@@ -1,3 +1,4 @@
+import { withRobotAssetFixture } from './robot-asset-fixture.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildFaceoff, FACE_OFF_DURATION } from '../shared/faceoff-script.js';
@@ -164,14 +165,11 @@ test('countdown blend supports a normal ending and early mutual skip without a s
 });
 
 test('real robot meshes and bone-mounted trophies clear both overlays throughout the script',async t=>{
-  const THREE=await import('three'),{GLTFLoader}=await import('three/addons/loaders/GLTFLoader.js');
-  const fs=await import('node:fs/promises');
+  const THREE=await import('three');
   globalThis.self=globalThis;globalThis.createImageBitmap=async()=>({width:1024,height:1024,close(){}});
   globalThis.ProgressEvent=class{constructor(type,properties){Object.assign(this,properties);}};
-  const bytes=await fs.readFile(new URL('../public/assets/automaton.glb',import.meta.url)),originalLoad=GLTFLoader.prototype.loadAsync;
-  GLTFLoader.prototype.loadAsync=function(){return this.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');};
   const {loadRobotAssets,createRobot}=await import('../src/robot.js');
-  try{await loadRobotAssets();}finally{GLTFLoader.prototype.loadAsync=originalLoad;}
+  await withRobotAssetFixture(loadRobotAssets);
   const robots=[createRobot(),createRobot({skin:'cyan'})],beats=buildFaceoff(playersAt(0),'review'),point=new THREE.Vector3();
   const extents={x:0,bottom:1,top:-1};let checked=0;
   try{

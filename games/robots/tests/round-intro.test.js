@@ -1,13 +1,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { buildRoundIntro, activeRoundIntroBeat, ROUND_INTRO_DURATION, ROUND_INTRO_BEAT_DURATION } from '../shared/round-intro.js';
+import { buildRoundIntro as buildCurrentRoundIntro, activeRoundIntroBeat, ROUND_INTRO_DURATION, ROUND_INTRO_BEAT_DURATION } from '../shared/round-intro.js';
 import { PREMATCH_EXCHANGES } from '../shared/club-story.js';
 import { GENERATED_VOICE_CLIPS } from '../shared/generated-voice-clips.js';
 import { createRoundIntroUI } from '../src/round-intro-ui.js';
 import { createStoryVoice } from '../src/story-voice.js';
 
 const players = [{ id: 'copper', name: 'Медный Сом' }, { id: 'baron', name: 'Барон Коротыш' }];
+// This file preserves the old-pack/TTS fallback contract. The complete 57-take
+// catalogue and adaptive timings are exercised in spoken-runtime.test.js.
+const legacyCatalog=Object.fromEntries(Object.entries(GENERATED_VOICE_CLIPS).filter(([id])=>/^(jotaro|dio)-(mode|round-[12])$/.test(id)));
+const buildRoundIntro=(players,room,round,serial)=>buildCurrentRoundIntro(players,room,round,serial,{catalog:legacyCatalog});
 
 test('round exchange is deterministic, independent of names and composed of two exact speaking windows', () => {
   const intro = buildRoundIntro(players, 'ROOM-42', 3, 2);
@@ -33,35 +37,27 @@ test('shuffled deck does not repeat in any twelve consecutive rounds, including 
   assert.ok(firstOrders.size > 12, 'different rooms get genuinely varied orders');
 });
 
-test('the first two shuffled pairs use all four recordings with voices fixed to seats even when Dio speaks first', () => {
-  const expected = ['dio-round-1', 'dio-round-2', 'jotaro-round-1', 'jotaro-round-2'];
-  assert.equal(PREMATCH_EXCHANGES.filter(pair => pair.clips).length, 2);
-  assert.equal(PREMATCH_EXCHANGES.filter(pair => !pair.clips).length, 10);
-  const openings = new Set();
-  for (let seed = 0; seed < 24; seed++) {
-    const intro = [1, 2].map(round => buildRoundIntro(players, `ROOM-${seed}`, round, seed % 3));
-    openings.add(intro[0].exchangeId);
-    assert.deepEqual(intro.flatMap(scene => scene.beats.map(beat => beat.clip)).sort(), expected);
-    for (const scene of intro) {
-      const exchange = PREMATCH_EXCHANGES.find(pair => pair.id === scene.exchangeId);
-      for (const beat of scene.beats) {
-        const seat = players.findIndex(player => player.id === beat.speaker), recording = GENERATED_VOICE_CLIPS[beat.clip];
-        assert.equal(beat.clip, exchange.clips[seat === 0 ? 'a' : 'b']);
-        assert.equal(recording.speaker, seat === 0 ? 'jotaro' : 'dio');
-        assert.equal(beat.text, recording.text); assert.equal(beat.ttsText, recording.text);
-        assert.equal(beat.clipDuration, recording.duration); assert.equal(beat.clipOffset, 0);
-        assert.ok(recording.duration <= ROUND_INTRO_BEAT_DURATION);
-        const template = seat === 0 ? exchange.first : exchange.reply;
-        assert.equal(template.replace(/^\{[ab]\}:\s*«/, '').replace(/»$/, ''), recording.text);
+test('legacy pack never reverses setup and reply to preserve a voice on even rounds', () => {
+  const covered = new Set();
+  for (let seed = 0; seed < 24; seed++) for (let round = 1; round <= 12; round++) {
+    const intro=buildRoundIntro(players, 'ROOM-'+seed, round, seed%3);
+    const exchange=PREMATCH_EXCHANGES.find(pair=>pair.id===intro.exchangeId);
+    for (const [index,beat] of intro.beats.entries()) {
+      const expected=(index===0?exchange.first:exchange.reply).replace(/^\{[ab]\}:\s*«/, '').replace(/»[.!?]*$/, '').trim();
+      assert.equal(beat.text.replace(/[.!?…]$/, ''),expected.replace(/[.!?…]$/, ''));
+      const seat=players.findIndex(player=>player.id===beat.speaker);
+      assert.equal(seat,index===0?(round-1)%2:1-(round-1)%2);
+      if(round%2===0) assert.ok(!beat.clip,'missing legacy cross-voice takes stay optional TTS, never reversed recordings');
+      if(beat.clip) {
+        covered.add(beat.clip);
+        const recording=GENERATED_VOICE_CLIPS[beat.clip];
+        assert.equal(recording.speaker,seat===0?'jotaro':'dio');
+        assert.equal(beat.text,recording.text);assert.equal(beat.clipDuration,recording.duration);
+        assert.ok(beat.duration>=recording.duration+.38+.12);
       }
     }
-    assert.equal(GENERATED_VOICE_CLIPS[intro[1].beats[0].clip].speaker, 'dio');
-    assert.equal(GENERATED_VOICE_CLIPS[intro[1].beats[1].clip].speaker, 'jotaro');
-    for (let round = 3; round <= 12; round++) {
-      assert.ok(buildRoundIntro(players, `ROOM-${seed}`, round, seed % 3).beats.every(beat => !beat.clip), 'the remaining ten pairs keep their original optional speech');
-    }
   }
-  assert.equal(openings.size, 2, 'both recorded pairs can open a match');
+  assert.deepEqual([...covered].sort(),['dio-round-1','dio-round-2','jotaro-round-1','jotaro-round-2']);
 });
 
 // The checked-in pack is MPEG-2 Layer III mono, 24 kHz. Read its real frame
@@ -108,7 +104,7 @@ test('all four actual generated MP3 assets fit their windows with the complete f
     assert.ok(duration > 0 && duration + .38 < ROUND_INTRO_BEAT_DURATION,
       `${clip}: full ${duration}s recording must fit even after the maximum .38s first-start delay`);
   }
-  for (const round of [1, 2]) for (const beat of buildRoundIntro(players, 'jitter-budget', round).beats) {
+  for (const round of [1, 2]) for (const beat of buildRoundIntro(players, 'jitter-budget', round).beats.filter(beat=>beat.clip)) {
     for (const delay of [.28, .38]) {
       const intro = buildRoundIntro(players, 'jitter-budget', round);
       assert.equal(activeRoundIntroBeat(intro, beat.at + delay + beat.clipDuration)?.id, beat.id,
@@ -182,7 +178,23 @@ test('a reconnect selects the current subtitle immediately, including an empty-r
   ui.update({ active: true, players: [], intro, elapsed: ROUND_INTRO_BEAT_DURATION + .8, paused: true });
   assert.equal(find(ui.element, 'round-intro-speaker').textContent, 'Автоматон 2');
   assert.equal(find(ui.element, 'round-intro-line').textContent, intro.beats[1].text); assert.equal(ui.element.dataset.speaker, '1');
-  ui.update({ active: true, intro, elapsed: ROUND_INTRO_DURATION }); assert.equal(find(ui.element, 'round-intro-line').textContent, 'Теперь говорят приёмы.'); ui.dispose();
+  ui.update({ active: true, intro, elapsed: intro.duration }); assert.equal(find(ui.element, 'round-intro-line').textContent, 'Теперь говорят приёмы.'); ui.dispose();
+});
+
+test('round UI uses each measured window for progress and keeps a long reply visible until its actual end', () => {
+  const mount = new Element('main', doc), ui = createRoundIntroUI(mount);
+  const intro = { id:'uneven', round:3, duration:19.9, beats:[
+    { id:'setup', at:0, duration:7.7, speaker:'p1', text:'Начало реплики.' },
+    { id:'reply', at:7.7, duration:12.2, speaker:'p2', text:'Ответ с эмоциональной паузой.' },
+  ] };
+  ui.update({ active:true, intro, elapsed:3.85 });
+  assert.equal(find(ui.element,'round-intro-fill').style.transform,'scaleX(0.5)');
+  ui.update({ active:true, intro, elapsed:19.8 });
+  assert.equal(find(ui.element,'round-intro-line').textContent,intro.beats[1].text);
+  assert.match(find(ui.element,'round-intro-note').textContent,/СНАЧАЛА СЛОВО/);
+  ui.update({ active:true, intro, elapsed:intro.duration });
+  assert.equal(find(ui.element,'round-intro-note').textContent,'ПРИГОТОВЬТЕСЬ');
+  ui.dispose();
 });
 
 test('unrecorded round beats retain opt-in local voice; late join and referee suppression stay silent', async t => {

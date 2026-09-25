@@ -1,5 +1,8 @@
-// Offline reference-conditioned synthesis; see docs/generated-voice-pack.md.
-export const GENERATED_VOICE_CLIPS = Object.freeze({
+import { GENERATED_DIO_VOICE_CLIPS } from './generated-dio-voice-clips.js';
+import { GENERATED_JOTARO_VOICE_CLIPS } from './generated-jotaro-voice-clips.js';
+// Keep the first pack for the explicit incomplete-catalog fallback only.
+// New conversations switch together once both complete actor packs are present.
+export const LEGACY_GENERATED_VOICE_CLIPS = Object.freeze({
   "jotaro-mode": {
     "url": "/assets/voices/generated/jotaro-mode.mp3",
     "text": "Боевой режим: кабачковое противостояние!",
@@ -36,4 +39,10 @@ export const GENERATED_VOICE_CLIPS = Object.freeze({
     "duration": 2.98,
     "speaker": "dio"
   }
+});
+
+export const GENERATED_VOICE_CLIPS = Object.freeze({
+  ...LEGACY_GENERATED_VOICE_CLIPS,
+  ...GENERATED_DIO_VOICE_CLIPS,
+  ...GENERATED_JOTARO_VOICE_CLIPS,
 });

@@ -3,8 +3,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import crypto from 'node:crypto';
 import { buildFaceoff, activeFaceoffBeat, FACE_OFF_DURATION, FACE_OFF_POSES, FACE_OFF_DIALOGUE_CLIPS, VOICE_CLIPS } from '../shared/faceoff-script.js';
+import { hasCompleteSpokenCatalog } from '../shared/spoken-catalog.js';
 
-test('faceoff is a deterministic complete 48-second sequence with stable identities and legal audio slices', () => {
+test('faceoff is a deterministic complete sequence with stable identities and whole recordings', () => {
   const players = [{ id: 'p1', name: 'Медный Сом' }, { id: 'p2', name: 'Герой <script>чайника</script>' }];
   const beats = buildFaceoff(players, 'same-seed'); assert.deepEqual(beats, buildFaceoff(players, 'same-seed'));
   assert.equal(new Set(beats.map(b => b.id)).size, beats.length); assert.equal(beats[0].at, 0);
@@ -17,7 +18,7 @@ test('faceoff is a deterministic complete 48-second sequence with stable identit
   assert.equal(activeFaceoffBeat(beats, FACE_OFF_DURATION), null);
   assert.ok(beats.some(b => b.text.includes(players[0].name))); assert.ok(beats.some(b => b.text.includes(players[1].name)));
   assert.deepEqual(beats.filter(b => b.clip && b.chapter === 'dialogue').map(b => b.clip), FACE_OFF_DIALOGUE_CLIPS);
-  assert.deepEqual(beats.filter(b => b.clip && b.chapter === 'mode').map(b => b.clip), ['jotaro-mode', 'dio-mode']);
+  assert.deepEqual(beats.filter(b => b.clip && b.chapter === 'mode').map(b => b.clip), hasCompleteSpokenCatalog()?['faceoff-mode-p1','faceoff-mode-p2']:['jotaro-mode', 'dio-mode']);
   const clips = beats.filter(b => b.clip);
   for (let i = 0; i < clips.length; i++) {
     assert.equal(clips[i].clipOffset, 0);

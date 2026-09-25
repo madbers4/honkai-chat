@@ -1,4 +1,4 @@
-import { activeFaceoffBeat, FACE_OFF_DURATION, FACE_OFF_CHAPTERS } from '../shared/faceoff-script.js';
+import { activeFaceoffBeat, faceoffDuration, FACE_OFF_DURATION, FACE_OFF_CHAPTERS } from '../shared/faceoff-script.js';
 import { computeFaceoffCamera, faceoffShotState } from './faceoff-camera.js';
 import { projectCameraPoint } from './camera-choreography.js';
 
@@ -50,8 +50,9 @@ export function createFaceoffUI(container) {
     const key=`${sequenceId}:${beat?.id??''}`;
     if(key!==lastBeat){text(line,beat?.text||'');lastBeat=key;}
     caption.dataset.speaker=beat?.speaker||'narrator';
-    fill.style.transform=`scaleX(${Math.min(1,t/FACE_OFF_DURATION)})`;
-    text(countdown,paused?'ЖДЁМ ВОЗВРАЩЕНИЯ СОПЕРНИКА':`${Math.ceil(Math.max(0,FACE_OFF_DURATION-t))} С ДО БОЯ`);
+    const duration=faceoffDuration(beats)||FACE_OFF_DURATION;
+    fill.style.transform=`scaleX(${Math.min(1,t/duration)})`;
+    text(countdown,paused?'ЖДЁМ ВОЗВРАЩЕНИЯ СОПЕРНИКА':`${Math.ceil(Math.max(0,duration-t))} С ДО БОЯ`);
     text(voice,voiceStatus.message||'Оригинальные записи / настоящие имена над бойцами');
   }
   return{element:root,update,dispose(){if(disposed)return;disposed=true;root.remove();}};

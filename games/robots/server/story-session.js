@@ -1,16 +1,17 @@
-import { faceoffActorPose, faceoffActorX } from '../shared/faceoff-script.js';
+import { faceoffActorPose, faceoffActorX, faceoffDuration } from '../shared/faceoff-script.js';
 import { COUNTDOWN_SECONDS } from '../shared/constants.js';
-import { buildRoundIntro, ROUND_INTRO_DURATION } from '../shared/round-intro.js';
+import { buildRoundIntro as defaultRoundIntro, ROUND_INTRO_DURATION } from '../shared/round-intro.js';
 
 // Presentation runs beside CombatRoom: it cannot award damage, change inputs or
 // let an optional referee occupy a fighter slot. Existing protocol clients can
 // still create a room without the presentation layer.
 export class StorySession {
-  constructor(game, { ruleCount = 5, faceoffDuration = 24, buildFaceoff = () => [] } = {}) {
+  constructor(game, { ruleCount = 5, faceoffDuration = 24, buildFaceoff = () => [], buildRoundIntro = defaultRoundIntro } = {}) {
     this.game = game;
     this.ruleCount = Math.max(1, ruleCount);
     this.faceoffDuration = faceoffDuration;
     this.buildFaceoff = buildFaceoff;
+    this.buildRoundIntro = buildRoundIntro;
     this.stage = 'workshop';
     this.sequenceId = `${game.id}:opening:1`;
     this.elapsed = 0;
@@ -45,6 +46,7 @@ export class StorySession {
     if (this.stage === 'workshop' && this.allMarked(this.readyPlayers)) {
       this.stage = 'rules'; this.elapsed = 0; this.ruleIndex = 0; this.ruleAcks.clear();
       this.beats = this.buildFaceoff(this.game.players, this.game.id);
+      this.faceoffDuration = faceoffDuration(this.beats) || this.faceoffDuration;
     }
   }
 
@@ -88,9 +90,9 @@ export class StorySession {
     this.lastRoundEventId = event.id;
     if (this.game.round === 1 && this.lastRound) this.matchSerial++;
     this.lastRound = this.game.round;
-    const intro = buildRoundIntro(this.game.players, this.game.id, this.game.round, this.matchSerial);
+    const intro = this.buildRoundIntro(this.game.players, this.game.id, this.game.round, this.matchSerial);
     this.roundIntro = { ...intro, sequenceId: `${this.game.id}:round:${event.id}`, matchSerial: this.matchSerial };
-    this.game.countdown += ROUND_INTRO_DURATION;
+    this.game.countdown += intro.duration;
   }
 
   step(dt) {
@@ -105,14 +107,15 @@ export class StorySession {
     const inRoundIntro = this.stage === 'complete' && this.roundIntro
       && (this.game.phase === 'countdown' || this.game.phase === 'paused' && this.game.pausedFrom === 'countdown')
       && this.game.countdown > COUNTDOWN_SECONDS + 1e-8;
-    const roundElapsed = inRoundIntro ? Math.max(0, ROUND_INTRO_DURATION - (this.game.countdown - COUNTDOWN_SECONDS)) : ROUND_INTRO_DURATION;
+    const roundDuration = this.roundIntro?.duration ?? ROUND_INTRO_DURATION;
+    const roundElapsed = inRoundIntro ? Math.max(0, roundDuration - (this.game.countdown - COUNTDOWN_SECONDS)) : roundDuration;
     return {
       sequenceId: this.sequenceId,
       stage: inRoundIntro ? 'roundIntro' : this.stage,
       elapsed: Math.round((inRoundIntro ? roundElapsed : this.elapsed) * 1000) / 1000,
-      duration: inRoundIntro ? ROUND_INTRO_DURATION : this.stage === 'faceoff' ? this.faceoffDuration : null,
+      duration: inRoundIntro ? roundDuration : this.stage === 'faceoff' ? this.faceoffDuration : null,
       paused: Boolean((inRoundIntro || ['rules', 'faceoff'].includes(this.stage)) && !this.connected()),
-      roundIntro: this.roundIntro ? { sequenceId: this.roundIntro.sequenceId, elapsed: Math.round(roundElapsed * 1000) / 1000, duration: ROUND_INTRO_DURATION,
+      roundIntro: this.roundIntro ? { sequenceId: this.roundIntro.sequenceId, elapsed: Math.round(roundElapsed * 1000) / 1000, duration: roundDuration,
         exchangeId: this.roundIntro.exchangeId, round: this.roundIntro.round, matchSerial: this.roundIntro.matchSerial } : null,
       ruleIndex: this.ruleIndex, ruleCount: this.ruleCount,
       ruleAcks: [...this.ruleAcks], skipVotes: [...this.skipVotes],

@@ -2,7 +2,8 @@ import QRCode from 'qrcode';
 import { CLUB_STORY, RULE_CARDS, getClubRuleCard } from '../shared/club-story.js';
 import { buildFaceoff } from '../shared/faceoff-script.js';
 import { buildRoundIntro } from '../shared/round-intro.js';
-import { GENERATED_VOICE_CLIPS } from '../shared/generated-voice-clips.js';
+import { storyVoicePreload } from '../shared/story-voice-preload.js';
+import { hasCompleteSpokenCatalog } from '../shared/spoken-catalog.js';
 import { cleanRobotName, cleanCharacter } from '../shared/fighter-profile.js';
 import { normalizeCustomization } from '../shared/robot-customization.js';
 import { createCustomizationUI } from './customization-ui.js';
@@ -46,11 +47,14 @@ export function createClubJourney(container, { send, leave, toggleSound, toast, 
   let look = savedLook(), voiceStatus, faceoffKey, beats = [], lastStage, isMuted = muted, transportConnected = true;
   const faceoff = createFaceoffUI(q('.journey-faceoff'));
   const roundUI = createRoundIntroUI(q('.journey-round-intro'));
-  let roundKey, roundIntro;
+  let roundKey, roundIntro, preloadKey;
   const voice = createStoryVoice({ onStatus(value) { voiceStatus = value; text(q('[data-voice-status]'), value.message); } });
   voice.setMuted(muted);
   text(q('[data-sound]'), muted ? 'БЕЗ ЗВУКА' : 'ЗВУК ВКЛ.');
-  q('[data-tts]').checked = localStorage.getItem('belobog-local-tts') === 'true';
+  const packedConversations=hasCompleteSpokenCatalog();
+  q('.journey-tts').hidden=packedConversations;
+  q('[data-tts]').disabled=packedConversations;
+  q('[data-tts]').checked = !packedConversations && localStorage.getItem('belobog-local-tts') === 'true';
   voice.setTtsEnabled(q('[data-tts]').checked);
   text(q('[data-prologue]'), CLUB_STORY.prologue[0]);
 
@@ -100,19 +104,25 @@ export function createClubJourney(container, { send, leave, toggleSound, toast, 
     catch { input.focus(); input.select(); toast('Ссылка выделена. Скопируй её вручную.'); }
   });
   function hide() { root.hidden = true; workshop?.setVisible?.(false); faceoff.update({ active: false }); roundUI.update({ active: false }); voice.cancel(); }
+  function prewarm(snapshot) {
+    const story=snapshot.story,info=story.roundIntro||{};
+    const key=JSON.stringify([snapshot.room,snapshot.phase,story.stage,story.sequenceId,info.round||snapshot.round||1,info.matchSerial||0,story.refereeConnected]);
+    if (key===preloadKey) return;
+    preloadKey=key;voice.preload(storyVoicePreload(snapshot));
+  }
 
   return {
     profile: () => ({ customization: look }),
     previewActive: () => !root.hidden && latest?.story?.stage === 'workshop' && tab === 'appearance',
-    unlock() { voice.unlock(); voice.preload([...buildFaceoff(latest?.players || [], latest?.room || 0),
-      ...Object.keys(GENERATED_VOICE_CLIPS).filter(id => id.includes('-round-')).map(clip => ({ clip }))]); },
+    unlock() { voice.unlock(); voice.preload(storyVoicePreload(latest)); },
     setConnected(value) { transportConnected = value; if (!value && !root.hidden) { voice.cancel(); q('.journey-paused').hidden = false; } },
     setMuted(value) { isMuted = value; voice.setMuted(value); text(q('[data-sound]'), value ? 'БЕЗ ЗВУКА' : 'ЗВУК ВКЛ.'); q('[data-sound]').setAttribute('aria-pressed', String(!value)); },
     setInvite(value) { invite = value; refreshInvite(); },
-    reset() { clearTimeout(profileTimer); hide(); latest = undefined; profileRoom = faceoffKey = roundKey = undefined; lastStage = undefined; workshop?.dispose(); workshop = undefined; tab = 'passport'; },
+    reset() { clearTimeout(profileTimer); hide(); latest = undefined; profileRoom = faceoffKey = roundKey = preloadKey = undefined; lastStage = undefined; workshop?.dispose(); workshop = undefined; tab = 'passport'; },
     update(snapshot, id) {
       latest = snapshot; playerId = id;
       const story = snapshot.story ? { ...snapshot.story, paused: snapshot.story.paused || !transportConnected } : null;
+      if (story) prewarm(snapshot);
       if (!story || story.stage === 'complete') { if (!root.hidden) hide(); return false; }
       root.hidden = false; root.dataset.stage = story.stage;
       const me = snapshot.players.find(p => p.id === id);
@@ -121,7 +131,6 @@ export function createClubJourney(container, { send, leave, toggleSound, toast, 
         inviteRole = snapshot.mode === 'training' ? 'referee' : 'fighter';
         q('[data-invite-role=fighter]').hidden = snapshot.mode === 'training';
         q('[data-name]').value = me.name; q('[data-character]').value = me.character || ''; workshop?.set(look); selectTab('passport');
-        voice.preload(buildFaceoff(snapshot.players, snapshot.room));
       }
       text(q('[data-room]'), snapshot.room); refreshInvite();
       q('.journey-workshop').hidden = story.stage !== 'workshop';

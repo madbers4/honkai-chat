@@ -14,7 +14,7 @@ const inside=(q,message)=>{
   assert.ok(q.y>=FACEOFF_SAFE_FRAME.bottom-1e-9&&q.y<=FACEOFF_SAFE_FRAME.top+1e-9,`${message}: y ${q.y}`);
 };
 
-test('all 48 seconds frame full heroes or the explicitly labelled mechanism at desktop and phone ratios',()=>{
+test('the complete selected scene frames full heroes or the labelled mechanism at desktop and phone ratios',()=>{
   for(const [width,height]of[[844,390],[1280,720],[1024,768],[390,844]])for(const fov of[28,36,50])for(let i=0;i<=FACE_OFF_DURATION*30;i++){
     const elapsed=i/30,players=playersAt(elapsed),aspect=width/height,camera=frameAt(elapsed,{aspect,fov});
     assert.ok(keys.every(key=>Number.isFinite(camera[key])));assert.ok(camera.y>.35&&camera.z>1,'camera never travels through the floor or source wall');
@@ -25,13 +25,14 @@ test('all 48 seconds frame full heroes or the explicitly labelled mechanism at d
 });
 
 test('entrance, two portraits, two mechanism inserts and final two-shot have distinct compositions',()=>{
-  const intro=frameAt(0),a=frameAt(3.5),b=frameAt(5.7),core=frameAt(8.5),claw=frameAt(11.6),finish=frameAt(FACE_OFF_DURATION);
+  const beats=buildFaceoff(playersAt(0),'review'),clawBeat=beats.find(beat=>beat.shot==='claw');
+  const intro=frameAt(0),a=frameAt(3.5),b=frameAt(5.7),core=frameAt(8.5),claw=frameAt(clawBeat.at+1.7),finish=frameAt(FACE_OFF_DURATION);
   assert.ok(intro.z>a.z+3);assert.ok(intro.y>a.y+.8);
   assert.ok(a.tx<0&&b.tx>0,'both players own a clear hero shot');
   assert.ok(core.z<a.z-1.3&&claw.z>core.z+.6,'detail inserts change scale, not just labels');
   assert.equal(core.ty,.86,'core insert targets the lower reactor housing rather than the face');
   assert.equal(finish.x,0);assert.equal(finish.tx,0);
-  for(const elapsed of[3.5,5.7,15.3,26.5,32,38,42.4]){
+  for(const elapsed of beats.filter(beat=>beat.shot==='portrait').map(beat=>beat.at+Math.min(1.4,beat.duration-.01))){
     const actors=playersAt(elapsed),shot=faceoffShotState({story:{elapsed},players:actors});
     const actor=shot.framedPlayers[0],camera=frameAt(elapsed);
     const head=projectCameraPoint({x:actor.x,y:2.9,z:0},camera,844/390),foot=projectCameraPoint({x:actor.x,y:0,z:1.4},camera,844/390);

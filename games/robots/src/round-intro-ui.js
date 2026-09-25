@@ -1,4 +1,4 @@
-import { activeRoundIntroBeat, ROUND_INTRO_DURATION, ROUND_INTRO_BEAT_DURATION } from '../shared/round-intro.js';
+import { activeRoundIntroBeat, ROUND_INTRO_DURATION } from '../shared/round-intro.js';
 
 const setText = (element, value) => { const next = String(value ?? ''); if (element.textContent !== next) element.textContent = next; };
 const playerName = (player, index) => String(player?.name ?? '').trim() || `Автоматон ${index + 1}`;
@@ -47,8 +47,8 @@ export function createRoundIntroUI(container) {
       setText(who, beat ? playerName(roster[speakingSeat], Math.max(0, speakingSeat)) : 'АРГУМЕНТЫ ЗАКОНЧИЛИСЬ');
       setText(line, beat?.text || 'Теперь говорят приёмы.'); lastBeat = key;
     }
-    fills.forEach((fill, index) => { fill.style.transform = `scaleX(${progress((time - index * ROUND_INTRO_BEAT_DURATION) / ROUND_INTRO_BEAT_DURATION)})`; });
-    setText(note, paused ? 'ПАУЗА · ЖДЁМ СОПЕРНИКА' : time >= ROUND_INTRO_DURATION ? 'ПРИГОТОВЬТЕСЬ' : 'СНАЧАЛА СЛОВО. ПОТОМ — БОЙ.');
+    fills.forEach((fill, index) => { const window=intro?.beats?.[index]; fill.style.transform = `scaleX(${window?progress((time-window.at)/window.duration):0})`; });
+    setText(note, paused ? 'ПАУЗА · ЖДЁМ СОПЕРНИКА' : time >= (intro?.duration??ROUND_INTRO_DURATION) ? 'ПРИГОТОВЬТЕСЬ' : 'СНАЧАЛА СЛОВО. ПОТОМ — БОЙ.');
   }
   return { element: root, update, dispose() { if (disposed) return; disposed = true; root.remove(); } };
 }

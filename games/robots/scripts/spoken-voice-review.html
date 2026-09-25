@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ru">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Реплики роботов — прослушивание</title>
+<style>
+  :root{color-scheme:dark;font:16px/1.5 system-ui;background:#10171b;color:#e8e5dc}
+  body{max-width:1100px;margin:auto;padding:24px 20px 150px}h1{font-size:clamp(24px,5vw,38px);margin:0}
+  p{color:#aeb9be}nav{display:flex;gap:10px;flex-wrap:wrap;margin:24px 0}button,select{font:inherit;color:inherit;background:#27343b;border:1px solid #59686e;border-radius:8px;padding:10px 15px;cursor:pointer}
+  button:focus-visible,select:focus-visible{outline:3px solid #f7c56f;outline-offset:3px}button[aria-pressed=true]{background:#66502d;border-color:#f7c56f}
+  .lines{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px}.line{background:#1a252b;border:1px solid #34464f;border-radius:10px;padding:16px}.line p{color:#fff;min-height:48px}.line small{color:#b6c7d0}.line button{width:100%}.line.playing{border-color:#f7c56f;box-shadow:0 0 0 1px #f7c56f}.line button:disabled{opacity:.45;cursor:default}
+  footer{position:fixed;bottom:0;left:0;right:0;background:#10171bf2;border-top:1px solid #59686e;padding:12px 20px}footer>div{max-width:1100px;margin:auto;display:flex;gap:16px;align-items:center;flex-wrap:wrap}audio{width:min(100%,420px)}#status{flex:1;min-width:230px;font-size:14px}#count{font-variant-numeric:tabular-nums}
+</style>
+<h1>Реплики роботов</h1>
+<p>Проверка полной перезаписи. Боевые выкрики и эффекты сохранены отдельно. За раз играет одна реплика.</p>
+<nav aria-label="Отбор реплик">
+  <select id="group" aria-label="Сцена"><option value="all">Все реплики</option><option value="faceoff">Кат-сцена</option><option value="round">Перед раундами</option></select>
+  <button data-seat="all" aria-pressed="true">Оба голоса</button><button data-seat="p1" aria-pressed="false">Джотаро</button><button data-seat="p2" aria-pressed="false">Дио</button>
+  <span id="count"></span>
+</nav>
+<main class="lines" id="lines"></main>
+<footer><div><audio id="player" controls preload="metadata"></audio><span id="status" role="status">Выбери реплику для прослушивания.</span></div></footer>
+<script type="module">
+  import script from './voice-production/spoken-script.json';
+  import { GENERATED_VOICE_CLIPS } from '../shared/generated-voice-clips.js';
+  const root=document.querySelector('#lines'),player=document.querySelector('#player'),status=document.querySelector('#status');
+  let seat='all',selected=null,serial=0;
+  const actor=s=>s==='p1'?'Джотаро / первая машина':'Дио / вторая машина';
+  function render(){
+    const group=document.querySelector('#group').value;
+    const lines=script.utterances.filter(line=>(seat==='all'||line.speaker===seat)&&(group==='all'||line.sequence.kind===group));
+    root.replaceChildren();document.querySelector('#count').textContent=`${lines.length} реплик`;
+    for(const line of lines){
+      const clip=GENERATED_VOICE_CLIPS[line.id],card=document.createElement('article');card.className='line';card.dataset.id=line.id;card.classList.toggle('playing',selected===line.id);
+      const label=document.createElement('small');label.textContent=`${actor(line.speaker)} · ${line.sequence.kind==='faceoff'?'Кат-сцена':line.sequence.exchangeId}`;
+      const text=document.createElement('p');text.textContent=clip?.text||line.text;
+      const button=document.createElement('button');button.disabled=!clip;button.textContent=clip?`Слушать · ${clip.duration.toFixed(2)} с`:'Запись ещё не подключена';
+      button.addEventListener('click',async()=>{
+        const current=++serial;player.pause();selected=line.id;player.src=clip.url;render();
+        status.textContent=`${actor(line.speaker)}: ${clip.text}`;
+        try{await player.play();if(current===serial)document.body.dataset.playCount=String(Number(document.body.dataset.playCount||0)+1)}
+        catch(error){if(current===serial)status.textContent=`Не удалось воспроизвести: ${error.message}`}
+      });
+      card.append(label,text,button);root.append(card);
+    }
+  }
+  document.querySelector('#group').addEventListener('change',render);
+  document.querySelectorAll('[data-seat]').forEach(button=>button.addEventListener('click',()=>{seat=button.dataset.seat;document.querySelectorAll('[data-seat]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));render()}));
+  player.addEventListener('error',()=>{status.textContent='Не удалось загрузить выбранную запись.'});
+  player.addEventListener('ended',()=>{status.textContent=`Прослушано полностью · ${player.duration.toFixed(2)} с`;selected=null;render()});
+  render();
+</script>
+</html>

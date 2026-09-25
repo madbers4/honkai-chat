@@ -5,7 +5,7 @@ import { StorySession } from '../server/story-session.js';
 import { createStoryVoice } from '../src/story-voice.js';
 import { buildFaceoff, FACE_OFF_DURATION, faceoffActorX, VOICE_CLIPS } from '../shared/faceoff-script.js';
 
-test('production opening stays server-authoritative through all 48 seconds, including disconnect in the dialogue', () => {
+test('production opening stays server-authoritative through the complete scene, including disconnect in the dialogue', () => {
   const room = new CombatRoom({ id: 'CINEMA' });
   room.addPlayer('Медный Сом'); room.addPlayer('Барон Коротыш');
   const scene = new StorySession(room, { ruleCount: 1, faceoffDuration: FACE_OFF_DURATION, buildFaceoff });
@@ -26,17 +26,17 @@ test('production opening stays server-authoritative through all 48 seconds, incl
   room.setConnected('p2', false);
   const held = scene.snapshot(); step(10);
   assert.deepEqual(scene.snapshot(), held, 'disconnected scene freezes its authoritative clock');
-  room.setConnected('p2', true); step(20.6);
+  room.setConnected('p2', true); step(scene.beats.at(-1).at+.1-scene.elapsed);
   presented = scene.decorate(room.snapshot());
   assert.deepEqual(presented.players.map(p => p.variant), ['armed', 'armed']);
   assert.equal(scene.stage, 'faceoff');
-  step(3.4);
+  step(FACE_OFF_DURATION-scene.elapsed+1/60);
   assert.equal(scene.stage, 'complete'); assert.equal(room.phase, 'countdown');
   const starts = room.events.filter(event => event.type === 'round').length;
   step(5); assert.equal(room.events.filter(event => event.type === 'round').length, starts);
 });
 
-test('complete production voice schedule plays five originals and two generated mode lines without truncation', async t => {
+test('complete selected production voice schedule plays every recording without truncation', async t => {
   const records = [], beats = buildFaceoff([{ id: 'p1' }, { id: 'p2' }], 'audio-proof');
   let clock = 0;
   const ctx = {
@@ -57,7 +57,7 @@ test('complete production voice schedule plays five originals and two generated 
   for (const beat of beats) { moments.add(beat.at); if (beat.clip) moments.add(beat.at + beat.clipDuration); }
   for (clock of [...moments].sort((a, b) => a - b)) voice.update({ sequenceId: 'cinema', elapsed: clock, beats, enabled: true });
   const originals = beats.filter(beat => beat.clip);
-  assert.equal(records.length, 7);
+  assert.equal(records.length, originals.length);
   for (const [i, record] of records.entries()) {
     const beat = originals[i];
     assert.equal(record.startedAt, beat.at);

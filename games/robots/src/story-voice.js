@@ -1,7 +1,8 @@
 import { assetUrl as defaultAssetUrl } from './app-paths.js';
 import { VOICE_CLIPS } from '../shared/voice-clips.js';
+import { VOICE_START_GRACE } from '../shared/spoken-catalog.js';
 
-const LATE_GRACE = .38;
+const LATE_GRACE = VOICE_START_GRACE;
 
 /** One voice at a time, driven by the server's scene clock. Optional speech
  * only uses a Russian voice explicitly declared LOCAL by the browser. */
@@ -9,7 +10,7 @@ export function createStoryVoice({ assetUrl = defaultAssetUrl, onStatus = () => 
   makeContext = () => { const AudioCtx = globalThis.AudioContext || globalThis.webkitAudioContext; return AudioCtx ? new AudioCtx() : null; },
   fetcher = globalThis.fetch?.bind(globalThis), speech = globalThis.speechSynthesis,
   Utterance = globalThis.SpeechSynthesisUtterance, visibility = globalThis.document,
-  loadTimeoutMs = 10000 } = {}) {
+  loadTimeoutMs = 10000, clipCatalog = VOICE_CLIPS } = {}) {
   let ctx = null, master = null, unlocked = false, muted = false, ttsEnabled = false, disposed = false;
   let active = null, pausedRecord = null, sequence = null, frame = null, localVoice = null, statusKey = '', fault = '';
   const cache = new Map(), seen = new Set();
@@ -35,7 +36,7 @@ export function createStoryVoice({ assetUrl = defaultAssetUrl, onStatus = () => 
   }
   function cancel() { stopActive(); pausedRecord = null; }
   async function load(clip) {
-    if (!VOICE_CLIPS[clip] || disposed) return null;
+    if (!clipCatalog[clip] || disposed) return null;
     let entry = cache.get(clip);
     if (!entry) {
       entry = { buffer: null, bytes: null, pending: null, failed: false }; cache.set(clip, entry);
@@ -47,7 +48,7 @@ export function createStoryVoice({ assetUrl = defaultAssetUrl, onStatus = () => 
           const controller = new AbortController(); entry.controller = controller;
           const timer = setTimeout(() => controller.abort(), loadTimeoutMs);
           try {
-            const response = await fetcher(assetUrl(VOICE_CLIPS[clip].url), { signal: controller.signal });
+            const response = await fetcher(assetUrl(clipCatalog[clip].url), { signal: controller.signal });
             if (!response.ok) throw new Error('Recording unavailable');
             entry.bytes = await response.arrayBuffer(); return;
           } catch (error) {
@@ -64,7 +65,7 @@ export function createStoryVoice({ assetUrl = defaultAssetUrl, onStatus = () => 
     }
     return entry.buffer;
   }
-  function preload(beats = []) { return Promise.all([...new Set(beats.map(b => b.clip).filter(id => VOICE_CLIPS[id]))].map(load)); }
+  function preload(beats = []) { return Promise.all([...new Set(beats.map(b => b.clip).filter(id => clipCatalog[id]))].map(load)); }
   async function unlock() {
     if (disposed) return false;
     try {
@@ -128,7 +129,7 @@ export function createStoryVoice({ assetUrl = defaultAssetUrl, onStatus = () => 
     if (active && (active.sequence !== sequence || elapsed >= active.endsAt)) stopActive();
     for (const beat of beats) {
       if (seen.has(beat.id) || elapsed < beat.at) continue;
-      if (elapsed - beat.at > LATE_GRACE || elapsed >= endOf(beat)) { seen.add(beat.id); continue; }
+      if (elapsed - beat.at > LATE_GRACE + 1e-8 || elapsed >= endOf(beat)) { seen.add(beat.id); continue; }
       // Packed original/generated recordings take precedence over optional
       // device speech. The latter only reads beats without an authored clip.
       let played = false;

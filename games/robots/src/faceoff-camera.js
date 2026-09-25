@@ -1,4 +1,4 @@
-import { buildFaceoff, activeFaceoffBeat, FACE_OFF_DURATION } from '../shared/faceoff-script.js';
+import { buildFaceoff, activeFaceoffBeat, faceoffDuration, FACE_OFF_DURATION } from '../shared/faceoff-script.js';
 
 const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
 const mix = (a, b, t) => a + (b - a) * t;
@@ -55,8 +55,8 @@ function scriptFor(beats,story,actors) {
 
 /** Public shot metadata also drives names, the insert label and visual QA. */
 export function faceoffShotState({story={},players=[],beats,reduced=false}={}) {
-  const actors=actorsFor(players),elapsed=clamp(finite(story?.elapsed,0),0,FACE_OFF_DURATION);
-  const script=scriptFor(beats,story,actors),beat=activeFaceoffBeat(script,elapsed)??script.at(-1);
+  const actors=actorsFor(players),script=scriptFor(beats,story,actors);
+  const elapsed=clamp(finite(story?.elapsed,0),0,faceoffDuration(script)||FACE_OFF_DURATION),beat=activeFaceoffBeat(script,elapsed)??script.at(-1);
   const portrait=!reduced&&['portrait','core','claw'].includes(beat?.shot);
   const primary=portrait?actors.find(player=>player.id===beat.speaker):null;
   return {chapter:beat?.chapter??'establish',shot:reduced?'wide':beat?.shot??'wide',primary:primary?.id??null,
@@ -71,7 +71,8 @@ export function computeFaceoffCamera({story={},players=[],beats,aspect=16/9,fov=
   const actors=actorsFor(players),mid=actors.reduce((sum,p)=>sum+p.x,0)/actors.length;
   const middleY=Math.max(...actors.map(p=>p.y)),middleZ=actors.reduce((sum,p)=>sum+p.z,0)/actors.length;
   const ratio=Number.isFinite(aspect)&&aspect>0?aspect:16/9,field=Number.isFinite(fov)&&fov>0&&fov<179?fov:36;
-  const elapsed=clamp(finite(story?.elapsed,0),0,FACE_OFF_DURATION);
+  const script=scriptFor(beats,story,actors);
+  const elapsed=clamp(finite(story?.elapsed,0),0,faceoffDuration(script)||FACE_OFF_DURATION);
   const wide=(progress=0,ending=false)=>framedShot({target:{x:mid,y:1.43+middleY,z:middleZ-.1},yaw:mix(-7,0,progress)*radians,
     pitch:mix(11,ending?8:5.5,progress)*radians,distance:mix(15.8,ending?11.6:11.8,progress)},actors,ratio,field);
   if(reduced) {
@@ -79,7 +80,6 @@ export function computeFaceoffCamera({story={},players=[],beats,aspect=16/9,fov=
     const held=actors.map((p,i)=>({...p,x:mid+(i?1:-1)*spread}));
     return framedShot({target:{x:mid,y:1.45+middleY,z:middleZ-.1},yaw:0,pitch:8*radians,distance:15.8},held,ratio,field);
   }
-  const script=scriptFor(beats,story,actors);
   let frame=wide(ease(elapsed/2));
   for(const beat of script) {
     if(beat.at>elapsed)break;

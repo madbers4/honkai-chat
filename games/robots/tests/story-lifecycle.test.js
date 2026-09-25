@@ -5,7 +5,7 @@ import WebSocket from 'ws';
 import { startServer } from '../server/index.js';
 import { RULE_CARDS } from '../shared/club-story.js';
 import { WINS_TO_MATCH, COUNTDOWN_SECONDS } from '../shared/constants.js';
-import { ROUND_INTRO_DURATION } from '../shared/round-intro.js';
+import { buildRoundIntro } from '../shared/round-intro.js';
 
 let pingSerial = 0;
 async function connect(app) {
@@ -35,13 +35,17 @@ async function setup(t, storyMode = true) {
   await two.sync(); await one.sync();
   return { app, one, two, a, b };
 }
-// Drive the real server at its supported maximum fixed delta. Yield while
-// advancing long timeouts so a fast fixture cannot hide states in backpressure.
+// Drive the real server at its supported maximum delta, retaining the final
+// fractional step: measured recordings do not end at multiples of 100 ms.
+// Yield while advancing long timeouts so states cannot hide in backpressure.
 async function advance(f, seconds, observer = f.one) {
-  for (let n = 0; n < Math.round(seconds * 10); n++) {
-    f.app.tick(.1); if (n % 20 === 19) await new Promise(resolve => setImmediate(resolve));
+  for (let n = 0; n < Math.ceil(seconds * 10 - 1e-8); n++) {
+    f.app.tick(Math.min(.1,seconds-n*.1)); if (n % 20 === 19) await new Promise(resolve => setImmediate(resolve));
   }
   await new Promise(resolve => setImmediate(resolve));
+  // A final fractional simulation tick need not coincide with the server's
+  // lower snapshot cadence. Publish that exact state before the ping barrier.
+  f.app.broadcast(f.app.rooms.get(f.a.room));
   return observer.sync();
 }
 async function disconnect(ws, observer, id) {
@@ -133,9 +137,10 @@ test('real player/referee reconnects freeze only player-owned story time and pre
   const heldIntro = f.one.latest.story.elapsed, heldCountdown = f.one.latest.countdown;
   state = await advance(f, 5); assert.equal(state.story.elapsed, heldIntro); assert.equal(state.countdown, heldCountdown); assert.equal(state.story.paused, true);
   await reconnect(f, 'two');
-  state = await advance(f, ROUND_INTRO_DURATION - heldIntro - .1);
+  state = await advance(f, state.story.roundIntro.duration - heldIntro - .1);
   assert.equal(state.story.stage, 'roundIntro', 'the complete second recording retains its last presentation window');
-  state = await advance(f, .1); assert.equal(state.story.stage, 'complete'); assert.equal(state.phase, 'countdown'); assert.equal(state.countdown, COUNTDOWN_SECONDS);
+  state = await advance(f, .1); assert.equal(state.story.stage, 'complete'); assert.equal(state.phase, 'countdown');
+  assert.equal(state.countdown,COUNTDOWN_SECONDS,'the normal countdown starts after the complete measured recording window');
   state = await advance(f, 2.8); assert.equal(state.phase, 'countdown'); state = await advance(f, .2); assert.equal(state.phase, 'fight');
   await disconnect(f.two, f.one, 'p2'); const remainingTime = f.one.latest.time;
   state = await advance(f, 9); assert.equal(state.phase, 'paused'); assert.equal(state.time, remainingTime);
@@ -163,8 +168,8 @@ test('five real timeout victories and a rematch keep short exchanges; disconnect
   state = await advance(f, 8); assert.equal(state.phase, 'matchOver');
   f.one.sendPacket({ type: 'rematch' }); f.two.sendPacket({ type: 'rematch' }); await f.two.sync(); state = await f.one.sync();
   assert.equal(state.story.stage, 'roundIntro', 'the rematch first broadcast must already contain its complete exchange');
-  assert.equal(state.story.roundIntro.duration, ROUND_INTRO_DURATION);
+  assert.equal(state.story.roundIntro.duration, buildRoundIntro(state.players,state.room,state.round,state.story.roundIntro.matchSerial).duration);
   const rematchId = state.story.roundIntro.sequenceId; assert.ok(!introIds.has(rematchId)); assert.equal(state.story.roundIntro.matchSerial, 1); assert.equal(state.round, 1);
   await disconnect(f.two, f.one, 'p2'); state = await advance(f, 5); assert.equal(state.story.stage, 'roundIntro'); assert.equal(state.story.elapsed, 0);
-  await reconnect(f, 'two'); state = await advance(f, ROUND_INTRO_DURATION + COUNTDOWN_SECONDS); assert.equal(state.phase, 'fight'); assert.equal(state.story.roundIntro.sequenceId, rematchId); assert.equal(state.players[0].wins, 0);
+  await reconnect(f, 'two'); state = await advance(f, state.story.roundIntro.duration + COUNTDOWN_SECONDS); assert.equal(state.phase, 'fight'); assert.equal(state.story.roundIntro.sequenceId, rematchId); assert.equal(state.players[0].wins, 0);
 });

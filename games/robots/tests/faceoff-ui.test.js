@@ -18,11 +18,12 @@ test('real names stay present through establishment, mode, quoted recordings and
   assert.equal(find(ui.element,'faceoff-real-name').textContent,players[0].name);assert.equal(find(ui.element,'faceoff-line').textContent,beats[0].text);
   update(8.3);assert.equal(ui.element.dataset.chapter,'mode');assert.equal(find(ui.element,'faceoff-heading').textContent,'КАБАЧКОВОЕ ПРОТИВОСТОЯНИЕ');assert.equal(ui.element.dataset.shot,'core');
   assert.equal(find(ui.element,'faceoff-mechanism').hidden,false);assert.equal(find(ui.element,'faceoff-speaker').textContent,players[0].name);
-  update(15.2);assert.equal(ui.element.dataset.chapter,'dialogue');assert.equal(find(ui.element,'faceoff-real-name').textContent,players[0].name);
+  update(beats.find(beat=>beat.chapter==='dialogue').at+1);assert.equal(ui.element.dataset.chapter,'dialogue');assert.equal(find(ui.element,'faceoff-real-name').textContent,players[0].name);
   assert.match(find(ui.element,'faceoff-identity-state').textContent,/ПАКЕТ ПАФОСА/);assert.equal(find(ui.element,'faceoff-mechanism').hidden,true);
-  update(38.4,{paused:true,reducedMotion:true});assert.equal(ui.element.dataset.reduced,'true');assert.equal(ui.element.dataset.shot,'wide');
-  assert.equal(find(ui.element,'faceoff-countdown').textContent,'ЖДЁМ ВОЗВРАЩЕНИЯ СОПЕРНИКА');assert.equal(find(ui.element,'faceoff-progress-fill').style.transform,`scaleX(${38.4/FACE_OFF_DURATION})`);
-  update(46);assert.equal(ui.element.dataset.chapter,'ready');update(48,{active:false});assert.equal(ui.element.hidden,true);ui.dispose();ui.dispose();assert.equal(mount.children.length,0);
+  const pausedAt=FACE_OFF_DURATION*.7;
+  update(pausedAt,{paused:true,reducedMotion:true});assert.equal(ui.element.dataset.reduced,'true');assert.equal(ui.element.dataset.shot,'wide');
+  assert.equal(find(ui.element,'faceoff-countdown').textContent,'ЖДЁМ ВОЗВРАЩЕНИЯ СОПЕРНИКА');assert.equal(find(ui.element,'faceoff-progress-fill').style.transform,`scaleX(${pausedAt/FACE_OFF_DURATION})`);
+  update(beats.at(-1).at+.1);assert.equal(ui.element.dataset.chapter,'ready');update(FACE_OFF_DURATION,{active:false});assert.equal(ui.element.hidden,true);ui.dispose();ui.dispose();assert.equal(mount.children.length,0);
 });
 
 test('startup power envelopes are bounded, deterministic and do not invent gameplay energy',()=>{

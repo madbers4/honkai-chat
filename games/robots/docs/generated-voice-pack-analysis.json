@@ -1,0 +1,278 @@
+{
+  "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+  "modelRevision": "fd4b254389122332181a7c3db7f27e918eec64e3",
+  "modelLicense": "Apache-2.0",
+  "mode": "x_vector_only",
+  "dtype": "bfloat16",
+  "attention": "sdpa",
+  "references": {
+    "jotaro": {
+      "filename": "Джот - Похоже ты и правда не прост.mp3",
+      "sha256": "82be3df7b13043862877e998895db1ee384829f8cff6c98ca26365326f55ef7e",
+      "trim": [
+        0.04,
+        4.116979166666667
+      ],
+      "duration": 4.076979166666667
+    },
+    "dio": {
+      "filename": "Дио - Ха, ну вперед, Герой.mp3",
+      "sha256": "97fd9f884d9f7674ed5995f9ce15aef4e01da8b4241c6fee670fdda435812382",
+      "trim": [
+        0.23,
+        3.19
+      ],
+      "duration": 2.96
+    }
+  },
+  "clips": [
+    {
+      "id": "jotaro-mode",
+      "speaker": "jotaro",
+      "text": "Боевой режим: кабачковое противостояние!",
+      "seed": 41807,
+      "rawDuration": 3.2,
+      "duration": 3.2,
+      "trim": [
+        0.0,
+        3.2
+      ],
+      "tempo": 1.0,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.6873820424079895,
+      "rms": 0.15384313464164734,
+      "clippedFraction": 0.0,
+      "bytes": 39500,
+      "sha256": "2f68791a8a57bfcade55b429249b1bf11ae14789e0b1451bbafc9bd64d2cdf7c",
+      "generationAndEncodingSeconds": 6.139,
+      "normalizationInput": {
+        "input_i": "-22.76",
+        "input_tp": "-9.50",
+        "input_lra": "0.20",
+        "input_thresh": "-32.76",
+        "output_i": "-15.96",
+        "output_tp": "-2.80",
+        "output_lra": "0.00",
+        "output_thresh": "-25.96",
+        "normalization_type": "dynamic",
+        "target_offset": "-0.04"
+      },
+      "independentAsr": "Боевой режим кабачковое противостояние.",
+      "referenceSpeakerCosine": {
+        "jotaro": 0.96905,
+        "dio": 0.95068
+      },
+      "leadingSilence": 0.03,
+      "trailingSilence": 0.07,
+      "asrNormalizedTextMatch": true
+    },
+    {
+      "id": "dio-mode",
+      "speaker": "dio",
+      "text": "Твой гарантийный талон уже мёртв.",
+      "seed": 41808,
+      "rawDuration": 3.28,
+      "duration": 2.55,
+      "trim": [
+        0.41,
+        2.96
+      ],
+      "tempo": 1.0,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.6143870949745178,
+      "rms": 0.14497897028923035,
+      "clippedFraction": 0.0,
+      "bytes": 31724,
+      "sha256": "f88196e656fecb8c9e9866b259d7ccf4bb033e78a58d8d27da49b4cd8e1e23ce",
+      "generationAndEncodingSeconds": 6.034,
+      "normalizationInput": {
+        "input_i": "-20.31",
+        "input_tp": "-8.07",
+        "input_lra": "0.00",
+        "input_thresh": "-30.31",
+        "output_i": "-16.00",
+        "output_tp": "-3.77",
+        "output_lra": "0.00",
+        "output_thresh": "-26.00",
+        "normalization_type": "linear",
+        "target_offset": "-0.00"
+      },
+      "independentAsr": "Твой гарантийный талон уже мёртв.",
+      "referenceSpeakerCosine": {
+        "jotaro": 0.9495,
+        "dio": 0.95464
+      },
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.07,
+      "asrNormalizedTextMatch": true
+    },
+    {
+      "id": "jotaro-round-1",
+      "speaker": "jotaro",
+      "text": "Подойди. Проверим твою сборку.",
+      "seed": 41809,
+      "rawDuration": 3.28,
+      "duration": 2.988125,
+      "trim": [
+        0.0,
+        3.28
+      ],
+      "tempo": 1.1006711409395973,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.6152393817901611,
+      "rms": 0.13286642730236053,
+      "clippedFraction": 0.0,
+      "bytes": 36908,
+      "sha256": "888b040d1a333453cd074c34c1ea092f70942341278d1791afc9e16a63db4f5c",
+      "generationAndEncodingSeconds": 6.01,
+      "normalizationInput": {
+        "input_i": "-18.96",
+        "input_tp": "-6.68",
+        "input_lra": "0.00",
+        "input_thresh": "-29.88",
+        "output_i": "-16.01",
+        "output_tp": "-3.72",
+        "output_lra": "0.00",
+        "output_thresh": "-26.93",
+        "normalization_type": "linear",
+        "target_offset": "0.01"
+      },
+      "independentAsr": "Подойди, проверим твою сборку.",
+      "referenceSpeakerCosine": {
+        "jotaro": 0.95489,
+        "dio": 0.95013
+      },
+      "leadingSilence": 0.05,
+      "trailingSilence": 0.068,
+      "asrNormalizedTextMatch": true
+    },
+    {
+      "id": "jotaro-round-2",
+      "speaker": "jotaro",
+      "text": "Меньше пафоса. Лови искру!",
+      "seed": 41813,
+      "rawDuration": 2.4,
+      "duration": 2.4,
+      "trim": [
+        0.0,
+        2.4
+      ],
+      "tempo": 1.0,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.8083776235580444,
+      "rms": 0.12090718746185303,
+      "clippedFraction": 0.0,
+      "bytes": 29708,
+      "sha256": "a84bbe11e37f4c42b178f00026fe59096c8b63be4566d156edd38b10d2ed9f3b",
+      "generationAndEncodingSeconds": 4.436,
+      "normalizationInput": {
+        "input_i": "-23.04",
+        "input_tp": "-7.25",
+        "input_lra": "0.00",
+        "input_thresh": "-33.92",
+        "output_i": "-17.28",
+        "output_tp": "-1.50",
+        "output_lra": "0.00",
+        "output_thresh": "-28.16",
+        "normalization_type": "linear",
+        "target_offset": "1.28"
+      },
+      "independentAsr": "Меньше пафоса. Лови и скру.",
+      "referenceSpeakerCosine": {
+        "jotaro": 0.95535,
+        "dio": 0.94247
+      },
+      "leadingSilence": 0.06,
+      "trailingSilence": 0.03,
+      "asrNormalizedTextMatch": true
+    },
+    {
+      "id": "dio-round-1",
+      "speaker": "dio",
+      "text": "Твоя зарядка закончилась!",
+      "seed": 41811,
+      "rawDuration": 2.48,
+      "duration": 2.02,
+      "trim": [
+        0.46,
+        2.48
+      ],
+      "tempo": 1.0,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5190227031707764,
+      "rms": 0.15501834452152252,
+      "clippedFraction": 0.0,
+      "bytes": 25388,
+      "sha256": "b42b11a305e4d4a50d9dec8128c2e0dc9a5d77c25d8d8a7a3a673b12ac9bf4f4",
+      "generationAndEncodingSeconds": 4.611,
+      "normalizationInput": {
+        "input_i": "-20.79",
+        "input_tp": "-9.91",
+        "input_lra": "0.00",
+        "input_thresh": "-30.79",
+        "output_i": "-16.01",
+        "output_tp": "-5.12",
+        "output_lra": "0.00",
+        "output_thresh": "-26.01",
+        "normalization_type": "linear",
+        "target_offset": "0.01"
+      },
+      "independentAsr": "Твоя зарядка закончилась.",
+      "referenceSpeakerCosine": {
+        "jotaro": 0.94022,
+        "dio": 0.94805
+      },
+      "leadingSilence": 0.01,
+      "trailingSilence": 0.05,
+      "asrNormalizedTextMatch": true
+    },
+    {
+      "id": "dio-round-2",
+      "speaker": "dio",
+      "text": "Я отменяю твою гарантию!",
+      "seed": 41812,
+      "rawDuration": 3.12,
+      "duration": 2.9800416666666667,
+      "trim": [
+        0.0,
+        3.12
+      ],
+      "tempo": 1.0469798657718121,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.6082120537757874,
+      "rms": 0.14911651611328125,
+      "clippedFraction": 0.0,
+      "bytes": 36908,
+      "sha256": "2ab09baef5d2f53592edda8d1eaf829a9d5bb8603bc372d8e3a9a7940ab55858",
+      "generationAndEncodingSeconds": 6.01,
+      "normalizationInput": {
+        "input_i": "-22.16",
+        "input_tp": "-10.05",
+        "input_lra": "0.00",
+        "input_thresh": "-32.16",
+        "output_i": "-15.99",
+        "output_tp": "-3.90",
+        "output_lra": "0.00",
+        "output_thresh": "-25.99",
+        "normalization_type": "linear",
+        "target_offset": "-0.01"
+      },
+      "independentAsr": "Я отменяю твою гарантию.",
+      "referenceSpeakerCosine": {
+        "jotaro": 0.95072,
+        "dio": 0.95787
+      },
+      "leadingSilence": 0.07,
+      "trailingSilence": 0.06,
+      "asrNormalizedTextMatch": true
+    }
+  ],
+  "maxCudaAllocatedGB": 4.314566656,
+  "referenceSpeakerCosine": 0.97843
+}

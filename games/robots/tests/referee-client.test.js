@@ -4,7 +4,8 @@ import WebSocket from 'ws';
 import { once } from 'node:events';
 import { startServer } from '../server/index.js';
 import { createRefereeClient, REFEREE_SESSION_PREFIX } from '../src/referee-client.js';
-import { buildRoundIntro } from '../shared/round-intro.js';
+import { buildRoundIntro, ROUND_INTRO_BEAT_DURATION, ROUND_INTRO_DURATION } from '../shared/round-intro.js';
+import { RULE_CARDS, getClubRuleCard } from '../shared/club-story.js';
 
 const store = () => { const data = new Map(); return { data, getItem: key => data.get(key), setItem: (key, value) => data.set(key, value), removeItem: key => data.delete(key) }; };
 function fixture() {
@@ -140,13 +141,14 @@ test('real referee client joins a two-fighter story, advances exactly one card a
   await until(() => favorites.at(-1) === 'p2'); assert.equal(app.rooms.get(welcome.room).game.players.length, 2);
 });
 
-test('mounted page reads both timed robot lines and completes a late-joined final without repeating the winner', async t => {
+test('mounted player/referee pages share the charter, respect reading control, and retain timed/final lines', async t => {
   // Vite loads the actual CSS-importing route. Only the DOM/GPU/transport
   // surfaces are replaced; presentation handlers and shared director are real.
   const { createServer } = await import('vite');
   const vite = await createServer({ configFile: false, cacheDir: 'artifacts/referee-test-cache', server: { middlewareMode: true }, appType: 'custom' });
   t.after(() => vite.close());
   const { mountRefereePage } = await vite.ssrLoadModule('/src/referee-page.js');
+  const { createClubJourney } = await vite.ssrLoadModule('/src/club-journey.js');
   const saved = new Map(['document', 'location', 'localStorage', 'matchMedia'].map(key => [key, globalThis[key]]));
   let mountedPage;
   t.after(() => { mountedPage?.dispose(); for (const [key, value] of saved) { if (value === undefined) delete globalThis[key]; else globalThis[key] = value; } });
@@ -154,6 +156,7 @@ test('mounted page reads both timed robot lines and completes a late-joined fina
   const node = () => ({ textContent: '', hidden: false, disabled: false, value: '', children: [], style: {}, dataset: {}, listeners: {},
     classList: { add() {}, remove() {}, toggle() {} },
     setAttribute(name, value) { this[name] = value; }, appendChild(child) { this.children.push(child); }, append(...children) { this.children.push(...children); },
+    insertBefore(child, before) { this.children.splice(Math.max(0, this.children.indexOf(before)), 0, child); },
     replaceChildren(...children) { this.children = children; }, addEventListener(type, fn) { (this.listeners[type] ||= []).push(fn); }, removeEventListener() {},
     click() { if (!this.disabled) for (const fn of this.listeners.click || []) fn({ target: this }); }, close() {}, showModal() {}, remove() {},
     get firstElementChild() { return this.children[0] ||= node(); },
@@ -173,15 +176,48 @@ test('mounted page reads both timed robot lines and completes a late-joined fina
   mountedPage = page; handlers.onStatus({ status: 'connected', message: 'Микрофон у вас' });
   const roster = [{ id: 'p1', name: 'ИСКРА', maxHp: 180, hp: 90, wins: 5 }, { id: 'p2', name: 'ИНЕЙ', maxHp: 180, hp: 0, wins: 2 }];
   const ended = { room: 'ABC234', round: 7, phase: 'matchOver', elapsed: 80, time: 40, winner: 'p1', players: roster, events: [], story: { sequenceId: 'one', stage: 'complete' } };
+  const sent = [], journey = createClubJourney(node(), { send: packet => sent.push(packet), leave() {}, toggleSound() {}, toast() {} });
+  t.after(() => journey.reset());
+  // Deliberately reverse the roster and supply hostile names: both surfaces
+  // must keep the correct corner, the same words and plain-text presentation.
+  const fighters = [{ ...roster[1], name: '<img>\u202e{a}' }, { ...roster[0], name: 'Царь болтов' }];
+  let rules;
+  for (let index = 0; index < RULE_CARDS.length; index++) {
+    rules = { ...ended, phase: 'story', players: fighters, referee: { connected: true }, story: {
+      sequenceId: 'charter', stage: 'rules', ruleIndex: index, ruleCount: RULE_CARDS.length,
+      ruleAcks: [], ready: { p1: true, p2: true }, paused: false, refereeConnected: true,
+    } };
+    if (nodes.has('.journey-rules')) nodes.get('.journey-rules').scrollTop = 123;
+    journey.update(rules, 'p1'); handlers.onSnapshot(rules, { baseline: true, freshEvents: [] });
+    assert.equal(nodes.get('[data-rule-text]').textContent, getClubRuleCard(index, fighters).text);
+    assert.equal(nodes.get('script').textContent, nodes.get('[data-rule-text]').textContent);
+    assert.doesNotMatch(nodes.get('script').textContent, /[<>{}\u202e]/u);
+    assert.equal(nodes.get('[data-rule-text]').innerHTML, undefined, 'player names never enter HTML');
+    assert.equal(nodes.get('script').innerHTML, undefined, 'referee names never enter HTML');
+    assert.equal(nodes.get('[data-next]').disabled, true, 'only the connected referee can advance');
+    assert.equal(nodes.get('ack').disabled, false);
+    assert.equal(nodes.get('.journey-rules').scrollTop, 0, 'a new card starts at the top');
+    nodes.get('.journey-rules').scrollTop = 45;
+    journey.update(rules, 'p1');
+    assert.equal(nodes.get('.journey-rules').scrollTop, 45, 'server ticks preserve the reading position');
+  }
+  rules.story = { ...rules.story, refereeConnected: false };
+  journey.update(rules, 'p1'); nodes.get('[data-next]').click();
+  assert.deepEqual(sent.at(-1), { type: 'storyAdvance', sequenceId: 'charter', ruleIndex: RULE_CARDS.length - 1 });
+  rules.story.ruleAcks = ['p1']; journey.update(rules, 'p1');
+  assert.equal(nodes.get('[data-next]').disabled, true, 'a fighter waits for the peer after acknowledging');
+  rules.story = { ...rules.story, ruleAcks: [], refereeConnected: true, paused: true };
+  journey.update(rules, 'p1'); handlers.onSnapshot(rules, { baseline: false, freshEvents: [] });
+  assert.equal(nodes.get('[data-next]').disabled, true); assert.equal(nodes.get('ack').disabled, true);
   handlers.onSnapshot(ended, { baseline: true, freshEvents: [] });
   assert.match(nodes.get('script').textContent, /Победитель матча/); assert.equal(nodes.get('ack').disabled, false);
   nodes.get('ack').click(); assert.match(nodes.get('script').textContent, /последнее слово/);
   nodes.get('ack').click(); assert.match(nodes.get('script').textContent, /Оба участника/); assert.equal(nodes.get('ack').disabled, true);
   handlers.onSnapshot({ ...ended, elapsed: 81 }, { baseline: false, freshEvents: [] }); assert.doesNotMatch(nodes.get('script').textContent, /Победитель матча/);
   const intro = buildRoundIntro(roster, 'ABC234', 7, 4);
-  for (const [elapsed, index] of [[.4, 0], [3.2, 1]]) {
+  for (const [elapsed, index] of [[.4, 0], [ROUND_INTRO_BEAT_DURATION - .01, 0], [ROUND_INTRO_BEAT_DURATION, 1], [ROUND_INTRO_DURATION - .01, 1]]) {
     handlers.onSnapshot({ ...ended, phase: 'story', elapsed: 90 + elapsed, story: { sequenceId: 'two', stage: 'roundIntro',
-      roundIntro: { sequenceId: 'two:round7', round: 7, matchSerial: 4, elapsed, duration: 6 } } }, { baseline: false, freshEvents: [] });
+      roundIntro: { sequenceId: 'two:round7', round: 7, matchSerial: 4, elapsed, duration: ROUND_INTRO_DURATION } } }, { baseline: false, freshEvents: [] });
     assert.equal(nodes.get('title').textContent, roster.find(player => player.id === intro.beats[index].speaker).name);
     assert.equal(nodes.get('script').textContent, intro.beats[index].text);
     if (!index) assert.ok(nodes.get('next').textContent.includes(intro.beats[1].text));

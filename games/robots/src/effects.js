@@ -9,6 +9,7 @@ import { SHUTDOWN_DISCHARGES } from '../shared/shutdown-motion.js';
 import { createElectricalFaults, stepElectricalFragment } from './electrical-faults.js';
 import { createContactLights } from './contact-light.js';
 import { createOverloadEffects } from './overload-effects.js';
+import { createAnimeImpactEffects } from './anime-impact-effects.js';
 
 const AMBER = new THREE.Color('#ffbd5c');
 const CYAN = new THREE.Color('#6bdfff');
@@ -336,6 +337,7 @@ export function createCombatEffects(scene) {
     },
   });
   const mechanical = createMechanicalEffects(scene, { spark: particle });
+  const animeImpacts = createAnimeImpactEffects(scene);
 
   function colorFor(id, state) {
     const player = state?.players?.find(p => p.id === id);
@@ -391,6 +393,8 @@ export function createCombatEffects(scene) {
   }
 
   function emit(event, state) {
+    // Shared contact punctuation must run before ability/mechanical early returns.
+    animeImpacts.emit(event, state);
     damageEffects.queue(event, state);
     const abilityResult = abilityEffects.emit(event, state);
     if (abilityResult != null) return abilityResult;
@@ -483,6 +487,7 @@ export function createCombatEffects(scene) {
     const live = state?.phase === 'fight';
     damageEffects.update(dt, time, state, pixelRatio);
     mechanical.update(dt, time, state);
+    animeImpacts.update(dt, state);
     overloadEffects.update(dt, time, state);
     if (state?.phase !== 'paused' || state?.visualSeekToken !== presentationSeekToken) presentationTime = time;
     presentationSeekToken = state?.visualSeekToken;
@@ -671,6 +676,7 @@ export function createCombatEffects(scene) {
     energyBolts.clear();
     abilityEffects.clear();
     overloadEffects.clear();
+    animeImpacts.clear();
     for (const p of particles) p.life = 0;
 
     for (const f of flashes) { scene.remove(f.sprite); f.sprite.material.dispose(); }
@@ -687,11 +693,11 @@ export function createCombatEffects(scene) {
     emit, update, clear,
     getOverloadStats() { return overloadEffects.getStats(); },
     getDamageStats() { return damageEffects.getStats(); },
-    getEffectsStats() { return { ...mechanical.getStats(), abilities: abilityEffects.getStats() }; },
-    setQuality(value) { quality = value; overloadEffects.setQuality(value); energyBolts.setQuality(value); abilityEffects.setQuality(value); damageEffects.setQuality(value); mechanical.setQuality(value); },
-    setReducedMotion(value) { reducedMotion = value; overloadEffects.setReducedMotion(value); energyBolts.setReducedMotion(value); abilityEffects.setReducedMotion(value); damageEffects.setReducedMotion(value); mechanical.setReducedMotion(value); },
+    getEffectsStats() { return { ...mechanical.getStats(), abilities: abilityEffects.getStats(), anime: animeImpacts.getStats() }; },
+    setQuality(value) { quality = value; overloadEffects.setQuality(value); energyBolts.setQuality(value); abilityEffects.setQuality(value); damageEffects.setQuality(value); mechanical.setQuality(value); animeImpacts.setQuality(value); },
+    setReducedMotion(value) { reducedMotion = value; overloadEffects.setReducedMotion(value); energyBolts.setReducedMotion(value); abilityEffects.setReducedMotion(value); damageEffects.setReducedMotion(value); mechanical.setReducedMotion(value); animeImpacts.setReducedMotion(value); },
     dispose() {
-      clear(); overloadEffects.dispose(); damageEffects.dispose(); mechanical.dispose(); energyBolts.dispose(); abilityEffects.dispose(); scene.remove(points, debrisMesh); geometry.dispose(); material.dispose(); glow.dispose();
+      clear(); overloadEffects.dispose(); damageEffects.dispose(); mechanical.dispose(); energyBolts.dispose(); abilityEffects.dispose(); animeImpacts.dispose(); scene.remove(points, debrisMesh); geometry.dispose(); material.dispose(); glow.dispose();
       ringGeometry.dispose(); arcGeometry.dispose(); sphereGeometry.dispose(); waveGeometry.dispose(); clawGeometry.dispose();
       debrisGeometry.dispose(); debrisMaterial.dispose(); debrisMesh.dispose();
     },

@@ -132,6 +132,50 @@ function makeAccessory(id, envMap) {
     add(curlGeometry(-1),hair);add(curlGeometry(1),hair);
     add(new THREE.BoxGeometry(.065,.065,.022),brass,[0,.055,-.015]);
     add(new THREE.CylinderGeometry(.012,.012,.03,12),brass,[0,.055,.012],[Math.PI/2,0,0]);
+  } else if(id==='clubCap') {
+    // Low cloth crown and a closed leather visor: nothing hangs over the
+    // original signal lenses. Small brass fixtures catch the arena lighting.
+    const cloth=material('#19232c',.02,.90),leather=material('#10191f',.12,.49);
+    add(new THREE.CylinderGeometry(.405,.43,.175,40),cloth,[0,.145,-.035],[.025,0,0],[1.15,1,.92]);
+    add(new THREE.CylinderGeometry(.43,.427,.075,40),leather,[0,.05,-.03],[0,0,0],[1.14,1,.92]);
+    add(new THREE.TorusGeometry(.425,.010,6,40),brass,[0,.091,-.03],[Math.PI/2,0,0],[1.14,.92,1]);
+    const visor=new THREE.Shape();
+    visor.moveTo(-.34,.16);visor.quadraticCurveTo(-.53,.43,-.39,.57);
+    visor.quadraticCurveTo(0,.74,.39,.57);visor.quadraticCurveTo(.53,.43,.34,.16);
+    visor.quadraticCurveTo(0,.31,-.34,.16);visor.closePath();
+    add(new THREE.ExtrudeGeometry(visor,{depth:.027,bevelEnabled:true,bevelSize:.012,bevelThickness:.006,bevelSegments:2,steps:1,curveSegments:14}),leather,[0,.051,0],[Math.PI/2,0,0]);
+    // A real raised badge with an inset, rather than an emissive decal.
+    add(new THREE.CylinderGeometry(.057,.057,.017,8),brass,[0,.161,.351],[Math.PI/2,0,Math.PI/8],[1,1,1.13]);
+    add(new THREE.BoxGeometry(.026,.052,.012),leather,[0,.163,.365]);
+    add(new THREE.BoxGeometry(.014,.024,.014),brass,[0,.171,.374]);
+    for(const sign of[-1,1]) add(new THREE.SphereGeometry(.014,8,6),brass,[sign*.365,.070,.208]);
+    // Four visibly interlinked, alternating oval links sit beside the visor.
+    // All stay above the roof; they cannot drape onto the HP/status lenses.
+    for(let i=0;i<4;i++) {
+      const a=i/3;
+      add(new THREE.TorusGeometry(.034,.010,6,18),brass,[.444,.111-.038*Math.sin(a*Math.PI),.12+a*.153],
+        [0,i%2?Math.PI/2:0,.24],[.72,1.16,1]);
+    }
+  } else if(id==='heartBand') {
+    const enamel=material('#6d8858',.17,.42),lining=material('#34382c',.03,.86);
+    // The small circlet lies on the turret roof, leaving the entire signal
+    // face unobstructed. Its back is finished too, including the clasp.
+    add(new THREE.TorusGeometry(.405,.022,8,48),brass,[0,.034,0],[Math.PI/2,0,0],[1.08,.92,1]);
+    add(new THREE.TorusGeometry(.398,.012,6,40),lining,[0,.012,0],[Math.PI/2,0,0],[1.08,.92,1]);
+    add(new THREE.BoxGeometry(.095,.049,.034),brass,[0,.035,-.374]);
+    add(new THREE.BoxGeometry(.053,.025,.039),lining,[0,.035,-.378]);
+    const heart=new THREE.Shape();
+    heart.moveTo(0,0);heart.bezierCurveTo(-.055,.048,-.115,.105,-.085,.152);
+    heart.bezierCurveTo(-.062,.188,-.015,.185,0,.146);
+    heart.bezierCurveTo(.015,.185,.062,.188,.085,.152);
+    heart.bezierCurveTo(.115,.105,.055,.048,0,0);heart.closePath();
+    const settings={depth:.019,bevelEnabled:true,bevelSize:.006,bevelThickness:.005,bevelSegments:2,steps:1,curveSegments:10};
+    add(new THREE.ExtrudeGeometry(heart,settings),brass,[0,.025,.370]);
+    add(new THREE.ExtrudeGeometry(heart,{...settings,depth:.006,bevelSize:.003,bevelThickness:.002}),enamel,[0,.046,.395],[0,0,0],[.64,.64,1]);
+    for(const sign of[-1,1]) {
+      add(new THREE.SphereGeometry(.028,10,8),brass,[sign*.192,.048,.329],[0,0,0],[1,.72,.56]);
+      add(new THREE.OctahedronGeometry(.017),enamel,[sign*.194,.051,.344],[0,0,Math.PI/4],[1,.8,.45]);
+    }
   }
   for(const [mat,parts]of buckets) {
     const merged=mergeGeometries(parts,false);parts.forEach(part=>part.dispose());geometries.push(merged);

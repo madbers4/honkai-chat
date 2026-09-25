@@ -47,7 +47,7 @@ const $ = id => document.getElementById(id);
 const audio = new GameAudio();
 let arena, socket, state, playerId, room, token, mode = 'pvp', currentView = 'lobby';
 let quitting = false, reconnectTimer, reconnectAttempt = 0, pendingRequest, connected = false, assetsReady = false, ping = 0;
-let lastPhase, lastCountdown, lastEvent = 0, toastTimer, inviteUrl = '', serverInfo = null;
+let lastPhase, lastCountdown, lastEvent = 0, lastStateAt = 0, toastTimer, inviteUrl = '', serverInfo = null;
 let joinedRoom = new URL(location.href).searchParams.get('room')?.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
 
 document.getElementById('app').innerHTML = `
@@ -196,6 +196,7 @@ function connect(request) {
   socket.addEventListener('message', e => {
     let data; try { data = JSON.parse(e.data); } catch { return; }
     if (data.type === 'welcome') {
+      lastStateAt = 0;
       room = data.room; playerId = data.playerId; token = data.token;
       sessionStorage.setItem('belobog-session', JSON.stringify({room,playerId,token,mode}));
       if (currentView === 'lobby') showView('waiting');
@@ -211,6 +212,7 @@ function connect(request) {
   });
   socket.addEventListener('close', event => {
     if (socket !== currentSocket) return;
+    audio.stop();
     connected = false; controls.neutral(); setConnection('СВЯЗЬ ПРЕРВАНА', false);
     journey.setConnected(false);
     if (event.code === 4001 || event.code === 4000) { leave(); toast(event.reason || 'Комната закрыта.'); return; }
@@ -225,6 +227,9 @@ function connect(request) {
 async function enterRoom(training = false, code = null) {
   if (!assetsReady) { toast('Автоматоны ещё загружаются.'); return; }
   audio.unlock(); journey.unlock(); audio.play('ui');
+  // Request while the create/join/training tap still owns browser activation.
+  // Rejection is harmless: the responsive menu and rotate prompt remain usable.
+  if (matchMedia('(pointer: coarse)').matches) void requestFullscreen();
   mode = training ? 'training' : 'pvp'; lastEvent = 0; lastPhase = null; state = null;
   combatUI.reset();
   $('create-btn').disabled = true; $('training-btn').disabled = true;
@@ -265,6 +270,9 @@ function updateInvite() {
   if (!/^(localhost|127\.0\.0\.1|192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(new URL(origin).hostname)) setText('network-hint', 'Ссылка работает с любого телефона, у которого есть доступ к этому серверу.');
 }
 function receiveState(next) {
+  const now = performance.now();
+  const historicalEvents = !lastStateAt || now - lastStateAt > 350 || state?.phase === 'paused';
+  lastStateAt = now;
   state = next; mode = next.mode || mode;
   storyUI.update(next, playerId);
   if (state.phase === 'paused' && lastPhase !== 'paused') audio.stop();
@@ -274,6 +282,7 @@ function receiveState(next) {
   const inStory = journey.update(next, playerId);
   arena?.setSuspended?.(journey.previewActive());
   if (inStory) {
+    for (const event of next.events || []) lastEvent = Math.max(lastEvent, event.id || 0);
     showView('story'); $('result').hidden = true; announce();
     lastPhase = state.phase;
     return;
@@ -351,6 +360,7 @@ function receiveState(next) {
   for (const event of next.events || []) {
     if (event.id <= lastEvent) continue;
     lastEvent = event.id;
+    if (historicalEvents || state.phase === 'paused' || document.hidden) continue;
     const target = ['hit', 'grabStrike'].includes(event.type) ? next.players?.find(player => player.id === event.target) : undefined;
     audio.play(event.type, target ? { ...event, targetHp: target.hp, targetMaxHp: target.maxHp } : event);
     combatUI.event(event, playerId, state);

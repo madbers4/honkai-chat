@@ -5,6 +5,7 @@
 .club-journey[data-stage=faceoff] .journey-header>div:first-child,.club-journey[data-stage=faceoff] .journey-footer>div{visibility:hidden}
 .club-journey[data-stage=faceoff] .faceoff-bottom{left:5%;right:320px;bottom:20px;grid-template-columns:1fr auto}
 .club-journey[data-stage=faceoff] .faceoff-voice-note{display:none}
+.journey-rule-copy>[data-rule-text]{white-space:pre-line;overflow-wrap:anywhere}
 .journey-round-intro{position:absolute;inset:0;pointer-events:none;z-index:-1}
 .club-journey[data-stage=roundIntro]{background:transparent}
 .club-journey[data-stage=roundIntro] .journey-header{position:absolute;right:max(3vw,env(safe-area-inset-right));bottom:18px;border:0;padding:0;z-index:8}

@@ -4,6 +4,7 @@ import { once } from 'node:events';
 import WebSocket from 'ws';
 import { startServer } from '../server/index.js';
 import { RULE_CARDS } from '../shared/club-story.js';
+import { FACE_OFF_DURATION } from '../shared/faceoff-script.js';
 
 async function client(app) {
   const ws = new WebSocket(`ws://127.0.0.1:${app.port}/ws`);
@@ -124,7 +125,7 @@ test('real clients read shared rules and synchronize faceoff; referee disconnect
   const restored = await client(f.app); restored.sendPacket({ type: 'join', room: f.first.room, token: f.second.token });
   await restored.take(kind('welcome'));
   assert.equal(f.room.game.phase, 'waiting', 'reconnect cannot bypass the faceoff');
-  tick(f.app, 23);
+  tick(f.app, FACE_OFF_DURATION - sceneTime + 1);
   // A synthetic tight loop can fill the deliberate socket backpressure cap.
   // Let transport drain, then inspect the same authoritative final frame.
   await new Promise(resolve => setTimeout(resolve, 30)); f.app.broadcast(f.room);
@@ -139,7 +140,7 @@ test('training story needs only its human; a referee cannot keep an abandoned ro
     f.one.sendPacket({ type: 'storyAdvance', sequenceId: s.story.sequenceId, ruleIndex: i });
     await f.one.take(state(s => s.story.ruleIndex === i + 1));
   }
-  tick(f.app, 25); assert.equal(f.room.story.stage, 'complete');
+  tick(f.app, FACE_OFF_DURATION + 1); assert.equal(f.room.story.stage, 'complete');
   const ref = await client(f.app); ref.sendPacket({ type: 'watch', room: f.first.room });
   await ref.take(kind('refereeWelcome'));
   const gone = once(f.one, 'close'); f.one.close(); await gone;

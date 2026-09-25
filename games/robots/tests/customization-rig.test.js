@@ -87,7 +87,7 @@ test('round KO preserves the trophy; final destruction hides it; reboot restores
 test('reduced motion fixes the propeller, paused cosmetics still respond, disposal is idempotent',()=>{
   const robot=createRobot();let now=0;
   for(let pass=0;pass<3;pass++)for(const item of ACCESSORIES){now+=.1;robot.update({...base,customization:{accessory:item.id}},1/60,now);}
-  const mount=robot.group.getObjectByName('RobotCustomization_Mount');assert.equal(mount.children.length,5,'bounded lazy cache of five attachments');
+  const mount=robot.group.getObjectByName('RobotCustomization_Mount');assert.equal(mount.children.length,ACCESSORIES.length-1,'bounded lazy cache of catalogue attachments');
   const player={...base,visualPaused:true,visualReducedMotion:true,customization:{body:'ruby',core:'violet',accessory:'propeller'}};
   robot.update(player,0,10);const rotor=robot.group.getObjectByName('AccessoryPropeller_Rotor'),stopped=rotor.rotation.y;
   robot.update(player,0,20);assert.equal(rotor.rotation.y,stopped);

@@ -6,7 +6,7 @@ if(query.has('mobile')){
   const p=document.createElement('p');p.className='device-note';p.textContent='Реальный viewport документа 844 × 390. Все элементы доступны пальцем и с клавиатуры.';document.querySelector('main').append(p);
   const frame=document.createElement('iframe');frame.title='Мастерская на телефоне';frame.src='?embedded=1';document.querySelector('main').append(frame);
 }else{
-  const output=document.querySelector('output');const ui=createCustomizationUI(document.querySelector('#host'),{value:{body:'ruby',core:'cyan',accessory:'crown'},reducedMotion:query.has('reduced'),quality:query.has('low')?'low':'high',onChange:value=>output.textContent=JSON.stringify(value)});output.textContent=JSON.stringify(ui.value());
+  const output=document.querySelector('output');const ui=createCustomizationUI(document.querySelector('#host'),{value:{body:'ruby',core:'cyan',accessory:query.get('accessory')||'crown'},reducedMotion:query.has('reduced'),quality:query.has('low')?'low':'high',onChange:value=>output.textContent=JSON.stringify(value)});output.textContent=JSON.stringify(ui.value());
   document.querySelector('#reset').onclick=()=>{ui.set({});output.textContent=JSON.stringify(ui.value());};
   window.addEventListener('pagehide',()=>ui.dispose(),{once:true});
 }

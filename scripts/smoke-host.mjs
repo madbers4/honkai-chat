@@ -3,6 +3,8 @@ import { once } from 'node:events';
 import WebSocket from 'ws';
 import { MAX_HP } from '../games/robots/shared/constants.js';
 import { RULE_CARDS } from '../games/robots/shared/club-story.js';
+import { FACE_OFF_DURATION } from '../games/robots/shared/faceoff-script.js';
+import { GENERATED_VOICE_CLIPS } from '../games/robots/shared/generated-voice-clips.js';
 
 const origin = (process.argv[2] || 'http://127.0.0.1:3001').replace(/\/$/, '');
 const fetchText = async route => {
@@ -17,6 +19,11 @@ const bundle = robotHtml.match(/src="(\/robots\/assets\/[^\"]+\.js)"/)[1];
 assert.ok((await fetchText(bundle)).length > 500, 'entry bundle is served');
 assert.equal((await fetch(origin + '/robots/assets/automaton.glb', { method: 'HEAD' })).status, 200);
 assert.equal((await fetch(origin + '/robots/assets/voices/greeting.mp3', { method: 'HEAD' })).status, 200);
+for (const clip of Object.values(GENERATED_VOICE_CLIPS)) {
+  const response = await fetch(origin + '/robots' + clip.url, { method: 'HEAD', signal: AbortSignal.timeout(10000) });
+  assert.equal(response.status, 200, clip.url);
+  assert.ok(Number(response.headers.get('content-length')) > 1000, 'generated speech must be an actual audio file');
+}
 assert.match(await fetchText('/robots/?role=referee'), /Бойцовский клуб/);
 const sockets = [];
 const timeout = setTimeout(() => { console.error('Multiplayer smoke check timed out'); process.exit(1); }, 15000);
@@ -28,7 +35,7 @@ function next(socket, type, predicate = () => true) {
 }
 try {
   const first = new WebSocket(origin.replace(/^http/, 'ws') + '/robots/ws'); sockets.push(first); await once(first, 'open');
-  let response = next(first, 'welcome'); first.send(JSON.stringify({ type: 'create', mode: 'pvp', storyMode: true, name: 'Проверка сервера', customization: { body: 'jade', core: 'violet', accessory: 'crown' } }));
+  let response = next(first, 'welcome'); first.send(JSON.stringify({ type: 'create', mode: 'pvp', storyMode: true, name: 'Проверка сервера', customization: { body: 'jade', core: 'violet', accessory: 'clubCap' } }));
   const room = (await response).room;
   const second = new WebSocket(origin.replace(/^http/, 'ws') + '/robots/ws'); sockets.push(second); await once(second, 'open');
   const initialState = next(second, 'state');
@@ -38,7 +45,7 @@ try {
   assert.equal(state.players.length, 2);
   assert.ok(state.players.every(player => player.hp === MAX_HP && player.maxHp === MAX_HP), 'deployed combat health must match this release');
   assert.equal(state.story.stage, 'workshop');
-  assert.deepEqual(state.players[0].customization, { body: 'jade', core: 'violet', accessory: 'crown' });
+  assert.deepEqual(state.players[0].customization, { body: 'jade', core: 'violet', accessory: 'clubCap' });
   const referee = new WebSocket(origin.replace(/^http/, 'ws') + '/robots/ws'); sockets.push(referee); await once(referee, 'open');
   response = next(referee, 'refereeWelcome'); referee.send(JSON.stringify({ type: 'watch', room }));
   const refWelcome = await response; assert.equal(refWelcome.room, room);
@@ -55,5 +62,6 @@ try {
     current = (await stage).state;
   }
   assert.equal(current.story.stage, 'faceoff'); assert.equal(current.players.length, 2);
+  assert.equal(current.story.duration, FACE_OFF_DURATION);
   console.log(`PASS: both games, story assets, ${MAX_HP} HP, customization, two fighters, private referee, shared rules and faceoff.`);
 } finally { for (const socket of sockets) socket.terminate(); clearTimeout(timeout); }

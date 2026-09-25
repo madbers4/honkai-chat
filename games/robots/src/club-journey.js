@@ -1,7 +1,8 @@
 import QRCode from 'qrcode';
-import { CLUB_STORY, RULE_CARDS } from '../shared/club-story.js';
+import { CLUB_STORY, RULE_CARDS, getClubRuleCard } from '../shared/club-story.js';
 import { buildFaceoff } from '../shared/faceoff-script.js';
 import { buildRoundIntro } from '../shared/round-intro.js';
+import { GENERATED_VOICE_CLIPS } from '../shared/generated-voice-clips.js';
 import { cleanRobotName, cleanCharacter } from '../shared/fighter-profile.js';
 import { normalizeCustomization } from '../shared/robot-customization.js';
 import { createCustomizationUI } from './customization-ui.js';
@@ -29,12 +30,12 @@ export function createClubJourney(container, { send, leave, toggleSound, toast, 
       <div class="journey-passport">
         <article class="journey-introduction"><span class="journey-kicker">БЕЛОБОГ · ПОДЗЕМНАЯ ГАЛЕРЕЯ</span><h2>Гарантии нет.<br><em>Характер есть.</em></h2><p data-prologue></p><p class="journey-intro-small">Сегодня клуб запомнит две машины.<br>Начнём с твоей.</p></article>
         <div class="journey-profile"><span class="journey-kicker">ПАСПОРТ БОЙЦА</span><label>КАК ТЕБЯ ОБЪЯВЯТ?<input data-name maxlength="20" placeholder="Например, Барон Кабачок" aria-label="Имя твоего робота" autocomplete="nickname"></label><label>ХАРАКТЕР<input data-character maxlength="60" placeholder="Скромный. Пока не включён." aria-label="Характер твоего робота" autocomplete="off"></label><button class="journey-customize" data-customize>ПОДОБРАТЬ ВНЕШНОСТЬ <span>→</span></button>
-          <label class="journey-tts"><input type="checkbox" data-tts> Имена голосом устройства</label><small data-voice-status></small></div>
+          <label class="journey-tts"><input type="checkbox" data-tts> Дополнительные реплики голосом устройства</label><small data-voice-status></small></div>
         <aside class="journey-invite"><div class="journey-invite-tabs"><button data-invite-role="fighter" aria-pressed="true">СОПЕРНИК</button><button data-invite-role="referee" aria-pressed="false">РЕФЕРИ · ПО ЖЕЛАНИЮ</button></div><div class="journey-qr"><canvas aria-label="QR-код приглашения"></canvas><div><span data-invite-caption></span><strong data-invite-code></strong><button data-copy>КОПИРОВАТЬ ↗</button></div></div><input data-invite-link readonly aria-label="Приглашение в комнату"><p data-invite-detail></p><div class="journey-roster" aria-live="polite"></div></aside>
       </div>
       <div class="journey-appearance" hidden></div>
     </div>
-    <article class="journey-rules" hidden><div class="journey-rule-stamp" aria-hidden="true"><span>УСТАВ</span><b data-rule-number></b><small>НОВОГО<br>БОЙЦОВСКОГО КЛУБА</small></div><div class="journey-rule-copy"><span class="journey-kicker" data-rule-kicker></span><h2 data-rule-title></h2><p data-rule-text></p><blockquote data-rule-aloud></blockquote><div class="journey-rule-dots" aria-hidden="true"></div></div></article>
+    <article class="journey-rules" hidden><div class="journey-rule-stamp" aria-hidden="true"><span data-rule-section>УСТАВ</span><b data-rule-number></b><small>НОВОГО<br>БОЙЦОВСКОГО КЛУБА</small></div><div class="journey-rule-copy"><span class="journey-kicker" data-rule-kicker></span><h2 data-rule-title></h2><p data-rule-text></p><div class="journey-rule-dots" aria-hidden="true"></div></div></article>
     <div class="journey-faceoff" hidden></div>
     <div class="journey-round-intro" hidden></div>
     <footer class="journey-footer"><div><span data-stage-caption></span><strong data-stage-status aria-live="polite"></strong></div><button class="button primary" data-next></button></footer>
@@ -103,7 +104,8 @@ export function createClubJourney(container, { send, leave, toggleSound, toast, 
   return {
     profile: () => ({ customization: look }),
     previewActive: () => !root.hidden && latest?.story?.stage === 'workshop' && tab === 'appearance',
-    unlock() { voice.unlock(); voice.preload(buildFaceoff(latest?.players || [], latest?.room || 0)); },
+    unlock() { voice.unlock(); voice.preload([...buildFaceoff(latest?.players || [], latest?.room || 0),
+      ...Object.keys(GENERATED_VOICE_CLIPS).filter(id => id.includes('-round-')).map(clip => ({ clip }))]); },
     setConnected(value) { transportConnected = value; if (!value && !root.hidden) { voice.cancel(); q('.journey-paused').hidden = false; } },
     setMuted(value) { isMuted = value; voice.setMuted(value); text(q('[data-sound]'), value ? 'БЕЗ ЗВУКА' : 'ЗВУК ВКЛ.'); q('[data-sound]').setAttribute('aria-pressed', String(!value)); },
     setInvite(value) { invite = value; refreshInvite(); },
@@ -146,15 +148,18 @@ export function createClubJourney(container, { send, leave, toggleSound, toast, 
         text(q('[data-stage-status]'), locked ? 'Паспорт сдан. Ждём второго бойца.' : 'Внешность меняет стиль. Характер — историю.');
         text(next, locked ? 'ЕЩЁ ПОКОЛДУЮ ↶' : 'МОЙ БОЕЦ ГОТОВ →');
       } else if (story.stage === 'rules') {
-        const rule = RULE_CARDS[story.ruleIndex] || RULE_CARDS[0];
+        const rule = getClubRuleCard(story.ruleIndex, snapshot.players) || getClubRuleCard(0, snapshot.players);
+        const rules = q('.journey-rules');
+        if (rules.dataset.card !== rule.id) { rules.scrollTop = 0; rules.dataset.card = rule.id; }
+        text(q('[data-rule-section]'), rule.kind === 'charter' ? 'УСТАВ' : 'БОЙ');
         text(q('[data-rule-number]'), String(story.ruleIndex + 1).padStart(2, '0'));
-        text(q('[data-rule-kicker]'), `УСТАВ КЛУБА / ${story.ruleIndex + 1} ИЗ ${RULE_CARDS.length}`);
-        text(q('[data-rule-title]'), rule.title); text(q('[data-rule-text]'), rule.text); text(q('[data-rule-aloud]'), rule.readAloud);
+        text(q('[data-rule-kicker]'), `${rule.kind === 'charter' ? 'УСТАВ КЛУБА' : 'КОРОТКО О БОЕ'} / ${story.ruleIndex + 1} ИЗ ${RULE_CARDS.length}`);
+        text(q('[data-rule-title]'), rule.title); text(q('[data-rule-text]'), rule.text);
         text(q('.journey-rule-dots'), RULE_CARDS.map((_, i) => i === story.ruleIndex ? '◆' : '◇').join('  '));
         const ack = story.ruleAcks.includes(id);
         next.disabled = story.paused || story.refereeConnected || ack;
         text(next, story.refereeConnected ? 'СЛУШАЕМ РЕФЕРИ' : ack ? 'ЖДЁМ СОПЕРНИКА…' : story.ruleIndex === RULE_CARDS.length - 1 ? 'ВЫХОД НА АРЕНУ →' : 'ПРАВИЛО ПРИНЯТО →');
-        text(q('[data-stage-caption]'), story.refereeConnected ? 'РЕФЕРИ ЗАЧИТЫВАЕТ УСТАВ' : 'ПРОЧИТАЙТЕ И ПОДТВЕРДИТЕ ВДВОЁМ');
+        text(q('[data-stage-caption]'), story.refereeConnected ? rule.kind === 'charter' ? 'РЕФЕРИ ЗАЧИТЫВАЕТ УСТАВ' : 'РЕФЕРИ ОБЪЯСНЯЕТ БОЙ' : 'ПРОЧИТАЙТЕ И ПОДТВЕРДИТЕ ВДВОЁМ');
         text(q('[data-stage-status]'), story.refereeConnected ? 'Он перевернёт карточку после объявления.' : 'Нет рефери? Дайте голос своим машинам.');
       } else if (story.stage === 'roundIntro') {
         const info = story.roundIntro;

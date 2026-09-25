@@ -1,3 +1,4 @@
+import { faceoffActorPose, faceoffActorX } from '../shared/faceoff-script.js';
 import { COUNTDOWN_SECONDS } from '../shared/constants.js';
 import { buildRoundIntro, ROUND_INTRO_DURATION } from '../shared/round-intro.js';
 
@@ -127,14 +128,14 @@ export class StorySession {
       if (['faceoff', 'roundIntro'].includes(story.stage)) {
         const beats = story.stage === 'roundIntro' ? this.roundIntro.beats : this.beats;
         const beat = beats.findLast(b => b.at <= story.elapsed && b.at + b.duration > story.elapsed);
-        const approach = Math.min(1, story.elapsed / 5);
+
         for (let i = 0; i < snapshot.players.length; i++) {
           const player = snapshot.players[i], direction = i === 0 ? 1 : -1;
           // The mechanical reboot remains visible during the first exchange.
           if (story.stage === 'roundIntro' && player.action === 'recover') continue;
-          if (story.stage === 'faceoff') player.x = direction * (-3.6 + 1.75 * approach);
+          if (story.stage === 'faceoff') player.x = faceoffActorX(i, story.elapsed);
           player.y = player.vx = player.vy = 0; player.facing = direction;
-          player.action = 'faceoff'; player.variant = beat?.speaker === player.id ? beat.pose || 'challenge' : beat?.speaker === 'narrator' && beat.pose === 'recoil' ? 'recoil' : 'stance';
+          player.action = 'faceoff'; player.variant = faceoffActorPose(beat, player.id);
           player.actionTime = Math.max(0, story.elapsed - (beat?.at || 0));
           player.actionDuration = beat?.duration || this.faceoffDuration;
         }

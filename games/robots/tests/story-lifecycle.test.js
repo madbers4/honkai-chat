@@ -4,7 +4,8 @@ import { once } from 'node:events';
 import WebSocket from 'ws';
 import { startServer } from '../server/index.js';
 import { RULE_CARDS } from '../shared/club-story.js';
-import { WINS_TO_MATCH } from '../shared/constants.js';
+import { WINS_TO_MATCH, COUNTDOWN_SECONDS } from '../shared/constants.js';
+import { ROUND_INTRO_DURATION } from '../shared/round-intro.js';
 
 let pingSerial = 0;
 async function connect(app) {
@@ -131,7 +132,10 @@ test('real player/referee reconnects freeze only player-owned story time and pre
   state = await advance(f, 1.4); await disconnect(f.two, f.one, 'p2');
   const heldIntro = f.one.latest.story.elapsed, heldCountdown = f.one.latest.countdown;
   state = await advance(f, 5); assert.equal(state.story.elapsed, heldIntro); assert.equal(state.countdown, heldCountdown); assert.equal(state.story.paused, true);
-  await reconnect(f, 'two'); state = await advance(f, 4.6); assert.equal(state.story.stage, 'complete'); assert.equal(state.phase, 'countdown'); assert.equal(state.countdown, 3);
+  await reconnect(f, 'two');
+  state = await advance(f, ROUND_INTRO_DURATION - heldIntro - .1);
+  assert.equal(state.story.stage, 'roundIntro', 'the complete second recording retains its last presentation window');
+  state = await advance(f, .1); assert.equal(state.story.stage, 'complete'); assert.equal(state.phase, 'countdown'); assert.equal(state.countdown, COUNTDOWN_SECONDS);
   state = await advance(f, 2.8); assert.equal(state.phase, 'countdown'); state = await advance(f, .2); assert.equal(state.phase, 'fight');
   await disconnect(f.two, f.one, 'p2'); const remainingTime = f.one.latest.time;
   state = await advance(f, 9); assert.equal(state.phase, 'paused'); assert.equal(state.time, remainingTime);
@@ -158,8 +162,9 @@ test('five real timeout victories and a rematch keep short exchanges; disconnect
   assert.equal(introIds.size, WINS_TO_MATCH); assert.equal(exchanges.size, WINS_TO_MATCH);
   state = await advance(f, 8); assert.equal(state.phase, 'matchOver');
   f.one.sendPacket({ type: 'rematch' }); f.two.sendPacket({ type: 'rematch' }); await f.two.sync(); state = await f.one.sync();
-  assert.equal(state.story.stage, 'roundIntro', 'the rematch first broadcast must already contain its six-second exchange');
+  assert.equal(state.story.stage, 'roundIntro', 'the rematch first broadcast must already contain its complete exchange');
+  assert.equal(state.story.roundIntro.duration, ROUND_INTRO_DURATION);
   const rematchId = state.story.roundIntro.sequenceId; assert.ok(!introIds.has(rematchId)); assert.equal(state.story.roundIntro.matchSerial, 1); assert.equal(state.round, 1);
   await disconnect(f.two, f.one, 'p2'); state = await advance(f, 5); assert.equal(state.story.stage, 'roundIntro'); assert.equal(state.story.elapsed, 0);
-  await reconnect(f, 'two'); state = await advance(f, 9); assert.equal(state.phase, 'fight'); assert.equal(state.story.roundIntro.sequenceId, rematchId); assert.equal(state.players[0].wins, 0);
+  await reconnect(f, 'two'); state = await advance(f, ROUND_INTRO_DURATION + COUNTDOWN_SECONDS); assert.equal(state.phase, 'fight'); assert.equal(state.story.roundIntro.sequenceId, rematchId); assert.equal(state.players[0].wins, 0);
 });

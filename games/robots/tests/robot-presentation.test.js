@@ -2,6 +2,22 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { robotPresentation } from '../shared/robot-presentation.js';
 
+test('cinematic power-up drives reactor light without repainting the HP lenses', () => {
+  const base = { id: 'p1', hp: 42, energy: 0, action: 'faceoff', actionDuration: 3.5 };
+  const idle = robotPresentation({ ...base, variant: 'stance' }, 5);
+  const peak = robotPresentation({ ...base, variant: 'reactor', actionTime: 1.5 }, 5);
+  assert.ok(peak.reactorIntensity > idle.reactorIntensity + .8);
+  assert.ok(peak.reactorIntensity <= 1.3);
+  assert.equal(peak.healthColor, idle.healthColor);
+  assert.equal(peak.healthIntensity, idle.healthIntensity);
+  assert.equal(peak.reactorColor, idle.reactorColor);
+  for (const variant of ['reactor', 'actuators', 'armed']) {
+    const state = { ...base, variant, actionTime: 1 };
+    assert.equal(robotPresentation(state, 0).reactorIntensity, robotPresentation(state, 100).reactorIntensity);
+    assert.equal(robotPresentation({ ...state, actionTime: 3.5 }, 5).reactorIntensity, idle.reactorIntensity);
+  }
+});
+
 test('health thresholds are exact, absent HP is healthy, and KO is always offline', () => {
   const cases = [[100, 'healthy'], [61, 'healthy'], [60, 'damaged'], [26, 'damaged'], [25, 'critical'], [1, 'critical'], [0, 'offline'], [-20, 'offline']];
   for (const [hp, band] of cases) assert.equal(robotPresentation({ hp }).healthBand, band);

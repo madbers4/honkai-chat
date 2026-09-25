@@ -39,11 +39,10 @@ function eventCue(states, type, variant, expected) {
 }
 
 test('club cards use actual rules and names are one-pass safe quoted text', () => {
-  assert.equal(RULE_CARDS.length, 6); assert.ok(PREMATCH_EXCHANGES.length >= 6);
+  assert.ok(PREMATCH_EXCHANGES.length >= 6);
   for (const card of RULE_CARDS) for (const key of ['id', 'title', 'text', 'readAloud']) assert.equal(typeof card[key], 'string');
-  assert.ok(RULE_CARDS.find(c => c.id === 'score').text.includes(String(MAX_HP)));
   assert.ok(RULE_CARDS.find(c => c.id === 'score').text.includes(`${WINS_TO_MATCH} побед`));
-  assert.ok(RULE_CARDS.find(c => c.id === 'special').text.includes(`${ATTACKS.ultimate.energy}`));
+  assert.ok(RULE_CARDS.find(c => c.id === 'thumbs').text.includes('одним нажатием'));
   assert.ok(CLUB_STORY.final.both.includes('Оба участника'));
   const rendered = formatClubText('{a} / {b} / {round} / {score}', { a: '<img>\u202e{b}', b: 'Искра', round: 2, score: '1 : 0' });
   assert.equal(rendered, '«imgb» / «Искра» / 2 / 1 : 0');

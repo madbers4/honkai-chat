@@ -1,5 +1,7 @@
-// Original user recordings. Timings measured from the MP3 stream.
+import { GENERATED_VOICE_CLIPS } from './generated-voice-clips.js';
+// Original user recordings plus the explicitly documented offline voice pack.
 export const VOICE_CLIPS = Object.freeze({
+  ...GENERATED_VOICE_CLIPS,
   "explosion": {
     "url": "/assets/voices/explosion.mp3",
     "duration": 10.512

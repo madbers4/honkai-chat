@@ -23,8 +23,8 @@ test('recordings preload under /robots; repeated packets never queue duplicate s
   const h = harness(t); await h.voice.unlock(); await h.voice.preload([clip, clip]);
   assert.deepEqual(h.urls, ['/robots/assets/voices/greeting.mp3']);
   h.voice.update(frame(0)); h.voice.update(frame(1.1)); h.voice.update(frame(1.1)); h.voice.update(frame(1.2));
-  assert.equal(h.sources.length, 1); assert.ok(Math.abs(h.sources[0].startArgs[1] - .3) < .0001);
-  assert.ok(Math.abs(h.sources[0].startArgs[2] - 7.9) < .0001);
+  assert.equal(h.sources.length, 1); assert.ok(Math.abs(h.sources[0].startArgs[1] - .2) < .0001);
+  assert.ok(Math.abs(h.sources[0].startArgs[2] - 8) < .0001);
 });
 
 test('late join and mute never replay past dialogue; pause resumes the same recording at scene offset', async t => {
@@ -73,4 +73,43 @@ test('leaving a paused story discards the resumable clip rather than leaking it 
   h.voice.update(frame(1)); h.voice.update(frame(2, { paused: true }));
   h.voice.update(frame(2, { paused: true, enabled: false }));
   h.voice.update(frame(2.1)); assert.equal(h.sources.length, 1);
+});
+
+test('packed generated lines play without browser TTS and keep precedence when device speech is enabled', async t => {
+  const h = harness(t, { voices: [{ name: 'RU', lang: 'ru', localService: true }] });
+  await h.voice.unlock(); h.voice.setTtsEnabled(true);
+  const beat = { id: 'generated', at: 0, duration: 3.5, clip: 'jotaro-mode', clipDuration: 3.2, ttsText: 'Боевой режим: кабачковое противостояние!' };
+  await h.voice.preload([beat]); h.voice.update(frame(0, { beats: [beat] }));
+  assert.deepEqual(h.urls, ['/robots/assets/voices/generated/jotaro-mode.mp3']);
+  assert.equal(h.sources.length, 1); assert.equal(h.spoken.length, 0);
+  assert.equal(h.sources[0].startArgs[2], 3.2);
+});
+
+test('fresh jitter never trims a word; pause resumes its actual offset and overlapping beats wait', async t => {
+  const h = harness(t); await h.voice.unlock();
+  const first = { id: 'mode-a', at: 6.4, duration: 3.5, clip: 'jotaro-mode', clipDuration: 3.2 };
+  const second = { id: 'mode-b', at: 9.9, duration: 3.1, clip: 'dio-mode', clipDuration: 2.55 };
+  await h.voice.preload([first, second]);
+  const next = (elapsed, paused = false) => h.voice.update(frame(elapsed, { beats: [first, second], paused }));
+  next(6.75); assert.deepEqual(h.sources[0].startArgs, [0, 0, 3.2]);
+  next(7.5, true); next(7.5);
+  assert.equal(h.sources[1].startArgs[1], .75);
+  next(9.9); assert.equal(h.sources.length, 2, 'second voice waits for full first line');
+  next(9.96); assert.equal(h.sources.length, 3);
+  assert.deepEqual(h.sources[2].startArgs, [0, 0, 2.55]);
+});
+
+test('stalled recordings time out twice and disposal aborts owned downloads', async () => {
+  let requests = 0, aborts = 0;
+  const fetcher = (_url, { signal }) => new Promise((_resolve, reject) => {
+    requests++;
+    signal.addEventListener('abort', () => { aborts++; reject(new Error('aborted')); }, { once: true });
+  });
+  const voice = createStoryVoice({ fetcher, loadTimeoutMs: 5, visibility: null, speech: null });
+  await voice.preload([clip]);
+  assert.equal(requests, 2); assert.equal(aborts, 2);
+  await voice.preload([clip]); assert.equal(requests, 2, 'no unbounded background retry');
+  const pending = voice.preload([{ ...clip, clip: 'dio-hero' }]);
+  await Promise.resolve(); voice.dispose(); await pending;
+  assert.equal(requests, 3); assert.equal(aborts, 3);
 });

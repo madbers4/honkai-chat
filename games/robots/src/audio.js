@@ -1,4 +1,5 @@
 import { healthPercent } from '../shared/health.js';
+import { createCombatVoice } from './combat-voice.js';
 
 export class GameAudio {
   constructor() { this.muted = localStorage.getItem('belobog-muted') === 'true'; this.voices = new Set(); }
@@ -15,11 +16,14 @@ export class GameAudio {
       this.noise = this.ctx.createBuffer(1, this.ctx.sampleRate, this.ctx.sampleRate);
       const data = this.noise.getChannelData(0);
       for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+      this.combatVoice = createCombatVoice({ context: this.ctx, destination: this.master, muted: () => this.muted });
+      void this.combatVoice.preload();
     }
     this.ctx.resume().catch(() => {});
   }
   toggle() {
     this.muted = !this.muted; localStorage.setItem('belobog-muted', this.muted);
+    if (this.muted) this.combatVoice?.stop();
     if (this.master) this.master.gain.setTargetAtTime(this.muted ? 0 : 0.28, this.ctx.currentTime, .03);
     return this.muted;
   }
@@ -28,6 +32,7 @@ export class GameAudio {
     source.onended = () => { this.voices.delete(source); source.disconnect(); for (const node of nodes) node.disconnect(); };
   }
   stop() {
+    this.combatVoice?.stop();
     for (const source of this.voices) { try { source.stop(); } catch {} }
     this.voices.clear();
   }
@@ -51,6 +56,7 @@ export class GameAudio {
   }
   play(type, event = {}) {
     if (typeof document !== 'undefined' && document.hidden) return;
+    this.combatVoice?.play({ ...event, type });
     if (type === 'ui') this.tone(640, .055, 'sine', .13, 920);
     if (type === 'countdown') this.tone(480, .13, 'triangle', .4);
     if (type === 'fight') { this.tone(150, .6, 'sawtooth', .3, 42); this.burst(.25, 1600, .7); }

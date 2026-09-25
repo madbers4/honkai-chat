@@ -1,6 +1,7 @@
 import { healthPercent } from './health.js';
 import { rebootSignals } from './shutdown-motion.js';
 import { ATTACKS } from './constants.js';
+import { faceoffPowerEnvelope } from './faceoff-script.js';
 
 /**
  * Both original head lenses belong to HP. Ability status modulates the reactor.
@@ -50,6 +51,7 @@ function selectStatus(player, offline, energy) {
   if (variant === 'grab' || player.grabTarget) return 'grab';
   if (action === 'block') return 'block';
   if (['light', 'heavy', 'dash'].includes(action)) return 'attack';
+  if (action === 'faceoff') return 'faceoff';
   if (energy >= ATTACKS.ultimate.energy && finite(player.cooldowns?.ultimate, 0) <= 0) return 'energy-ready';
   return 'standby';
 }
@@ -129,6 +131,11 @@ export function robotPresentation(player = {}, time = 0, { reducedMotion = false
   } else if (status === 'energy-ready') {
     statusColor = COLORS.charge; statusIntensity = 0.96 + breathe;
     reactorIntensity = 0.80 + breathe;
+  } else if (status === 'faceoff') {
+    const power = faceoffPowerEnvelope(player.variant, actionTime, duration, { reducedMotion });
+    // The existing physical reactor lamp and emissive material share this
+    // envelope; the original health lenses retain their HP colour throughout.
+    reactorIntensity = Math.min(1.30, reactorIntensity + power.core * .92 + power.drives * .18);
   }
 
   return {

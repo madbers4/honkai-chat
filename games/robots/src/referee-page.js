@@ -4,7 +4,7 @@ import { GameAudio } from './audio.js';
 import { createRefereeClient, cleanRoomCode, validRoomCode } from './referee-client.js';
 import { createRefereeDirector } from '../shared/referee-director.js';
 import { REFEREE_CATEGORIES } from '../shared/referee-lines.js';
-import { CLUB_STORY, RULE_CARDS, formatClubText } from '../shared/club-story.js';
+import { CLUB_STORY, RULE_CARDS, formatClubText, getClubRuleCard } from '../shared/club-story.js';
 import { MAX_HP, WINS_TO_MATCH } from '../shared/constants.js';
 import { buildRoundIntro, activeRoundIntroBeat } from '../shared/round-intro.js';
 
@@ -163,8 +163,8 @@ export function mountRefereePage({ container = document.body, room = new URL(loc
       ack = 'Бойцы готовятся'; variation = 'Другой вопрос'; canAck = false; canVary = true;
       next = 'Игроки назовут машины, выберут характер и отметят готовность на своих телефонах.'; note = 'Задайте каждой стороне один короткий вопрос. Готовность отмечают бойцы.';
     } else if (stage === 'rules') {
-      const index = state.story.ruleIndex, card = RULE_CARDS[index];
-      category = `ПРАВИЛА · ${index + 1} / ${RULE_CARDS.length}`; title = card?.title || 'Правила прочитаны'; script = card?.readAloud || 'Ждём выхода бойцов.';
+      const index = state.story.ruleIndex, card = getClubRuleCard(index, state.players);
+      category = `${card?.kind === 'charter' ? 'УСТАВ КЛУБА' : 'КОРОТКО О БОЕ'} · ${index + 1} / ${RULE_CARDS.length}`; title = card?.title || 'Правила прочитаны'; script = card?.readAloud || 'Ждём выхода бойцов.';
       ack = pendingAdvance ? 'Передаём слово…' : 'Зачитано — дальше'; canAck = Boolean(card) && !pendingAdvance; canVary = false;
       nextLabel = 'СЛЕДУЮЩАЯ КАРТОЧКА'; next = RULE_CARDS[index + 1]?.title || 'Выход бойцов. Дайте записи прозвучать.';
       note = 'Бойцы ждут вас. Нажмите после того, как прочитаете карточку.';

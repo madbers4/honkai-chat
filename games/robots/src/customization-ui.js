@@ -8,6 +8,8 @@ const icons={
   colander:'<path d="M6 23a10 10 0 0 1 20 0ZM6 21H3v4h4m19-4h3v4h-4M13 14h.1M19 14h.1M10 19h.1M16 19h.1M22 19h.1"/>',
   propeller:'<path d="M16 14v12M11 26h10M15 12C1 10 4 4 13 8zm2 0c14 2 11 8 2 4z"/><circle cx="16" cy="12" r="2"/>',
   mustache:'<path d="M16 14c-3-3-5 4-9 4-3 0-3-3-2-5-5 7 2 13 11 7 9 6 16 0 11-7 1 2 1 5-2 5-4 0-6-7-9-4Z"/>',
+  clubCap:'<path d="M6 17V9q10-6 20 0v8M6 14h20M6 17q10 10 20 0ZM14 9h4v3h-4M26 13l2 3-1 4-2-1 1-3"/>',
+  heartBand:'<path d="M5 17q0-6 6-8m10 0q6 2 6 8M5 17q11 7 22 0M16 18l-6-6a4 4 0 0 1 6-5 4 4 0 0 1 6 5Z"/>',
 };
 let nextId=0;
 

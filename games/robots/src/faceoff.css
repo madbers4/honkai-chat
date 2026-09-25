@@ -1,27 +1,22 @@
-.faceoff-scene{position:absolute;inset:0;z-index:7;pointer-events:none;color:#f1e7cf;font-family:inherit;overflow:hidden;background:linear-gradient(#081418a8,transparent 27%,transparent 65%,#081418e8)}
-.faceoff-scene[hidden]{display:none}
-.faceoff-eyebrow{position:absolute;top:18px;left:0;right:0;text-align:center;font-size:9px;letter-spacing:3px;color:#c7b895}
-.faceoff-heading{position:absolute;top:37px;left:0;right:0;text-align:center;font-weight:800;font-size:17px;letter-spacing:3px;text-shadow:0 2px 14px #000}
-.faceoff-names{position:absolute;top:87px;left:7%;right:7%;display:flex;justify-content:space-between;align-items:center;gap:24px}
-.faceoff-card{width:min(34%,320px);border-top:2px solid #dfb767;padding:10px 13px;background:linear-gradient(100deg,#101c24e8,#101c2433);display:flex;flex-direction:column;gap:5px;text-shadow:0 2px 9px #000}
-.faceoff-card-1{border-color:#78d5df;text-align:right;background:linear-gradient(-100deg,#101c24e8,#101c2433)}
-.faceoff-role,.faceoff-identity-state{font-size:8px;letter-spacing:1.4px;opacity:.7}
-.faceoff-wrong-name{font-size:29px;font-weight:900;letter-spacing:4px;text-decoration:none;line-height:1.05}
-.faceoff-real-name{display:none;font-size:26px;line-height:1.05;overflow-wrap:anywhere}
-.faceoff-vs{font-size:24px;font-weight:900;font-style:italic;color:#e4ba68;opacity:.7}
-.faceoff-card.speaking{box-shadow:0 -8px 22px -15px #ffd893,inset 3px 0 #dfb767}
-.faceoff-card-1.speaking{box-shadow:0 -8px 22px -15px #9aebfa,inset -3px 0 #78d5df}
-.faceoff-scene[data-revealed=true] .faceoff-wrong-name{font-size:12px;letter-spacing:2px;text-decoration:line-through;color:#be8b78;opacity:.65}
-.faceoff-scene[data-revealed=true] .faceoff-real-name{display:block}
-.faceoff-scene[data-glitch=true] .faceoff-wrong-name{text-decoration:line-through;text-shadow:2px 0 #d6834d,-2px 0 #78d5df;transform:skew(-7deg)}
-.faceoff-scene[data-glitch=true] .faceoff-heading{color:#ffba67}
-.faceoff-caption{position:absolute;bottom:72px;left:16%;right:16%;text-align:center;padding:11px 18px;border-left:2px solid #dbc399;border-right:2px solid #dbc399;background:#0b141be8;box-shadow:0 8px 30px #0004}
-.faceoff-speaker{font-size:9px;letter-spacing:2px;color:#eac288;font-weight:800}
-.faceoff-line{font-size:20px;font-weight:650;line-height:1.2;margin:7px 0 0;text-wrap:balance;overflow-wrap:anywhere}
-.faceoff-bottom{position:absolute;left:17%;right:17%;bottom:17px;display:grid;grid-template-columns:1fr auto;gap:7px 12px;align-items:center}
-.faceoff-progress{height:3px;background:#cbb88730;overflow:hidden}.faceoff-progress-fill{height:100%;display:block;background:linear-gradient(90deg,#dfb767,#f7eaca);transform-origin:left}
-.faceoff-countdown{font-size:8px;letter-spacing:1px;color:#f0c98c}.faceoff-voice-note{grid-column:1/-1;text-align:center;font-size:8px;color:#d4d1c7;opacity:.75}
-.faceoff-scene[data-paused=true] .faceoff-progress-fill{background:#a4bac2}
-@media(max-height:500px){.faceoff-eyebrow{top:9px;font-size:7px;letter-spacing:1.5px}.faceoff-heading{top:24px;font-size:12px;letter-spacing:2px}.faceoff-names{top:52px;left:5%;right:5%;gap:12px}.faceoff-card{padding:6px 9px;gap:3px;width:30%}.faceoff-role,.faceoff-identity-state{font-size:6px;letter-spacing:1px}.faceoff-wrong-name{font-size:19px}.faceoff-real-name{font-size:18px}.faceoff-vs{font-size:19px}.faceoff-caption{bottom:45px;padding:7px 12px;left:15%;right:15%}.faceoff-speaker{font-size:7px;letter-spacing:1px}.faceoff-line{font-size:13px;margin-top:4px}.faceoff-bottom{bottom:9px;left:16%;right:16%;gap:4px 8px}.faceoff-countdown{font-size:6px}.faceoff-voice-note{font-size:6px}}
-@media(prefers-reduced-motion:reduce){.faceoff-scene[data-glitch=true] .faceoff-wrong-name{transform:none;text-shadow:none}}
-.faceoff-scene[data-reduced=true] .faceoff-wrong-name{transform:none;text-shadow:none}
+.faceoff-scene{position:absolute;inset:0;z-index:7;pointer-events:none;color:#f3e4c8;font-family:inherit;overflow:hidden;background:linear-gradient(100deg,#48283714,transparent 35%,#a8651d0a),radial-gradient(ellipse at 50% 46%,transparent 39%,#090d1b85 100%)}
+.faceoff-scene[hidden],.faceoff-card[hidden],.faceoff-mechanism[hidden]{display:none}
+.faceoff-film-matte{position:absolute;inset:0;border-top:15px solid #070b10;border-bottom:39px solid #070b10;background:linear-gradient(#070b1077,transparent 23%,transparent 66%,#070b10b8);pointer-events:none}
+.faceoff-speedlines{position:absolute;inset:0;background:repeating-conic-gradient(from 17deg at 50% 48%,transparent 0deg 13deg,#decdaa25 13.08deg 13.16deg,transparent 13.22deg 26deg);mask-image:radial-gradient(ellipse,transparent 44%,#000 100%);opacity:.06;pointer-events:none}
+.faceoff-scene[data-chapter=mode] .faceoff-speedlines{opacity:.23}
+.faceoff-eyebrow{position:absolute;top:21px;left:0;right:0;text-align:center;font-size:8px;letter-spacing:2.5px;color:#c7b895}
+.faceoff-heading{position:absolute;top:39px;left:15%;right:15%;text-align:center;font-weight:850;font-size:19px;letter-spacing:3px;text-shadow:0 2px 14px #000;line-height:1.2}
+.faceoff-scene[data-chapter=mode] .faceoff-heading{color:#ffe2a5;font-size:23px;letter-spacing:3.4px}
+.faceoff-names{position:absolute;inset:0}
+.faceoff-card{position:absolute;transform:translateX(-50%);width:max-content;min-width:120px;max-width:min(28%,260px);padding:6px 10px 7px;border-top:1px solid #e1ba70;background:linear-gradient(90deg,#0a121bce,#0a121b88);display:flex;flex-direction:column;gap:3px;text-align:center;text-shadow:0 2px 8px #000}
+.faceoff-card-1{border-color:#89c9d9}.faceoff-card.speaking{box-shadow:0 -6px 20px -12px #ffd998}.faceoff-card-1.speaking{box-shadow:0 -6px 20px -12px #9fe7ef}
+.faceoff-role{font-size:7px;letter-spacing:1.5px;opacity:.65}.faceoff-real-name{display:block;font-size:18px;line-height:1.1;overflow-wrap:anywhere}.faceoff-identity-state{font-size:6px;letter-spacing:.7px;opacity:.7}
+.faceoff-mechanism{position:absolute;left:6%;top:46%;max-width:20%;padding-left:11px;border-left:2px solid #e3bd74;font:9px/2.1 monospace;letter-spacing:1px;white-space:pre-line;color:#e0c29b;text-shadow:0 2px 9px #000}
+.faceoff-caption{position:absolute;bottom:68px;left:15%;right:15%;text-align:center;padding:5px 14px 7px;background:linear-gradient(90deg,transparent,#090d17d9 20%,#090d17d9 80%,transparent)}
+.faceoff-speaker{font-size:8px;letter-spacing:2px;color:#eac288;font-weight:800}.faceoff-line{font-size:19px;font-weight:650;line-height:1.2;margin:5px 0 0;text-wrap:balance;overflow-wrap:anywhere;text-shadow:0 2px 8px #000}
+.faceoff-bottom{position:absolute;left:17%;right:17%;bottom:13px;display:grid;grid-template-columns:1fr auto;gap:5px 12px;align-items:center}
+.faceoff-progress{height:2px;background:#cbb88730;overflow:hidden}.faceoff-progress-fill{height:100%;display:block;background:linear-gradient(90deg,#a37b44,#ffdf9f);transform-origin:left}
+.faceoff-countdown{font-size:8px;letter-spacing:1px;color:#f0c98c}.faceoff-voice-note{grid-column:1/-1;text-align:center;font-size:7px;color:#c6c6bf;opacity:.7}
+.faceoff-scene[data-paused=true] .faceoff-progress-fill{background:#a4bac2}.faceoff-scene[data-reduced=true] .faceoff-speedlines{display:none}
+@media(max-height:560px){.faceoff-film-matte{border-top-width:8px;border-bottom-width:31px}.faceoff-eyebrow{top:12px;font-size:6px;letter-spacing:1.5px}.faceoff-heading{top:27px;font-size:12px;letter-spacing:2px}.faceoff-scene[data-chapter=mode] .faceoff-heading{font-size:15px;letter-spacing:2px}.faceoff-card{min-width:94px;padding:4px 7px 5px;gap:2px;max-width:26%}.faceoff-role{font-size:5px}.faceoff-real-name{font-size:12px}.faceoff-identity-state{font-size:5px;letter-spacing:.2px}.faceoff-caption{bottom:45px;left:17%;right:17%;padding:5px 7px}.faceoff-speaker{font-size:6px;letter-spacing:1px}.faceoff-line{font-size:12px;margin-top:3px}.faceoff-bottom{bottom:10px;left:16%;right:16%;gap:4px 8px}.faceoff-countdown{font-size:6px}.faceoff-voice-note{font-size:5px}.faceoff-mechanism{left:4%;top:45%;font-size:6px;letter-spacing:.5px;max-width:22%;padding-left:7px}}
+@media(orientation:portrait){.faceoff-heading{left:6%;right:6%;font-size:14px}.faceoff-scene[data-chapter=mode] .faceoff-heading{font-size:16px}.faceoff-card{max-width:39%;min-width:0}.faceoff-real-name{font-size:12px}.faceoff-caption{left:6%;right:6%;bottom:105px}.faceoff-line{font-size:15px}.faceoff-mechanism{display:none}.faceoff-bottom{left:7%;right:7%;bottom:67px}}
+@media(prefers-reduced-motion:reduce){.faceoff-speedlines{display:none}}

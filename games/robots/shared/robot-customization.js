@@ -25,6 +25,8 @@ export const ACCESSORIES = catalog([
   { id: 'colander', name: 'Дуршлаг', description: 'Шлем. Вентиляция. Ужин. Всё продумано.' },
   { id: 'propeller', name: 'Вертушка', description: 'Добавляет уверенности в аэродинамике.' },
   { id: 'mustache', name: 'Усы', description: 'Серьёзная машина. Несерьёзные усы.' },
+  { id: 'clubCap', name: 'Капитан пафоса', description: 'Козырёк пониже. Аргумент потяжелее. Цепочка — по уставу.' },
+  { id: 'heartBand', name: 'Золотое самомнение', description: 'Сердце золотое. Характер требует отдельной гарантии.' },
 ]);
 export const DEFAULT_CUSTOMIZATION = Object.freeze({ body: 'original', core: 'original', accessory: 'none' });
 const ids = { body: new Set(BODY_COLORS.map(x => x.id)), core: new Set(CORE_COLORS.map(x => x.id)), accessory: new Set(ACCESSORIES.map(x => x.id)) };

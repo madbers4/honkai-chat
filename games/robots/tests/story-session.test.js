@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CombatRoom } from '../server/combat.js';
 import { StorySession } from '../server/story-session.js';
+import { ROUND_INTRO_DURATION } from '../shared/round-intro.js';
 
 const create = (training = false) => {
   const game = new CombatRoom({ id: 'STORY', mode: training ? 'training' : 'pvp' });
@@ -73,7 +74,7 @@ test('each real round gets one exchange while reconnect countdowns do not replay
   const firstSequence = story.snapshot().roundIntro.sequenceId;
   game.setConnected('p2', false);
   const held = story.snapshot().elapsed; step(3); assert.equal(story.snapshot().elapsed, held);
-  game.setConnected('p2', true); step(6);
+  game.setConnected('p2', true); step(ROUND_INTRO_DURATION - held);
   assert.equal(story.snapshot().stage, 'complete'); assert.equal(game.phase, 'countdown');
   step(3); assert.equal(game.phase, 'fight');
   game.setConnected('p2', false); game.setConnected('p2', true); story.prepareRound();

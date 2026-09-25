@@ -1,0 +1,2572 @@
+{
+  "recipe": "jojo-v3-full-rerecording",
+  "model": "Qwen/Qwen3-TTS-12Hz-1.7B-Base",
+  "revision": "fd4b254389122332181a7c3db7f27e918eec64e3",
+  "references": {
+    "p1": {
+      "file": "jotaro-dio.mp3",
+      "range": null,
+      "text": "Ублюдок! Дио!",
+      "seed": 62101,
+      "sha256": "17bad1ef01499370b836f7a5d5761b9150d6fa23036124c095e951a54e883741",
+      "pilot": "faceoff-challenge-p1",
+      "pilotSha256": "b70455f4432e6b4cc56d989c0cf17734e87e21a7bf5f2440cc35cec814642544"
+    },
+    "p2": {
+      "file": "greeting.mp3",
+      "range": [
+        7.7,
+        11.32
+      ],
+      "text": "Что ты мне сделаешь, а, Джотаро?",
+      "seed": 62202,
+      "sha256": "780ac5cb344f3a1c9cbe514b718b183a78bac98315de0047f4726cab66bb3361",
+      "pilot": "faceoff-mode-p2",
+      "pilotSha256": "639de7c08eddd6c2aff517a6d0edc4f316e1a47c697c58e87f0137d7e43a1ed1"
+    }
+  },
+  "generationSettings": {
+    "non_streaming_mode": true,
+    "max_new_tokens": 240,
+    "temperature": 0.9,
+    "top_k": 50,
+    "top_p": 1.0,
+    "do_sample": true,
+    "repetition_penalty": 1.05
+  },
+  "processing": {
+    "tempo": 1,
+    "pitchShift": 0,
+    "mp3": "24 kHz mono 64 kbit/s",
+    "normalization": "-18 LUFS / -1.5 dBTP / LRA11",
+    "fadesMs": [
+      6,
+      12
+    ]
+  },
+  "userListeningApproved": false,
+  "copiedRecordings": [],
+  "reviewScope": "Reference recipes were selected by the user; new dialogue is entirely generated. Signal/ASR/embedding checks do not constitute human listening approval.",
+  "clips": [
+    {
+      "id": "faceoff-mode-p1",
+      "speaker": "p1",
+      "text": "Дио. Сегодня гнётся не моя броня.",
+      "synthesisText": "Дио. Сегодня гнётся не МОЯ броня!",
+      "seed": 62101,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 3.28,
+      "rawSha256": "d7a4bcd7116103b61291bd7a82a3de9b67cbc2c3bb582b9b9a96233d4810ee9c",
+      "rawWav": "faceoff-mode-p1-seed62101-raw.wav",
+      "trim": [
+        0.04,
+        3.24
+      ],
+      "generationSeconds": 5.208,
+      "pilotCosine": {
+        "p1": 0.93948,
+        "p2": 0.93902
+      },
+      "referenceCosine": {
+        "p1": 0.91467,
+        "p2": 0.92462
+      },
+      "duration": 3.2,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.4756455421447754,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.08000000000000007,
+      "integratedLUFS": -18.43,
+      "truePeakDBFS": -6.45,
+      "bytes": 26348,
+      "sha256": "b96e4ff1877a75110407a7b57555b1b7a385be4c124bc0950d228eb933cf09b8",
+      "asrText": "Дио, сегодня гнется немоя броня.",
+      "exactWordMatch": false,
+      "technicalPass": true,
+      "passed": false
+    },
+    {
+      "id": "faceoff-mode-p2",
+      "speaker": "p2",
+      "text": "Джотаро! Подвал маловат для моего величия!",
+      "synthesisText": "Джотаро! Подвал маловат для МОЕГО величия!",
+      "seed": 62203,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 4.4,
+      "rawSha256": "4ce0828f0e52727a3dd2c5de70007d0f6fda3409b1418b74a7a6af28e410f858",
+      "rawWav": "faceoff-mode-p2-seed62203-raw.wav",
+      "trim": [
+        0.14,
+        4.4
+      ],
+      "generationSeconds": 7.369,
+      "pilotCosine": {
+        "p1": 0.93988,
+        "p2": 0.9694
+      },
+      "referenceCosine": {
+        "p1": 0.93732,
+        "p2": 0.97828
+      },
+      "duration": 4.26,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5315154194831848,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.040000000000000036,
+      "integratedLUFS": -18.43,
+      "truePeakDBFS": -5.48,
+      "bytes": 34796,
+      "sha256": "ff6f9e5b907e53005a48f696e96cadadbb35a88d35cd926197dbba297cf8128f",
+      "asrText": "Джотаро, подвал маловат для моего величия",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "faceoff-greeting-open",
+      "speaker": "p2",
+      "text": "Ты приближаешься? Выход в другой стороне.",
+      "synthesisText": "Ты ПРИБЛИЖАЕШЬСЯ? Выход в другой стороне!",
+      "seed": 62202,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 3.68,
+      "rawSha256": "17a0f9e5382ef14ca9dc73492f7afc9165d137d0c5f42b93fa9aa285d1e361d0",
+      "rawWav": "faceoff-greeting-open-seed62202-raw.wav",
+      "trim": [
+        0.0,
+        3.66
+      ],
+      "generationSeconds": 5.87,
+      "pilotCosine": {
+        "p1": 0.9421,
+        "p2": 0.96715
+      },
+      "referenceCosine": {
+        "p1": 0.93609,
+        "p2": 0.96977
+      },
+      "duration": 3.66,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5514814853668213,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.08000000000000007,
+      "integratedLUFS": -18.44,
+      "truePeakDBFS": -5.04,
+      "bytes": 29996,
+      "sha256": "d90a9e90db3d9543c0eed235bfecfc6572f4c5f7dedf7d8bde8edcc0002a4382",
+      "asrText": "Ты приближаешься? Выход в другой стороне!",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "faceoff-greeting-answer",
+      "speaker": "p1",
+      "text": "Я иду туда, где надо ударить.",
+      "synthesisText": "Я иду туда, где надо УДАРИТЬ.",
+      "seed": 62101,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 3.12,
+      "rawSha256": "de0900d593a85ce829bfb53c55062ccda1df1a2f66d37e69bfa26bb4c59033cf",
+      "rawWav": "faceoff-greeting-answer-seed62101-raw.wav",
+      "trim": [
+        0.28,
+        3.12
+      ],
+      "generationSeconds": 4.807,
+      "pilotCosine": {
+        "p1": 0.97409,
+        "p2": 0.92694
+      },
+      "referenceCosine": {
+        "p1": 0.95599,
+        "p2": 0.94167
+      },
+      "duration": 2.84,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5001534223556519,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.009999999999999787,
+      "integratedLUFS": -18.44,
+      "truePeakDBFS": -5.96,
+      "bytes": 23468,
+      "sha256": "4b60fd186596735180a1783eff00e7a324b23befd5051b928c33351e3f1668df",
+      "asrText": "Я иду туда, где надо ударить.",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "faceoff-greeting-package",
+      "speaker": "p2",
+      "text": "Какая дерзость! Даже твои винты дрожат!",
+      "synthesisText": "Какая ДЕРЗОСТЬ! Даже твои винты дрожат!",
+      "seed": 62202,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 3.28,
+      "rawSha256": "ef41691b96e615f4267e51950f7e41ffd9ea52609d0adb2f17052361925e98e9",
+      "rawWav": "faceoff-greeting-package-seed62202-raw.wav",
+      "trim": [
+        0.05,
+        3.28
+      ],
+      "generationSeconds": 4.772,
+      "pilotCosine": {
+        "p1": 0.94715,
+        "p2": 0.96846
+      },
+      "referenceCosine": {
+        "p1": 0.93289,
+        "p2": 0.97252
+      },
+      "duration": 3.23,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.6174328327178955,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.020000000000000018,
+      "integratedLUFS": -18.46,
+      "truePeakDBFS": -4.09,
+      "bytes": 26540,
+      "sha256": "f289d5193035f8de1a03d9bb2ed4da784796949583e824e12ad783ebc5d34f05",
+      "asrText": "Какая дерзость! Даже твои винты дрожат!",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "faceoff-challenge-p1",
+      "speaker": "p1",
+      "text": "Это твой корпус. Мой уже рядом.",
+      "synthesisText": "Это ТВОЙ корпус. Мой уже рядом!",
+      "seed": 62101,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 3.600041666666667,
+      "rawSha256": "0ad5df3df98741200a94bf97325b19c9c04e95b884182f11806a8c47da92be84",
+      "rawWav": "faceoff-challenge-p1-seed62101-raw.wav",
+      "trim": [
+        0.03,
+        3.49
+      ],
+      "generationSeconds": 5.748,
+      "pilotCosine": {
+        "p1": 0.95766,
+        "p2": 0.93281
+      },
+      "referenceCosine": {
+        "p1": 0.94398,
+        "p2": 0.94926
+      },
+      "duration": 3.46,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5760728716850281,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.07,
+      "trailingSilence": 0.08000000000000007,
+      "integratedLUFS": -18.45,
+      "truePeakDBFS": -4.61,
+      "bytes": 28460,
+      "sha256": "599cc56474080d3a66ea165ca0a960da3e09615151b9521c7411a73ac5ea06d9",
+      "asrText": "Это твой корпус! Мой уже рядом!",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "faceoff-taunt-p2",
+      "speaker": "p2",
+      "text": "Я бы остановил время ради этой позы!",
+      "synthesisText": "Я бы остановил время ради этой ПОЗЫ!",
+      "seed": 62202,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.72,
+      "rawSha256": "f899a6bc13c03dde02d8fb000e0bd6b6024ddd44d11c69919c1655afb3d5c124",
+      "rawWav": "faceoff-taunt-p2-seed62202-raw.wav",
+      "trim": [
+        0.0,
+        2.72
+      ],
+      "generationSeconds": 4.429,
+      "pilotCosine": {
+        "p1": 0.94754,
+        "p2": 0.97142
+      },
+      "referenceCosine": {
+        "p1": 0.9375,
+        "p2": 0.97235
+      },
+      "duration": 2.72,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5511757135391235,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.040000000000000036,
+      "integratedLUFS": -18.47,
+      "truePeakDBFS": -5.07,
+      "bytes": 22508,
+      "sha256": "260c9755a45c269e1408f1f4a854428b626c3c2957cdaa457a09feb95edec5bb",
+      "asrText": "Я бы остановил время ради этой позы.",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "faceoff-resolve-p1",
+      "speaker": "p1",
+      "text": "Сначала останови болтовню. Потом позируй.",
+      "synthesisText": "Сначала останови БОЛТОВНЮ. Потом позируй.",
+      "seed": 62101,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 3.600041666666667,
+      "rawSha256": "22b6a9a1b9359940ec908c9ed2d6ca24193b7bb2e366367db1b6082454c5fc2e",
+      "rawWav": "faceoff-resolve-p1-seed62101-raw.wav",
+      "trim": [
+        0.24,
+        3.36
+      ],
+      "generationSeconds": 5.372,
+      "pilotCosine": {
+        "p1": 0.97483,
+        "p2": 0.92199
+      },
+      "referenceCosine": {
+        "p1": 0.95506,
+        "p2": 0.93685
+      },
+      "duration": 3.12,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.6448297500610352,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.08000000000000007,
+      "integratedLUFS": -18.45,
+      "truePeakDBFS": -3.7,
+      "bytes": 25580,
+      "sha256": "eb3af2d55b681c536b7b95d7f2fe0baaae7eed99eb2f5e8f733ed48669a74d3f",
+      "asrText": "«Сначала останови болтовню, потом позируй».",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "faceoff-fight-p2",
+      "speaker": "p2",
+      "text": "Подходи, железный нахал! Муда!",
+      "synthesisText": "Подходи, железный НАХАЛ! Муда!",
+      "seed": 62202,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 3.68,
+      "rawSha256": "edd3c18214ad7cb5df0844d889295a3bc28d201b1de6eae39e37decc94287a99",
+      "rawWav": "faceoff-fight-p2-seed62202-raw.wav",
+      "trim": [
+        0.05,
+        3.58
+      ],
+      "generationSeconds": 5.681,
+      "pilotCosine": {
+        "p1": 0.94903,
+        "p2": 0.9692
+      },
+      "referenceCosine": {
+        "p1": 0.93508,
+        "p2": 0.97158
+      },
+      "duration": 3.53,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.6147392392158508,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.07999999999999963,
+      "integratedLUFS": -18.44,
+      "truePeakDBFS": -4.15,
+      "bytes": 29036,
+      "sha256": "be98f991f6bc8f91874434b592acc6b92c6ad259c3925a6bc4feea6b7aee7366",
+      "asrText": "Подходи, железный нахал, муда!",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-warranty-setup-p1",
+      "speaker": "p1",
+      "text": "Ты всё ещё идёшь ко мне?",
+      "synthesisText": "Ты всё ещё ИДЁШЬ ко мне?",
+      "seed": 62101,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.48,
+      "rawSha256": "ef802f76b2e40c0c554a9e0c07d01bdf2084f8d2345e78d56fb11eead4727748",
+      "rawWav": "round-warranty-setup-p1-seed62101-raw.wav",
+      "trim": [
+        0.07,
+        2.3
+      ],
+      "generationSeconds": 3.968,
+      "pilotCosine": {
+        "p1": 0.91444,
+        "p2": 0.9362
+      },
+      "referenceCosine": {
+        "p1": 0.90663,
+        "p2": 0.93033
+      },
+      "duration": 2.23,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.4647279381752014,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.08000000000000007,
+      "integratedLUFS": -18.45,
+      "truePeakDBFS": -6.03,
+      "bytes": 18476,
+      "sha256": "79d34e6cf8dd62afebe84f7f79493c7b5c3f32c3bed0fcb7947ff0bd657fb4af",
+      "asrText": "Ты все еще идешь ко мне?",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-warranty-setup-p2",
+      "speaker": "p2",
+      "text": "Ты всё ещё идёшь ко мне?",
+      "synthesisText": "Ты всё ещё идёшь ко МНЕ?!",
+      "seed": 62202,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.0,
+      "rawSha256": "a35d136006b5c5645d39e16d54a925702074f8d6ee93e15801f975e709b3839c",
+      "rawWav": "round-warranty-setup-p2-seed62202-raw.wav",
+      "trim": [
+        0.01,
+        2.0
+      ],
+      "generationSeconds": 3.237,
+      "pilotCosine": {
+        "p1": 0.93018,
+        "p2": 0.95652
+      },
+      "referenceCosine": {
+        "p1": 0.92713,
+        "p2": 0.96483
+      },
+      "duration": 1.99,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.45667293667793274,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.07000000000000006,
+      "integratedLUFS": -18.45,
+      "truePeakDBFS": -6.79,
+      "bytes": 16556,
+      "sha256": "a0ff383ba9f30de3f17e3250dd6f31862dd06ebb857074c77235be457551ad23",
+      "asrText": "Ты все еще идешь ко мне?",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-warranty-reply-p1",
+      "speaker": "p1",
+      "text": "Твою броню издалека не помнёшь!",
+      "synthesisText": "Твою БРОНЮ издалека не помнёшь!",
+      "seed": 62101,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 1.92,
+      "rawSha256": "721558248c7d08f6b8d91392e992981abd2f1d1ead2378901b10773857fad42f",
+      "rawWav": "round-warranty-reply-p1-seed62101-raw.wav",
+      "trim": [
+        0.0,
+        1.92
+      ],
+      "generationSeconds": 3.273,
+      "pilotCosine": {
+        "p1": 0.95349,
+        "p2": 0.94342
+      },
+      "referenceCosine": {
+        "p1": 0.94307,
+        "p2": 0.943
+      },
+      "duration": 1.92,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5131469964981079,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.02,
+      "trailingSilence": 0.020000000000000018,
+      "integratedLUFS": -18.44,
+      "truePeakDBFS": -5.8,
+      "bytes": 15980,
+      "sha256": "1df083aee381ecc9f6bdfb2aa19ff8b981d842f0f5af414c40ef4b2f08c10c41",
+      "asrText": "Твою броню издалека не помнёшь.",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-warranty-reply-p2",
+      "speaker": "p2",
+      "text": "Твою броню издалека не помнёшь!",
+      "synthesisText": "Твою броню издалека не ПОМНЁШЬ!",
+      "seed": 62202,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.4,
+      "rawSha256": "eddbc2080d560624ced73d4262de612cfb3715ed4a0e6e67df6d878a43a7e178",
+      "rawWav": "round-warranty-reply-p2-seed62202-raw.wav",
+      "trim": [
+        0.02,
+        2.26
+      ],
+      "generationSeconds": 3.927,
+      "pilotCosine": {
+        "p1": 0.9486,
+        "p2": 0.97217
+      },
+      "referenceCosine": {
+        "p1": 0.93086,
+        "p2": 0.95984
+      },
+      "duration": 2.24,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5176725387573242,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.08000000000000007,
+      "integratedLUFS": -18.45,
+      "truePeakDBFS": -5.64,
+      "bytes": 18668,
+      "sha256": "a32d579f06f176e4e08fb70111e352339540622b64086f36051739c6fd89acf9",
+      "asrText": "Твою броню издалека не помнёшь!",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-quiet-setup-p1",
+      "speaker": "p1",
+      "text": "Слышишь зловещий гул?",
+      "synthesisText": "Слышишь зловещий ГУЛ?",
+      "seed": 62101,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.32,
+      "rawSha256": "b225519663aeffb6e1ae4641723c311a65432e2812612fc415db8b1f4ab62cda",
+      "rawWav": "round-quiet-setup-p1-seed62101-raw.wav",
+      "trim": [
+        0.08,
+        2.32
+      ],
+      "generationSeconds": 4.279,
+      "pilotCosine": {
+        "p1": 0.9587,
+        "p2": 0.92473
+      },
+      "referenceCosine": {
+        "p1": 0.94296,
+        "p2": 0.93085
+      },
+      "duration": 2.24,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.4575612246990204,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.07000000000000028,
+      "integratedLUFS": -18.44,
+      "truePeakDBFS": -6.79,
+      "bytes": 18668,
+      "sha256": "9f67153d5e3130bd61304bf2a0cec1cdf4a678f9a5ffc9d66e308f603de83739",
+      "asrText": "— Слышишь зловещий гул?",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-quiet-setup-p2",
+      "speaker": "p2",
+      "text": "Слышишь зловещий гул?",
+      "synthesisText": "Слышишь ЗЛОВЕЩИЙ гул?!",
+      "seed": 62202,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.0,
+      "rawSha256": "bdce1fbcbc4ca5878630a9bb0539e39c1b7d47be2b1e245d04692700ac53f33b",
+      "rawWav": "round-quiet-setup-p2-seed62202-raw.wav",
+      "trim": [
+        0.01,
+        2.0
+      ],
+      "generationSeconds": 3.895,
+      "pilotCosine": {
+        "p1": 0.94198,
+        "p2": 0.96992
+      },
+      "referenceCosine": {
+        "p1": 0.93465,
+        "p2": 0.96817
+      },
+      "duration": 1.99,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.4285934567451477,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.06000000000000005,
+      "integratedLUFS": -18.44,
+      "truePeakDBFS": -6.92,
+      "bytes": 16556,
+      "sha256": "9af7f40c29d1e819d3032ac3422942615da6c287c14c91542ae654e188edaa5f",
+      "asrText": "Слышишь, зловещий гул?",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-quiet-reply-p1",
+      "speaker": "p1",
+      "text": "Это твои колени. Я бы проверил.",
+      "synthesisText": "Это твои КОЛЕНИ. Я бы проверил.",
+      "seed": 62101,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 3.28,
+      "rawSha256": "e25f9b5510a31d424b08929fbf052e5802e47ebe37f01ba3c34cca0066f2389b",
+      "rawWav": "round-quiet-reply-p1-seed62101-raw.wav",
+      "trim": [
+        0.03,
+        3.21
+      ],
+      "generationSeconds": 5.836,
+      "pilotCosine": {
+        "p1": 0.96362,
+        "p2": 0.91964
+      },
+      "referenceCosine": {
+        "p1": 0.94966,
+        "p2": 0.93357
+      },
+      "duration": 3.18,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.4844977855682373,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.07,
+      "trailingSilence": 0.08000000000000007,
+      "integratedLUFS": -18.44,
+      "truePeakDBFS": -6.29,
+      "bytes": 26156,
+      "sha256": "768af6437d6026fc1cdbf272f8760513f724f40093a0899c993a86fb7615835f",
+      "asrText": "Это твои колени, я бы проверил.",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-quiet-reply-p2",
+      "speaker": "p2",
+      "text": "Это твои колени. Я бы проверил.",
+      "synthesisText": "Это ТВОИ колени! Я бы проверил.",
+      "seed": 62202,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 3.2000416666666665,
+      "rawSha256": "172fb67df8025c9acd0799ff7aa6e7e8ac1f59ecd3db9204de06b763d15f377a",
+      "rawWav": "round-quiet-reply-p2-seed62202-raw.wav",
+      "trim": [
+        0.01,
+        3.1
+      ],
+      "generationSeconds": 6.902,
+      "pilotCosine": {
+        "p1": 0.93595,
+        "p2": 0.96493
+      },
+      "referenceCosine": {
+        "p1": 0.93118,
+        "p2": 0.97358
+      },
+      "duration": 3.09,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5829461812973022,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.08000000000000007,
+      "integratedLUFS": -18.45,
+      "truePeakDBFS": -4.63,
+      "bytes": 25388,
+      "sha256": "465c204b0e6044073dd8a1b64a40686392777537e8b6773bd4dc4809417cefdb",
+      "asrText": "Это твои колени! Я бы проверил!",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-manual-setup-p1",
+      "speaker": "p1",
+      "text": "У меня есть идеальный план!",
+      "synthesisText": "У меня есть идеальный ПЛАН!",
+      "seed": 62101,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.0,
+      "rawSha256": "7c4e4b3e69a505d1193ec8bc6823e5baba76837c2afb2eb9550872433ff2e59b",
+      "rawWav": "round-manual-setup-p1-seed62101-raw.wav",
+      "trim": [
+        0.0,
+        2.0
+      ],
+      "generationSeconds": 4.52,
+      "pilotCosine": {
+        "p1": 0.91991,
+        "p2": 0.93864
+      },
+      "referenceCosine": {
+        "p1": 0.90436,
+        "p2": 0.91781
+      },
+      "duration": 2.0,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.548120379447937,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.040000000000000036,
+      "integratedLUFS": -18.47,
+      "truePeakDBFS": -5.21,
+      "bytes": 16748,
+      "sha256": "bd7720f2fc3dd0cfcea61098c3526dd755b1ab5d303249b00c863bdb2efb9b3e",
+      "asrText": "У меня есть идеальный план!",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-manual-setup-p2",
+      "speaker": "p2",
+      "text": "У меня есть идеальный план!",
+      "synthesisText": "У меня есть ИДЕАЛЬНЫЙ план!",
+      "seed": 62202,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.24,
+      "rawSha256": "7145a328de38ddab1da87d2cd0df30afb7192fe3087243b8ef7898e11a718bf2",
+      "rawWav": "round-manual-setup-p2-seed62202-raw.wav",
+      "trim": [
+        0.06,
+        2.1
+      ],
+      "generationSeconds": 4.221,
+      "pilotCosine": {
+        "p1": 0.92385,
+        "p2": 0.95375
+      },
+      "referenceCosine": {
+        "p1": 0.91922,
+        "p2": 0.95991
+      },
+      "duration": 2.04,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.45555925369262695,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.08000000000000007,
+      "integratedLUFS": -18.45,
+      "truePeakDBFS": -6.83,
+      "bytes": 16940,
+      "sha256": "ee7384a827082f8fd55798a7c4da04f5165904b9557bd41e1d55faf5387f9961",
+      "asrText": "У меня есть идеальный план!",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-manual-reply-p1",
+      "speaker": "p1",
+      "text": "Главное — не забудь удивиться.",
+      "synthesisText": "Главное — не забудь УДИВИТЬСЯ.",
+      "seed": 62101,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 1.76,
+      "rawSha256": "cc02d2be2add5b446b70fbbe0ab138269adf5becae131dd2786539b11dad3bbb",
+      "rawWav": "round-manual-reply-p1-seed62101-raw.wav",
+      "trim": [
+        0.02,
+        1.76
+      ],
+      "generationSeconds": 2.725,
+      "pilotCosine": {
+        "p1": 0.9183,
+        "p2": 0.93207
+      },
+      "referenceCosine": {
+        "p1": 0.90165,
+        "p2": 0.90424
+      },
+      "duration": 1.74,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.6086304187774658,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.030000000000000027,
+      "integratedLUFS": -18.44,
+      "truePeakDBFS": -4.25,
+      "bytes": 14636,
+      "sha256": "c79c93476e618cfad2c2fcce296c43494e3bc82ae8d833ea7b2c049d57d0ba36",
+      "asrText": "Главное, не забудь удивиться.",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-manual-reply-p2",
+      "speaker": "p2",
+      "text": "Главное — не забудь удивиться.",
+      "synthesisText": "Главное — НЕ забудь удивиться!",
+      "seed": 62202,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.4,
+      "rawSha256": "ea12a4c45a7cb2d37ec203a705432e36300619eb340fdf1e0885086140774618",
+      "rawWav": "round-manual-reply-p2-seed62202-raw.wav",
+      "trim": [
+        0.0,
+        2.19
+      ],
+      "generationSeconds": 3.958,
+      "pilotCosine": {
+        "p1": 0.95517,
+        "p2": 0.96179
+      },
+      "referenceCosine": {
+        "p1": 0.94022,
+        "p2": 0.96602
+      },
+      "duration": 2.19,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5197972059249878,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.05,
+      "trailingSilence": 0.08000000000000007,
+      "integratedLUFS": -18.45,
+      "truePeakDBFS": -5.5,
+      "bytes": 18284,
+      "sha256": "6d3279c73552427e1ea164092177fb0b4a648cfdab521f18145b0f9076ebb98d",
+      "asrText": "Главное не забудь удивиться.",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-spares-setup-p1",
+      "speaker": "p1",
+      "text": "Что громче: ора или муда?",
+      "synthesisText": "Что громче: ОРА или муда?",
+      "seed": 62101,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 3.2,
+      "rawSha256": "0ef709aa6ec160dee1bce1d23e329dd05ee73a36238b19aef8d669ecc568f08a",
+      "rawWav": "round-spares-setup-p1-seed62101-raw.wav",
+      "trim": [
+        0.15,
+        3.2
+      ],
+      "generationSeconds": 5.481,
+      "pilotCosine": {
+        "p1": 0.95996,
+        "p2": 0.93187
+      },
+      "referenceCosine": {
+        "p1": 0.95175,
+        "p2": 0.93606
+      },
+      "duration": 3.05,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.47311097383499146,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.029999999999999805,
+      "integratedLUFS": -18.47,
+      "truePeakDBFS": -6.3,
+      "bytes": 25196,
+      "sha256": "523df9e3e221302d08e510fa4d3d718b6241531d6517c0a9c760dc763fc63c04",
+      "asrText": "Что громче? Ора или муда?",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-spares-setup-p2",
+      "speaker": "p2",
+      "text": "Что громче: ора или муда?",
+      "synthesisText": "Что громче: ора или МУДА?!",
+      "seed": 62202,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.88,
+      "rawSha256": "fe13d8a110131f980bf7132c41c82bdf4243d5c7e7258594b3e8f4d2bbceb1a1",
+      "rawWav": "round-spares-setup-p2-seed62202-raw.wav",
+      "trim": [
+        0.03,
+        2.79
+      ],
+      "generationSeconds": 4.523,
+      "pilotCosine": {
+        "p1": 0.94154,
+        "p2": 0.96568
+      },
+      "referenceCosine": {
+        "p1": 0.93463,
+        "p2": 0.9749
+      },
+      "duration": 2.76,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5518600344657898,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.07,
+      "trailingSilence": 0.07999999999999963,
+      "integratedLUFS": -18.44,
+      "truePeakDBFS": -5.15,
+      "bytes": 22700,
+      "sha256": "3d77271f85bd83ca94904c495fcfd4b6b9a2862e04aaa69280f8549f0f9ac2ef",
+      "asrText": "Что громче? Ора или муда?",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-spares-reply-p1",
+      "speaker": "p1",
+      "text": "Проверим на твоём корпусе!",
+      "synthesisText": "Проверим на ТВОЁМ корпусе!",
+      "seed": 62101,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.0,
+      "rawSha256": "5dd16ae580ce105c4a08a413e0cfd21ee00a37689b0b60eb946d4c5046205bb1",
+      "rawWav": "round-spares-reply-p1-seed62101-raw.wav",
+      "trim": [
+        0.0,
+        1.99
+      ],
+      "generationSeconds": 3.197,
+      "pilotCosine": {
+        "p1": 0.96845,
+        "p2": 0.94534
+      },
+      "referenceCosine": {
+        "p1": 0.95282,
+        "p2": 0.9435
+      },
+      "duration": 1.99,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5899085402488708,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.07000000000000006,
+      "integratedLUFS": -18.43,
+      "truePeakDBFS": -4.52,
+      "bytes": 16556,
+      "sha256": "caade9453e584c2e420aa3cf9931b8a78e7b298e622eec8a8b05feaa2cf067bc",
+      "asrText": "Проверим на твоём корпусе.",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-spares-reply-p2",
+      "speaker": "p2",
+      "text": "Проверим на твоём корпусе!",
+      "synthesisText": "ПРОВЕРИМ на твоём корпусе!",
+      "seed": 62203,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.48,
+      "rawSha256": "9c4f29e29a4a666c30b1fbf871060f0b58911310f1103a9e13b87083d783181c",
+      "rawWav": "round-spares-reply-p2-seed62203-raw.wav",
+      "trim": [
+        0.11,
+        2.42
+      ],
+      "generationSeconds": 4.125,
+      "pilotCosine": {
+        "p1": 0.95847,
+        "p2": 0.9503
+      },
+      "referenceCosine": {
+        "p1": 0.94417,
+        "p2": 0.95815
+      },
+      "duration": 2.31,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5589417815208435,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.08000000000000007,
+      "integratedLUFS": -18.45,
+      "truePeakDBFS": -5.03,
+      "bytes": 19244,
+      "sha256": "338d117eb1c18799d6101fac7c25ed8a7eaf87a5e153c74022b0897f07a6c299",
+      "asrText": "Проверим на твоём корпусе.",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-rust-setup-p1",
+      "speaker": "p1",
+      "text": "Зацени мою устрашающую позу!",
+      "synthesisText": "Зацени мою устрашающую ПОЗУ!",
+      "seed": 62101,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.96,
+      "rawSha256": "e8772cef2b3b8f188cb3fda569d8222c002ffe40b63aa11fe6c62da7de427828",
+      "rawWav": "round-rust-setup-p1-seed62101-raw.wav",
+      "trim": [
+        0.03,
+        2.92
+      ],
+      "generationSeconds": 5.019,
+      "pilotCosine": {
+        "p1": 0.97213,
+        "p2": 0.92027
+      },
+      "referenceCosine": {
+        "p1": 0.95832,
+        "p2": 0.94245
+      },
+      "duration": 2.89,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.6185203790664673,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.08000000000000007,
+      "integratedLUFS": -18.44,
+      "truePeakDBFS": -4.17,
+      "bytes": 23852,
+      "sha256": "f73e2d63492b9929976ffd95fd9912af74a7ee1b1ad672a7ca3f2748b02accbc",
+      "asrText": "Зацени мою устрашающую позу.",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-rust-setup-p2",
+      "speaker": "p2",
+      "text": "Зацени мою устрашающую позу!",
+      "synthesisText": "Зацени МОЮ устрашающую позу!",
+      "seed": 62202,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 3.28,
+      "rawSha256": "066c9467eff63ebde21542342982f17c9563a6d1c086e43ba91eb4046dcdd492",
+      "rawWav": "round-rust-setup-p2-seed62202-raw.wav",
+      "trim": [
+        0.02,
+        3.27
+      ],
+      "generationSeconds": 5.144,
+      "pilotCosine": {
+        "p1": 0.93559,
+        "p2": 0.96792
+      },
+      "referenceCosine": {
+        "p1": 0.92654,
+        "p2": 0.97351
+      },
+      "duration": 3.25,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.49614107608795166,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.08000000000000007,
+      "integratedLUFS": -18.44,
+      "truePeakDBFS": -6.08,
+      "bytes": 26732,
+      "sha256": "95508eb2d02558512119cb2129ceb5f275379dfe75e1233004b68d7ac591fbde",
+      "asrText": "Зацени мою устрашающую позу!",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-rust-reply-p1",
+      "speaker": "p1",
+      "text": "Замри. Хочу запомнить, куда бить!",
+      "synthesisText": "Замри. Хочу запомнить, КУДА бить!",
+      "seed": 62101,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 3.44,
+      "rawSha256": "9c4acf8fd153b77a8a19f0fb7bb302dfc91203454719d8f84d3ef358a7f8acb1",
+      "rawWav": "round-rust-reply-p1-seed62101-raw.wav",
+      "trim": [
+        0.03,
+        3.44
+      ],
+      "generationSeconds": 5.637,
+      "pilotCosine": {
+        "p1": 0.97301,
+        "p2": 0.93586
+      },
+      "referenceCosine": {
+        "p1": 0.95888,
+        "p2": 0.94287
+      },
+      "duration": 3.41,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.6005584597587585,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.010000000000000231,
+      "integratedLUFS": -18.45,
+      "truePeakDBFS": -4.4,
+      "bytes": 28076,
+      "sha256": "5e81d360c97c17603ac8ebd6753895628cd04df9f467ddda8e7e6061f0e7ec64",
+      "asrText": "Замри! Хочу запомнить, куда бить!",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-rust-reply-p2",
+      "speaker": "p2",
+      "text": "Замри. Хочу запомнить, куда бить!",
+      "synthesisText": "ЗАМРИ! Хочу запомнить, куда бить.",
+      "seed": 62202,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 3.6,
+      "rawSha256": "ccf493c8e62a930bf15925870821a6957635fa599af46f076bac772982818775",
+      "rawWav": "round-rust-reply-p2-seed62202-raw.wav",
+      "trim": [
+        0.01,
+        3.6
+      ],
+      "generationSeconds": 5.802,
+      "pilotCosine": {
+        "p1": 0.93797,
+        "p2": 0.966
+      },
+      "referenceCosine": {
+        "p1": 0.9254,
+        "p2": 0.96953
+      },
+      "duration": 3.59,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.6151638627052307,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.029999999999999805,
+      "integratedLUFS": -18.45,
+      "truePeakDBFS": -4.22,
+      "bytes": 29420,
+      "sha256": "069edac76fad5ad303431ccf8cd88df31c8caa0a5411bc62d5f19a0e3057abe2",
+      "asrText": "Замри! Хочу запомнить, куда бить!",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-floor-setup-p1",
+      "speaker": "p1",
+      "text": "Моему величию здесь тесно!",
+      "synthesisText": "Моему величию здесь ТЕСНО!",
+      "seed": 62101,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.56,
+      "rawSha256": "1dbc56df08a52d4931836cc8b65adc1743ece725f797389bd0938e321082c53d",
+      "rawWav": "round-floor-setup-p1-seed62101-raw.wav",
+      "trim": [
+        0.01,
+        2.56
+      ],
+      "generationSeconds": 3.981,
+      "pilotCosine": {
+        "p1": 0.9227,
+        "p2": 0.93845
+      },
+      "referenceCosine": {
+        "p1": 0.90331,
+        "p2": 0.91735
+      },
+      "duration": 2.55,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5735740065574646,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.040000000000000036,
+      "integratedLUFS": -18.43,
+      "truePeakDBFS": -4.69,
+      "bytes": 21164,
+      "sha256": "afa90c861d8b03ef424d5a23c5a53256c846c4ac4193321ba7e6b0ded36d04f6",
+      "asrText": "Моему величию здесь тесно!",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-floor-setup-p2",
+      "speaker": "p2",
+      "text": "Моему величию здесь тесно!",
+      "synthesisText": "МОЕМУ величию здесь тесно!",
+      "seed": 62202,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.32,
+      "rawSha256": "ec59c5a152b60419ab148b6e08cfe7707fbead5dc6d0a12181d62184b609adcc",
+      "rawWav": "round-floor-setup-p2-seed62202-raw.wav",
+      "trim": [
+        0.0,
+        2.29
+      ],
+      "generationSeconds": 3.801,
+      "pilotCosine": {
+        "p1": 0.94003,
+        "p2": 0.96097
+      },
+      "referenceCosine": {
+        "p1": 0.93339,
+        "p2": 0.9664
+      },
+      "duration": 2.29,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.4750685691833496,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.06,
+      "trailingSilence": 0.08000000000000007,
+      "integratedLUFS": -18.43,
+      "truePeakDBFS": -6.45,
+      "bytes": 19052,
+      "sha256": "e69cc87776c0a535ab78b2ccc5603ca2558c5a63373dc956675a0177256e67e5",
+      "asrText": "Моему величию здесь тесно.",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-floor-reply-p1",
+      "speaker": "p1",
+      "text": "Пригнись. Тут низкий потолок.",
+      "synthesisText": "Пригнись. Тут НИЗКИЙ потолок.",
+      "seed": 62101,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 3.36,
+      "rawSha256": "a388897fc835fb7c4fb9714e7f2cd49fa33b4b391e40a396b4ce0a7886901ad5",
+      "rawWav": "round-floor-reply-p1-seed62101-raw.wav",
+      "trim": [
+        0.04,
+        3.36
+      ],
+      "generationSeconds": 5.547,
+      "pilotCosine": {
+        "p1": 0.96576,
+        "p2": 0.93318
+      },
+      "referenceCosine": {
+        "p1": 0.95547,
+        "p2": 0.94509
+      },
+      "duration": 3.32,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5369167923927307,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.009999999999999787,
+      "integratedLUFS": -18.43,
+      "truePeakDBFS": -5.37,
+      "bytes": 27308,
+      "sha256": "5226187a936bbf5de880e262e9b4a6dee4c20285079cfd799ce4fe61a06a3543",
+      "asrText": "Пригнись, тут низкий потолок.",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-floor-reply-p2",
+      "speaker": "p2",
+      "text": "Пригнись. Тут низкий потолок.",
+      "synthesisText": "ПРИГНИСЬ! Тут низкий потолок.",
+      "seed": 62202,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 3.12,
+      "rawSha256": "8237a09804784c62d186ba33797e6414af7284d6659d1c44d8565de4e13a4c15",
+      "rawWav": "round-floor-reply-p2-seed62202-raw.wav",
+      "trim": [
+        0.0,
+        3.12
+      ],
+      "generationSeconds": 4.786,
+      "pilotCosine": {
+        "p1": 0.9291,
+        "p2": 0.96092
+      },
+      "referenceCosine": {
+        "p1": 0.92764,
+        "p2": 0.97243
+      },
+      "duration": 3.12,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.704204261302948,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.020000000000000018,
+      "integratedLUFS": -18.45,
+      "truePeakDBFS": -3.05,
+      "bytes": 25580,
+      "sha256": "a89d9252821ab4f70bdce194836e6eed918531e3e12282adaccaabbd8295b3a1",
+      "asrText": "Пригнись! Тут низкий потолок!",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-calculate-setup-p1",
+      "speaker": "p1",
+      "text": "Я бы остановил само время!",
+      "synthesisText": "Я бы ОСТАНОВИЛ само время!",
+      "seed": 62101,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.72,
+      "rawSha256": "b228677d47473def35728c2887e5d3f6ce599a7bd89e9dfb8158a4f3a27cde2b",
+      "rawWav": "round-calculate-setup-p1-seed62101-raw.wav",
+      "trim": [
+        0.38,
+        2.72
+      ],
+      "generationSeconds": 4.466,
+      "pilotCosine": {
+        "p1": 0.96772,
+        "p2": 0.93229
+      },
+      "referenceCosine": {
+        "p1": 0.95788,
+        "p2": 0.94511
+      },
+      "duration": 2.34,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5573999881744385,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0,
+      "integratedLUFS": -18.46,
+      "truePeakDBFS": -5.08,
+      "bytes": 19436,
+      "sha256": "33f56c76be90a19ee0c03007ce63e186570e44c728927785515a51fe1a31366a",
+      "asrText": "Я бы остановил само время.",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-calculate-setup-p2",
+      "speaker": "p2",
+      "text": "Я бы остановил само время!",
+      "synthesisText": "Я бы остановил САМО время!",
+      "seed": 62202,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.32,
+      "rawSha256": "dd4507623b2748b952c22120dd8f5490cb2797dc66a98ce79b32a4ac7e93af7f",
+      "rawWav": "round-calculate-setup-p2-seed62202-raw.wav",
+      "trim": [
+        0.1,
+        2.25
+      ],
+      "generationSeconds": 3.89,
+      "pilotCosine": {
+        "p1": 0.94051,
+        "p2": 0.96645
+      },
+      "referenceCosine": {
+        "p1": 0.92693,
+        "p2": 0.96876
+      },
+      "duration": 2.15,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5181996822357178,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.08000000000000007,
+      "integratedLUFS": -18.47,
+      "truePeakDBFS": -5.64,
+      "bytes": 17900,
+      "sha256": "20a58948deaee74dd64cc61298fd7c76a2a8d637e82c950010c1bfc3dd5d5516",
+      "asrText": "Я бы остановил само время!",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-calculate-reply-p1",
+      "speaker": "p1",
+      "text": "Ради паузы между оправданиями?",
+      "synthesisText": "Ради паузы между ОПРАВДАНИЯМИ?",
+      "seed": 62101,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 3.2,
+      "rawSha256": "241146c0187178f131ff44dcbf9bc92c61a28cd6490323d585efe6fd0896203d",
+      "rawWav": "round-calculate-reply-p1-seed62101-raw.wav",
+      "trim": [
+        0.18,
+        3.2
+      ],
+      "generationSeconds": 5.01,
+      "pilotCosine": {
+        "p1": 0.96844,
+        "p2": 0.93993
+      },
+      "referenceCosine": {
+        "p1": 0.94648,
+        "p2": 0.94326
+      },
+      "duration": 3.02,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5059366822242737,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.020000000000000018,
+      "integratedLUFS": -18.43,
+      "truePeakDBFS": -5.89,
+      "bytes": 24812,
+      "sha256": "3509915436cd8f4a93a5ac959f71663e585e1e1a21b637f85289440cad37d29d",
+      "asrText": "Ради паузы между оправданиями",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-calculate-reply-p2",
+      "speaker": "p2",
+      "text": "Ради паузы между оправданиями?",
+      "synthesisText": "Ради ПАУЗЫ между оправданиями?!",
+      "seed": 62202,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 3.28,
+      "rawSha256": "adbbd40a3b237adbe7836f4cbfdb7c146150361ea280d9699357d59a617e41c3",
+      "rawWav": "round-calculate-reply-p2-seed62202-raw.wav",
+      "trim": [
+        0.15,
+        3.28
+      ],
+      "generationSeconds": 5.232,
+      "pilotCosine": {
+        "p1": 0.9427,
+        "p2": 0.96212
+      },
+      "referenceCosine": {
+        "p1": 0.93671,
+        "p2": 0.96899
+      },
+      "duration": 3.13,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5660807490348816,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.040000000000000036,
+      "integratedLUFS": -18.46,
+      "truePeakDBFS": -4.86,
+      "bytes": 25772,
+      "sha256": "cf193f1257bc7b651eeb08175ed04c8233ac028d8a4e490b5584b645a137df32",
+      "asrText": "Ради паузы между оправданиями.",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-music-setup-p1",
+      "speaker": "p1",
+      "text": "Это мой звёздный выход!",
+      "synthesisText": "Это мой ЗВЁЗДНЫЙ выход!",
+      "seed": 62101,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.16,
+      "rawSha256": "8a8cf7f90bb6a25918a4940a7264fba61b243e47f6cce3e2f613b1a1e251bb7c",
+      "rawWav": "round-music-setup-p1-seed62101-raw.wav",
+      "trim": [
+        0.01,
+        2.16
+      ],
+      "generationSeconds": 3.442,
+      "pilotCosine": {
+        "p1": 0.96415,
+        "p2": 0.92345
+      },
+      "referenceCosine": {
+        "p1": 0.95854,
+        "p2": 0.9353
+      },
+      "duration": 2.15,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5249983668327332,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0,
+      "integratedLUFS": -18.45,
+      "truePeakDBFS": -5.54,
+      "bytes": 17900,
+      "sha256": "9944b9ce65d6e6329f15ea6ed13826e2aef140bb36a0682435199fcf9e045af5",
+      "asrText": "Это мой звездный выход.",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-music-setup-p2",
+      "speaker": "p2",
+      "text": "Это мой звёздный выход!",
+      "synthesisText": "Это МОЙ звёздный выход!",
+      "seed": 62202,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 1.92,
+      "rawSha256": "102d890140929fbb867079599b60c1e9a214860909767b71030825893663b768",
+      "rawWav": "round-music-setup-p2-seed62202-raw.wav",
+      "trim": [
+        0.0,
+        1.92
+      ],
+      "generationSeconds": 3.031,
+      "pilotCosine": {
+        "p1": 0.94533,
+        "p2": 0.96392
+      },
+      "referenceCosine": {
+        "p1": 0.93311,
+        "p2": 0.97016
+      },
+      "duration": 1.92,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5077036619186401,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.030000000000000027,
+      "integratedLUFS": -18.43,
+      "truePeakDBFS": -5.75,
+      "bytes": 15980,
+      "sha256": "ed5e4b1f182aa2bca279d1365cd12365bf24518148e382e5215f68e1f9e97dd1",
+      "asrText": "Это мой звёздный выход!",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-music-reply-p1",
+      "speaker": "p1",
+      "text": "Постарайся обойтись без вылета.",
+      "synthesisText": "ПОСТАРАЙСЯ обойтись без вылета.",
+      "seed": 62101,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.64,
+      "rawSha256": "7077d21b9e564fe9fbebf89f20d91c04ef2c214276d2e4e274a5e97e24a48b91",
+      "rawWav": "round-music-reply-p1-seed62101-raw.wav",
+      "trim": [
+        0.06,
+        2.64
+      ],
+      "generationSeconds": 4.14,
+      "pilotCosine": {
+        "p1": 0.97041,
+        "p2": 0.93314
+      },
+      "referenceCosine": {
+        "p1": 0.95785,
+        "p2": 0.93937
+      },
+      "duration": 2.58,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5712872743606567,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.07000000000000028,
+      "integratedLUFS": -18.44,
+      "truePeakDBFS": -4.67,
+      "bytes": 21356,
+      "sha256": "0d71faf75c6ab7b0e15ed04cef21e85f18cb5d72a22233ba596b3b45499ca260",
+      "asrText": "Постарайся обойтись без вылета.",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-music-reply-p2",
+      "speaker": "p2",
+      "text": "Постарайся обойтись без вылета.",
+      "synthesisText": "Постарайся обойтись без ВЫЛЕТА.",
+      "seed": 62202,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.8,
+      "rawSha256": "4c151b95076eee86dcf4dc186b9220fd2153ceeee63cd192a7c8467415fc596f",
+      "rawWav": "round-music-reply-p2-seed62202-raw.wav",
+      "trim": [
+        0.21,
+        2.78
+      ],
+      "generationSeconds": 4.256,
+      "pilotCosine": {
+        "p1": 0.94025,
+        "p2": 0.96703
+      },
+      "referenceCosine": {
+        "p1": 0.93029,
+        "p2": 0.97699
+      },
+      "duration": 2.57,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.4812871217727661,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.07999999999999963,
+      "integratedLUFS": -18.45,
+      "truePeakDBFS": -6.34,
+      "bytes": 21356,
+      "sha256": "8bf54d04ffabcd38a9a30daa35495f5e79041b4bc4292794654c452f5529d7be",
+      "asrText": "Постарайся обойтись без вылета.",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-polite-setup-p1",
+      "speaker": "p1",
+      "text": "Склонись перед моим величием!",
+      "synthesisText": "СКЛОНИСЬ перед моим величием!",
+      "seed": 62101,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.24,
+      "rawSha256": "b5f95f6e0ac5fb98cb657cda320e3fbd90c6a229df116b81084478dfee36c9b3",
+      "rawWav": "round-polite-setup-p1-seed62101-raw.wav",
+      "trim": [
+        0.07,
+        2.24
+      ],
+      "generationSeconds": 3.209,
+      "pilotCosine": {
+        "p1": 0.96469,
+        "p2": 0.91638
+      },
+      "referenceCosine": {
+        "p1": 0.9497,
+        "p2": 0.92944
+      },
+      "duration": 2.17,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.45936134457588196,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.029999999999999805,
+      "integratedLUFS": -18.44,
+      "truePeakDBFS": -6.76,
+      "bytes": 18092,
+      "sha256": "1960aa1f67ab03d8d1c6b8e9beb90f3caed8e373f7e972e31521867eb54fd4d5",
+      "asrText": "Склонись перед моим величием.",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-polite-setup-p2",
+      "speaker": "p2",
+      "text": "Склонись перед моим величием!",
+      "synthesisText": "Склонись перед МОИМ величием!",
+      "seed": 62202,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.32,
+      "rawSha256": "6faeee975efe285f3a18af495b1be960b32c2c485a4cd2863ad52614398b138b",
+      "rawWav": "round-polite-setup-p2-seed62202-raw.wav",
+      "trim": [
+        0.0,
+        2.32
+      ],
+      "generationSeconds": 3.617,
+      "pilotCosine": {
+        "p1": 0.94399,
+        "p2": 0.95551
+      },
+      "referenceCosine": {
+        "p1": 0.94284,
+        "p2": 0.95716
+      },
+      "duration": 2.32,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5461104512214661,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.020000000000000018,
+      "integratedLUFS": -18.44,
+      "truePeakDBFS": -5.25,
+      "bytes": 19244,
+      "sha256": "8063201ae6b6ee5b75f86678e05af1af5beb7abe67a48f431d6693ba4a5e8a66",
+      "asrText": "Склонись перед моим величием.",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-polite-reply-p1",
+      "speaker": "p1",
+      "text": "Нагнусь, когда буду тебя собирать.",
+      "synthesisText": "Нагнусь, когда буду тебя СОБИРАТЬ.",
+      "seed": 62101,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.32,
+      "rawSha256": "d1df7863f572a9dccfdc4761b8b03d9e29963b5af538a34f0611cdc4c13fe191",
+      "rawWav": "round-polite-reply-p1-seed62101-raw.wav",
+      "trim": [
+        0.03,
+        2.32
+      ],
+      "generationSeconds": 3.496,
+      "pilotCosine": {
+        "p1": 0.93655,
+        "p2": 0.94135
+      },
+      "referenceCosine": {
+        "p1": 0.91992,
+        "p2": 0.92906
+      },
+      "duration": 2.29,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5540023446083069,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.03000000000000025,
+      "integratedLUFS": -18.44,
+      "truePeakDBFS": -5.07,
+      "bytes": 19052,
+      "sha256": "5c0bef969baa626894af427bfc60beb92f89b69461e52d7ee5c69c31d747ef86",
+      "asrText": "Нагнусь, когда буду тебя собирать.",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-polite-reply-p2",
+      "speaker": "p2",
+      "text": "Нагнусь, когда буду тебя собирать.",
+      "synthesisText": "Нагнусь, когда буду ТЕБЯ собирать!",
+      "seed": 62202,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 3.2000416666666665,
+      "rawSha256": "c3bbcbd895623cf6603d130bf0b04e7b5435b24ede22bc8dd46085848fed072a",
+      "rawWav": "round-polite-reply-p2-seed62202-raw.wav",
+      "trim": [
+        0.2,
+        3.07
+      ],
+      "generationSeconds": 4.855,
+      "pilotCosine": {
+        "p1": 0.93108,
+        "p2": 0.95336
+      },
+      "referenceCosine": {
+        "p1": 0.92138,
+        "p2": 0.96889
+      },
+      "duration": 2.87,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5603920817375183,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.08000000000000007,
+      "integratedLUFS": -18.44,
+      "truePeakDBFS": -5.03,
+      "bytes": 23660,
+      "sha256": "2ad36c6fd11c84d0f06ec52fdaac780c03e280a3aa4df2426f58f3ecf7c236d1",
+      "asrText": "Нагнусь, когда буду тебя собирать?",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-fear-setup-p1",
+      "speaker": "p1",
+      "text": "Ну что, мурашки по металлу?",
+      "synthesisText": "Ну что, мурашки по МЕТАЛЛУ?",
+      "seed": 62101,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.0,
+      "rawSha256": "9fb2d6a4eaa1977f09a877b8a3a63b7ad9a9e864476245406cf3f15e4619d8fd",
+      "rawWav": "round-fear-setup-p1-seed62101-raw.wav",
+      "trim": [
+        0.03,
+        2.0
+      ],
+      "generationSeconds": 3.233,
+      "pilotCosine": {
+        "p1": 0.9268,
+        "p2": 0.91733
+      },
+      "referenceCosine": {
+        "p1": 0.90686,
+        "p2": 0.91022
+      },
+      "duration": 1.97,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5969588756561279,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.040000000000000036,
+      "integratedLUFS": -18.44,
+      "truePeakDBFS": -4.48,
+      "bytes": 16556,
+      "sha256": "0c0945f005319d21a81cab7cde8261cb9c34fa694de092ff522dac3ad64b7d3f",
+      "asrText": "Ну что, мурашки по металлу?",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-fear-setup-p2",
+      "speaker": "p2",
+      "text": "Ну что, мурашки по металлу?",
+      "synthesisText": "Ну что, МУРАШКИ по металлу?!",
+      "seed": 62202,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.88,
+      "rawSha256": "7a4992058847dc5dec4a0e78c1fdc8afc56f3f96e251ed5c3d5b824f3696367e",
+      "rawWav": "round-fear-setup-p2-seed62202-raw.wav",
+      "trim": [
+        0.16,
+        2.88
+      ],
+      "generationSeconds": 4.477,
+      "pilotCosine": {
+        "p1": 0.92674,
+        "p2": 0.95851
+      },
+      "referenceCosine": {
+        "p1": 0.92302,
+        "p2": 0.96885
+      },
+      "duration": 2.72,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.495059072971344,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.040000000000000036,
+      "integratedLUFS": -18.42,
+      "truePeakDBFS": -6.11,
+      "bytes": 22508,
+      "sha256": "864f06247eace90e6041cf28ba18041ec4718689dd66af2d3b83a479b6802cdc",
+      "asrText": "Ну что, мурашки по металлу?",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-fear-reply-p1",
+      "speaker": "p1",
+      "text": "Нет. Прикидываю, где оставить вмятину.",
+      "synthesisText": "Нет. Прикидываю, где оставить ВМЯТИНУ.",
+      "seed": 62101,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 3.2,
+      "rawSha256": "b7df342c75688aea1979b9ecc645576d28532d145ee3888e8df064605c862158",
+      "rawWav": "round-fear-reply-p1-seed62101-raw.wav",
+      "trim": [
+        0.03,
+        3.2
+      ],
+      "generationSeconds": 4.423,
+      "pilotCosine": {
+        "p1": 0.92032,
+        "p2": 0.93294
+      },
+      "referenceCosine": {
+        "p1": 0.90324,
+        "p2": 0.9132
+      },
+      "duration": 3.17,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.6300786733627319,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.08000000000000007,
+      "integratedLUFS": -18.44,
+      "truePeakDBFS": -3.94,
+      "bytes": 26156,
+      "sha256": "d9fe902e0b3eed89138a93278c0cde6dcd5f1aaa930d603503101dea9b5cb394",
+      "asrText": "«Нет. Прикидываю, где оставить вимитину».",
+      "exactWordMatch": false,
+      "technicalPass": true,
+      "passed": false
+    },
+    {
+      "id": "round-fear-reply-p2",
+      "speaker": "p2",
+      "text": "Нет. Прикидываю, где оставить вмятину.",
+      "synthesisText": "НЕТ! Прикидываю, где оставить вмятину.",
+      "seed": 62202,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 3.52,
+      "rawSha256": "a88a6770d8d9df5a6a4e2bd73d393de70e0e2fdc920b3f26c2bf5f67769fc9fe",
+      "rawWav": "round-fear-reply-p2-seed62202-raw.wav",
+      "trim": [
+        0.0,
+        3.52
+      ],
+      "generationSeconds": 5.181,
+      "pilotCosine": {
+        "p1": 0.94775,
+        "p2": 0.97171
+      },
+      "referenceCosine": {
+        "p1": 0.93812,
+        "p2": 0.97291
+      },
+      "duration": 3.52,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.6062564849853516,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.05,
+      "trailingSilence": 0.08000000000000007,
+      "integratedLUFS": -18.45,
+      "truePeakDBFS": -4.31,
+      "bytes": 28844,
+      "sha256": "44409e051bce77cb1930058ae33b4c01310b8622345e569320e735bb2a586bcd",
+      "asrText": "Нет, прикидываю, где оставить вмятину.",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-champion-setup-p1",
+      "speaker": "p1",
+      "text": "Запомни мой непобедимый силуэт!",
+      "synthesisText": "Запомни мой непобедимый СИЛУЭТ!",
+      "seed": 62101,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.4,
+      "rawSha256": "3dc7afdd61ac8734385dadf1a4f29417b398f6ce9afbfc2e12c985cf6ec9d00f",
+      "rawWav": "round-champion-setup-p1-seed62101-raw.wav",
+      "trim": [
+        0.02,
+        2.4
+      ],
+      "generationSeconds": 3.581,
+      "pilotCosine": {
+        "p1": 0.95725,
+        "p2": 0.92792
+      },
+      "referenceCosine": {
+        "p1": 0.94716,
+        "p2": 0.93235
+      },
+      "duration": 2.38,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.4635069668292999,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.029999999999999805,
+      "integratedLUFS": -18.43,
+      "truePeakDBFS": -6.64,
+      "bytes": 19820,
+      "sha256": "9c807585f7bb933b65630b229b918fb3a2519e6cf2b6e76def364664c903f115",
+      "asrText": "Запомни мой непобедимый силуэт.",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-champion-setup-p2",
+      "speaker": "p2",
+      "text": "Запомни мой непобедимый силуэт!",
+      "synthesisText": "Запомни мой НЕПОБЕДИМЫЙ силуэт!",
+      "seed": 62202,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.72,
+      "rawSha256": "c841dd0d6afba94212dcd736ed055e06ac44aebb4e06be49323e88329b018029",
+      "rawWav": "round-champion-setup-p2-seed62202-raw.wav",
+      "trim": [
+        0.03,
+        2.72
+      ],
+      "generationSeconds": 4.016,
+      "pilotCosine": {
+        "p1": 0.93097,
+        "p2": 0.97547
+      },
+      "referenceCosine": {
+        "p1": 0.91705,
+        "p2": 0.96252
+      },
+      "duration": 2.69,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5402451157569885,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.06999999999999984,
+      "integratedLUFS": -18.43,
+      "truePeakDBFS": -5.28,
+      "bytes": 22316,
+      "sha256": "6b60a684e3dd6046bf9ece59d230538d056c634cd95c0d9e9f886eeb1f2f3dd3",
+      "asrText": "Запомни мой непобедимый силуэт",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-champion-reply-p1",
+      "speaker": "p1",
+      "text": "После боя придётся учить новый.",
+      "synthesisText": "После боя придётся учить НОВЫЙ.",
+      "seed": 62101,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.56,
+      "rawSha256": "bde37855843b6078a81af0b5ff39ff182fc47a80f8c80bc5e59fe887378cbea9",
+      "rawWav": "round-champion-reply-p1-seed62101-raw.wav",
+      "trim": [
+        0.05,
+        2.54
+      ],
+      "generationSeconds": 3.823,
+      "pilotCosine": {
+        "p1": 0.96158,
+        "p2": 0.93508
+      },
+      "referenceCosine": {
+        "p1": 0.94833,
+        "p2": 0.93535
+      },
+      "duration": 2.49,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5095128417015076,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.08000000000000007,
+      "integratedLUFS": -18.44,
+      "truePeakDBFS": -5.86,
+      "bytes": 20588,
+      "sha256": "c209f62259c182b4139de327da7244eeaef9865e243c0587eedc73bb02a3e575",
+      "asrText": "После боя придется учить новый.",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-champion-reply-p2",
+      "speaker": "p2",
+      "text": "После боя придётся учить новый.",
+      "synthesisText": "После боя придётся УЧИТЬ новый.",
+      "seed": 62202,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 3.04,
+      "rawSha256": "f0104a5a6a7f6863d74706b94b2276a88320e48d327709e418ef0a7159de1b11",
+      "rawWav": "round-champion-reply-p2-seed62202-raw.wav",
+      "trim": [
+        0.01,
+        3.04
+      ],
+      "generationSeconds": 4.51,
+      "pilotCosine": {
+        "p1": 0.9423,
+        "p2": 0.96496
+      },
+      "referenceCosine": {
+        "p1": 0.93076,
+        "p2": 0.96509
+      },
+      "duration": 3.03,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.6347360610961914,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.04999999999999982,
+      "integratedLUFS": -18.45,
+      "truePeakDBFS": -3.94,
+      "bytes": 25004,
+      "sha256": "2258d5f754646e1bc2975a9fc42ad585f5a6f353448a8e8058d459dcc4d1106b",
+      "asrText": "После боя придется учить новый.",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-bolts-setup-p1",
+      "speaker": "p1",
+      "text": "Весь подвал запомнит этот удар!",
+      "synthesisText": "Весь подвал запомнит этот УДАР!",
+      "seed": 62101,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 3.2,
+      "rawSha256": "410bbf4cfe0db60128b8c62e5ddf72bb1dc9ca870130710bc906138ee06a4a12",
+      "rawWav": "round-bolts-setup-p1-seed62101-raw.wav",
+      "trim": [
+        0.26,
+        3.2
+      ],
+      "generationSeconds": 4.69,
+      "pilotCosine": {
+        "p1": 0.96885,
+        "p2": 0.93454
+      },
+      "referenceCosine": {
+        "p1": 0.94922,
+        "p2": 0.94134
+      },
+      "duration": 2.94,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5751083493232727,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.029999999999999805,
+      "integratedLUFS": -18.42,
+      "truePeakDBFS": -4.75,
+      "bytes": 24236,
+      "sha256": "75de94f09c147f4fdaa60bd11b7ff4452a7667095f84c3ba433ddb4afbd41a6d",
+      "asrText": "Весь подвал запомнит этот удар!",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-bolts-setup-p2",
+      "speaker": "p2",
+      "text": "Весь подвал запомнит этот удар!",
+      "synthesisText": "ВЕСЬ подвал запомнит этот удар!",
+      "seed": 62202,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.8,
+      "rawSha256": "af377f3ac371b4225e79be8214d16285aec33681c5b949f9a84f3e422462d8a8",
+      "rawWav": "round-bolts-setup-p2-seed62202-raw.wav",
+      "trim": [
+        0.07,
+        2.71
+      ],
+      "generationSeconds": 4.174,
+      "pilotCosine": {
+        "p1": 0.94782,
+        "p2": 0.97027
+      },
+      "referenceCosine": {
+        "p1": 0.92771,
+        "p2": 0.96559
+      },
+      "duration": 2.64,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5737389326095581,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.08000000000000007,
+      "integratedLUFS": -18.44,
+      "truePeakDBFS": -4.82,
+      "bytes": 21740,
+      "sha256": "7c34b7e833b415675eed82bfb220bebf723cd6a299545ef65651cb2720da98f5",
+      "asrText": "«Весь подвал запомнит этот удар!»",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-bolts-reply-p1",
+      "speaker": "p1",
+      "text": "Главное — сам не забудь встать.",
+      "synthesisText": "Главное — САМ не забудь встать.",
+      "seed": 62101,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.08,
+      "rawSha256": "7ea322da834ea218f29d4de8d76abea5807b774134c2eb6254cd21b131094cb4",
+      "rawWav": "round-bolts-reply-p1-seed62101-raw.wav",
+      "trim": [
+        0.0,
+        2.08
+      ],
+      "generationSeconds": 2.941,
+      "pilotCosine": {
+        "p1": 0.93544,
+        "p2": 0.93473
+      },
+      "referenceCosine": {
+        "p1": 0.90594,
+        "p2": 0.91751
+      },
+      "duration": 2.08,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.7023515105247498,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.07000000000000028,
+      "integratedLUFS": -18.44,
+      "truePeakDBFS": -3.01,
+      "bytes": 17324,
+      "sha256": "389d332e44ea96df99fa8621685f74e51df3b6182e3cac30dbe91613ff055705",
+      "asrText": "Главное, сам не забудь встать.",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    },
+    {
+      "id": "round-bolts-reply-p2",
+      "speaker": "p2",
+      "text": "Главное — сам не забудь встать.",
+      "synthesisText": "Главное — сам не забудь ВСТАТЬ.",
+      "seed": 62204,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.88,
+      "rawSha256": "c5ae0c19044e53d8a562ecb2b2ba8dceecd2a3b8516879c68bb4dadd5bdc929d",
+      "rawWav": "round-bolts-reply-p2-seed62204-raw.wav",
+      "trim": [
+        0.38,
+        2.88
+      ],
+      "generationSeconds": 5.079,
+      "pilotCosine": {
+        "p1": 0.93768,
+        "p2": 0.96288
+      },
+      "referenceCosine": {
+        "p1": 0.93208,
+        "p2": 0.97332
+      },
+      "duration": 2.5,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5315694212913513,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.06999999999999984,
+      "integratedLUFS": -18.43,
+      "truePeakDBFS": -5.49,
+      "bytes": 20780,
+      "sha256": "117a944b9323f0c7e05ae154130f4084716844be309c2985e47361d1150a908d",
+      "asrText": "Главное, сам не забудь встать.",
+      "exactWordMatch": true,
+      "technicalPass": true,
+      "passed": true
+    }
+  ],
+  "attemptHistory": [
+    {
+      "id": "faceoff-mode-p2",
+      "speaker": "p2",
+      "text": "Джотаро! Подвал маловат для моего величия!",
+      "synthesisText": "Джотаро! Подвал маловат для МОЕГО величия!",
+      "seed": 62202,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 4.64,
+      "rawSha256": "ced3459314f6fc7d683cb7cec59d79822f1fd929e5192dcbfb97bc68c6a48ab8",
+      "rawWav": "faceoff-mode-p2-seed62202-raw.wav",
+      "trim": [
+        0.05,
+        4.62
+      ],
+      "generationSeconds": 7.161,
+      "pilotCosine": {
+        "p1": 0.94666,
+        "p2": 0.97104
+      },
+      "referenceCosine": {
+        "p1": 0.9357,
+        "p2": 0.96969
+      },
+      "duration": 4.57,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5645163655281067,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.08000000000000007,
+      "integratedLUFS": -18.45,
+      "truePeakDBFS": -4.94,
+      "bytes": 37292,
+      "sha256": "00f51601137e23f1767b4d82b9b6da7c46d903034bc442b664e9f3164a35495b",
+      "asrText": "Джоторо, подвал малова для моего величия.",
+      "exactWordMatch": false,
+      "technicalPass": true,
+      "passed": false
+    },
+    {
+      "id": "round-spares-reply-p2",
+      "speaker": "p2",
+      "text": "Проверим на твоём корпусе!",
+      "synthesisText": "ПРОВЕРИМ на твоём корпусе!",
+      "seed": 62202,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.4,
+      "rawSha256": "58cfa987ff59505c8c4908f20e1b93d6099fb22fa3e1fe221e4899b43cc56357",
+      "rawWav": "round-spares-reply-p2-seed62202-raw.wav",
+      "trim": [
+        0.01,
+        2.4
+      ],
+      "generationSeconds": 3.91,
+      "pilotCosine": {
+        "p1": 0.93091,
+        "p2": 0.96736
+      },
+      "referenceCosine": {
+        "p1": 0.91848,
+        "p2": 0.96521
+      },
+      "duration": 2.39,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.4697084128856659,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.07000000000000028,
+      "integratedLUFS": -18.43,
+      "truePeakDBFS": -6.54,
+      "bytes": 19820,
+      "sha256": "5804240b3a38e71efb3cc8761f3e415d296536932a1fd624a80c7e7f5de87821",
+      "asrText": "Проверим на твоём компусе!",
+      "exactWordMatch": false,
+      "technicalPass": true,
+      "passed": false
+    },
+    {
+      "id": "round-bolts-reply-p2",
+      "speaker": "p2",
+      "text": "Главное — сам не забудь встать.",
+      "synthesisText": "Главное — сам не забудь ВСТАТЬ.",
+      "seed": 62202,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.96,
+      "rawSha256": "4fbeab8c9418801eb9767f9ded571ab422a58b0ee0126879ec4a45ac9a5e8b04",
+      "rawWav": "round-bolts-reply-p2-seed62202-raw.wav",
+      "trim": [
+        0.16,
+        2.88
+      ],
+      "generationSeconds": 4.345,
+      "pilotCosine": {
+        "p1": 0.94192,
+        "p2": 0.97374
+      },
+      "referenceCosine": {
+        "p1": 0.93242,
+        "p2": 0.97088
+      },
+      "duration": 2.72,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5327616333961487,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.08000000000000007,
+      "integratedLUFS": -18.43,
+      "truePeakDBFS": -5.4,
+      "bytes": 22508,
+      "sha256": "abe56cbf8d839beba89673e660d55be175ea38f0c6f54d1c736827e752439e25",
+      "asrText": "Главное, сам не забудь фыстать.",
+      "exactWordMatch": false,
+      "technicalPass": true,
+      "passed": false
+    },
+    {
+      "id": "round-bolts-reply-p2",
+      "speaker": "p2",
+      "text": "Главное — сам не забудь встать.",
+      "synthesisText": "Главное — сам не забудь ВСТАТЬ.",
+      "seed": 62203,
+      "source": "new Base full ICL synthesis",
+      "copied": false,
+      "userListeningApproved": false,
+      "rawDuration": 2.4,
+      "rawSha256": "4ef46eff694a2fe55f9c5ab75fa626e24facee9edf31ff82c7d116a5a38bbb2c",
+      "rawWav": "round-bolts-reply-p2-seed62203-raw.wav",
+      "trim": [
+        0.15,
+        2.4
+      ],
+      "generationSeconds": 4.048,
+      "pilotCosine": {
+        "p1": 0.93617,
+        "p2": 0.96799
+      },
+      "referenceCosine": {
+        "p1": 0.92962,
+        "p2": 0.96684
+      },
+      "duration": 2.25,
+      "sampleRate": 24000,
+      "channels": 1,
+      "peak": 0.5452665686607361,
+      "clippedFraction": 0.0,
+      "leadingSilence": 0.08,
+      "trailingSilence": 0.06000000000000005,
+      "integratedLUFS": -18.44,
+      "truePeakDBFS": -5.27,
+      "bytes": 18668,
+      "sha256": "8a2f65197237f9f5145d116323deae69c1ccb8d4141eb4fe44c7f3b9a6813e93",
+      "asrText": "Главное, сам не забудь выстать!",
+      "exactWordMatch": false,
+      "technicalPass": true,
+      "passed": false
+    }
+  ],
+  "generatorSha256": "d9f1653f49707eb809228146214dc8cf819b2f4265b6aec5d0e067ecdac3e698",
+  "maxTtsCudaAllocatedGB": 4.385502208,
+  "asr": {
+    "model": "openai/whisper-large-v3-turbo",
+    "revision": "41f01f3fe87f28c78e2fbf8b568835947dd65ed9",
+    "numBeams": 5,
+    "targetTextPrompt": false
+  },
+  "failedOrMissing": [
+    "faceoff-mode-p1",
+    "round-fear-reply-p1"
+  ],
+  "productionAcceptance": {
+    "status": "not-approved-do-not-publish",
+    "rejectedPilot": "faceoff-mode-p1",
+    "reason": "User explicitly rejected both intonation and voice identity of the opening Jotaro sample. New bounded actor-identity pilots are required; successful ASR does not override this feedback."
+  }
+}

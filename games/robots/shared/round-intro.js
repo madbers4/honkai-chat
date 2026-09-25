@@ -2,8 +2,7 @@ import { PREMATCH_EXCHANGES } from './club-story.js';
 import { GENERATED_VOICE_CLIPS } from './generated-voice-clips.js';
 import { hasCompleteSpokenCatalog, roundSpokenId, spokenBeatDuration } from './spoken-catalog.js';
 
-// A full recording may begin within the voice controller's .38 s late grace.
-// Leave that startup budget after even the longest (2.9881 s) round recording.
+// Caption-only minimum; recorded windows expand to measured duration + grace.
 export const ROUND_INTRO_BEAT_DURATION = 3.4;
 export const ROUND_INTRO_DURATION = 2 * ROUND_INTRO_BEAT_DURATION;
 
@@ -31,7 +30,7 @@ function permutation(seed) {
 }
 
 // Strip the AUTHOR'S speaker wrapper before any player names are involved.
-// The actor is displayed by the UI, and TTS gets just one short spoken line.
+// The actor is displayed separately by the UI.
 function spokenLine(template) {
   const line = String(template).replace(/^\{[ab]\}:\s*«/, '').replace(/»[.!?]*$/, '').trim();
   return /[.!?…]$/.test(line) ? line : `${line}.`;
@@ -53,18 +52,16 @@ export function buildRoundIntro(players = [], room = '', round = 1, matchSerial 
   let at=0;
   const beats=lines.map((_, index) => {
       const seat = index === 0 ? firstSeat : 1 - firstSeat;
-      // Semantic turn is fixed; only the voice/seat alternates. The old pack
-      // lacks setup.p2/reply.p1: use optional device speech in that fallback,
-      // never turn its recorded answer into the setup on an even round.
-      const clip = complete ? roundSpokenId(exchange.id,index===0?'setup':'reply',seat)
-        : seat===index ? exchange.clips?.[index===0?'a':'b'] : null;
+      // Semantic turn stays fixed. An incomplete pack is caption-only, never
+      // archived actors or a system voice restored from an old preference.
+      const clip = complete ? roundSpokenId(exchange.id,index===0?'setup':'reply',seat) : null;
       const recording = clip ? catalog[clip] : null;
       const text = recording ? recording.text : lines[index];
       const duration=recording?spokenBeatDuration(recording,ROUND_INTRO_BEAT_DURATION):ROUND_INTRO_BEAT_DURATION;
       const beat={
         id: `${id}-${index}`, at, duration,
-        speaker: speaker(seat), text, ttsText: text, pose: index === 0 ? 'resolve' : 'point',
-        ...(recording ? { clip, clipOffset: 0, clipDuration: recording.duration } : {}),
+        speaker: speaker(seat), text, pose: index === 0 ? 'resolve' : 'point',
+        ...(recording ? { clip, clipOffset: 0, clipDuration: recording.duration } : { audioUnavailable:true }),
       };
       at+=duration;return beat;
     });

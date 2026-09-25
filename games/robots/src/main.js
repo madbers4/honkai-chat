@@ -213,6 +213,7 @@ function connect(request) {
   socket.addEventListener('close', event => {
     if (socket !== currentSocket) return;
     audio.stop();
+    audio.updateMusic(state, { connected: false });
     connected = false; controls.neutral(); setConnection('СВЯЗЬ ПРЕРВАНА', false);
     journey.setConnected(false);
     if (event.code === 4001 || event.code === 4000) { leave(); toast(event.reason || 'Комната закрыта.'); return; }
@@ -237,6 +238,7 @@ async function enterRoom(training = false, code = null) {
 }
 function leave() {
   audio.stop();
+  audio.resetMusic();
   quitting = true; clearTimeout(reconnectTimer); controls.neutral(); socket?.close(); socket = null; connected = false;
   room = null; token = null; playerId = null; state = null; lastPhase = null; lastEvent = 0;
   combatUI.reset();
@@ -274,6 +276,10 @@ function receiveState(next) {
   const historicalEvents = !lastStateAt || now - lastStateAt > 350 || state?.phase === 'paused';
   lastStateAt = now;
   state = next; mode = next.mode || mode;
+  audio.updateMusic(next, { connected });
+  // Story snapshots consume the round event below; stop the previous fight's
+  // explosion tail before the journey can start the new spoken introduction.
+  if (state.phase === 'story' && lastPhase !== 'story') audio.stop();
   storyUI.update(next, playerId);
   if (state.phase === 'paused' && lastPhase !== 'paused') audio.stop();
   document.body.dataset.phase = state.phase;
@@ -400,8 +406,9 @@ $('copy-btn').addEventListener('click', async () => {
   try { if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(inviteUrl); else { $('invite-link').focus(); $('invite-link').select(); if (!document.execCommand('copy')) throw Error(); } toast('Ссылка скопирована. Отправь её другу.'); }
   catch { $('invite-link').focus(); $('invite-link').select(); toast('Ссылка выделена — скопируй её вручную.'); }
 });
-document.addEventListener('pointerdown', () => { audio.unlock(); journey.unlock(); }, { once: true });
-document.addEventListener('visibilitychange', () => { if (document.hidden) audio.stop(); });
+document.addEventListener('pointerdown', () => audio.unlock());
+document.addEventListener('pointerdown', () => journey.unlock(), { once: true });
+document.addEventListener('visibilitychange', () => { if (document.hidden) audio.stop(); audio.updateMusic(state, { connected }); });
 setInterval(() => { if (connected) send({type:'ping',t:Date.now()}); }, 2500);
 showView('lobby');
 fetch(appPaths.path('api/info')).then(r => r.ok ? r.json() : null).then(info => { serverInfo = info; if (room) updateInvite(); }).catch(() => {});

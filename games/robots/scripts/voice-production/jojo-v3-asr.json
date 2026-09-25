@@ -1,0 +1,410 @@
+{
+  "model": "openai/whisper-large-v3-turbo",
+  "revision": "41f01f3fe87f28c78e2fbf8b568835947dd65ed9",
+  "targetTextPrompt": false,
+  "forcedLanguage": false,
+  "numBeams": 5,
+  "allRecordingsListeningApproved": false,
+  "clips": [
+    {
+      "id": "faceoff-mode-p1",
+      "text": "Дио. Сегодня гнётся не моя броня.",
+      "asrText": "Дио, сегодня гнётся не моя броня.",
+      "exactWordMatch": true,
+      "sha256": "ce38180ec99e01abb523c5416d3bcd865e055b19a2520e496aea7558aa019997"
+    },
+    {
+      "id": "faceoff-mode-p2",
+      "text": "Джотаро! Подвал маловат для моего величия!",
+      "asrText": "Джотаро, подвал маловат для моего величия",
+      "exactWordMatch": true,
+      "sha256": "ff6f9e5b907e53005a48f696e96cadadbb35a88d35cd926197dbba297cf8128f"
+    },
+    {
+      "id": "faceoff-greeting-open",
+      "text": "Ты приближаешься? Выход в другой стороне.",
+      "asrText": "Ты приближаешься? Выход в другой стороне!",
+      "exactWordMatch": true,
+      "sha256": "d90a9e90db3d9543c0eed235bfecfc6572f4c5f7dedf7d8bde8edcc0002a4382"
+    },
+    {
+      "id": "faceoff-greeting-answer",
+      "text": "Я иду туда, где надо ударить.",
+      "asrText": "Я иду туда, где надо ударить.",
+      "exactWordMatch": true,
+      "sha256": "21a765103ea28d0d0d5981cefd5965f4cda4af4dad3edb3f09180e4c95f218eb"
+    },
+    {
+      "id": "faceoff-greeting-package",
+      "text": "Какая дерзость! Даже твои винты дрожат!",
+      "asrText": "Какая дерзость! Даже твои винты дрожат!",
+      "exactWordMatch": true,
+      "sha256": "f289d5193035f8de1a03d9bb2ed4da784796949583e824e12ad783ebc5d34f05"
+    },
+    {
+      "id": "faceoff-challenge-p1",
+      "text": "Это твой корпус. Мой уже рядом.",
+      "asrText": "Это твой корпус. Мой уже рядом.",
+      "exactWordMatch": true,
+      "sha256": "f3c70ccf811cf8832096f438989a7f4c5879737800dd02929c6a372653a2e5bb"
+    },
+    {
+      "id": "faceoff-taunt-p2",
+      "text": "Я бы остановил время ради этой позы!",
+      "asrText": "Я бы остановил время ради этой позы.",
+      "exactWordMatch": true,
+      "sha256": "260c9755a45c269e1408f1f4a854428b626c3c2957cdaa457a09feb95edec5bb"
+    },
+    {
+      "id": "faceoff-resolve-p1",
+      "text": "Сначала останови болтовню. Потом позируй.",
+      "asrText": "Сначала останови болтовню, потом позируй.",
+      "exactWordMatch": true,
+      "sha256": "cb6ab11eea22dc3406cc5934d9ecf81cd80c91946c3600b87d6b2b78ffa096fe"
+    },
+    {
+      "id": "faceoff-fight-p2",
+      "text": "Подходи, железный нахал! Муда!",
+      "asrText": "Подходи, железный нахал, муда!",
+      "exactWordMatch": true,
+      "sha256": "be98f991f6bc8f91874434b592acc6b92c6ad259c3925a6bc4feea6b7aee7366"
+    },
+    {
+      "id": "round-warranty-setup-p1",
+      "text": "Ты всё ещё идёшь ко мне?",
+      "asrText": "Ты всё ещё идёшь ко мне?",
+      "exactWordMatch": true,
+      "sha256": "483334b7ffc5192afc8d4a5945fbed3c157e8dca5bf84751454430e67664d2a7"
+    },
+    {
+      "id": "round-warranty-setup-p2",
+      "text": "Ты всё ещё идёшь ко мне?",
+      "asrText": "Ты все еще идешь ко мне?",
+      "exactWordMatch": true,
+      "sha256": "a0ff383ba9f30de3f17e3250dd6f31862dd06ebb857074c77235be457551ad23"
+    },
+    {
+      "id": "round-warranty-reply-p1",
+      "text": "Твою броню издалека не помнёшь!",
+      "asrText": "Твою броню издалека не помнешь.",
+      "exactWordMatch": true,
+      "sha256": "360d678b3988464446611118cb51bbc06e19e636d5056ec7441ec24c8f29e79d"
+    },
+    {
+      "id": "round-warranty-reply-p2",
+      "text": "Твою броню издалека не помнёшь!",
+      "asrText": "Твою броню издалека не помнёшь!",
+      "exactWordMatch": true,
+      "sha256": "a32d579f06f176e4e08fb70111e352339540622b64086f36051739c6fd89acf9"
+    },
+    {
+      "id": "round-quiet-setup-p1",
+      "text": "Слышишь зловещий гул?",
+      "asrText": "Слышишь зловещий гул?",
+      "exactWordMatch": true,
+      "sha256": "dcac7ee65d59b1e9439e80da201e5431137807339d3e35582318322f2df5d0d8"
+    },
+    {
+      "id": "round-quiet-setup-p2",
+      "text": "Слышишь зловещий гул?",
+      "asrText": "Слышишь, зловещий гул?",
+      "exactWordMatch": true,
+      "sha256": "9af7f40c29d1e819d3032ac3422942615da6c287c14c91542ae654e188edaa5f"
+    },
+    {
+      "id": "round-quiet-reply-p1",
+      "text": "Это твои колени. Я бы проверил.",
+      "asrText": "Это твои колени. Я бы проверил.",
+      "exactWordMatch": true,
+      "sha256": "d4e4c4adfc4b75fa607b0d4f2e252b52b39e8a078b9a747ebdad955ff102d5d7"
+    },
+    {
+      "id": "round-quiet-reply-p2",
+      "text": "Это твои колени. Я бы проверил.",
+      "asrText": "Это твои колени! Я бы проверил!",
+      "exactWordMatch": true,
+      "sha256": "465c204b0e6044073dd8a1b64a40686392777537e8b6773bd4dc4809417cefdb"
+    },
+    {
+      "id": "round-manual-setup-p1",
+      "text": "У меня есть идеальный план!",
+      "asrText": "У меня есть идеальный план.",
+      "exactWordMatch": true,
+      "sha256": "08f1cc5656eb9749ad12dc2991dd6f9e3b892f419b1e3c7602b93dc109dfe452"
+    },
+    {
+      "id": "round-manual-setup-p2",
+      "text": "У меня есть идеальный план!",
+      "asrText": "У меня есть идеальный план!",
+      "exactWordMatch": true,
+      "sha256": "ee7384a827082f8fd55798a7c4da04f5165904b9557bd41e1d55faf5387f9961"
+    },
+    {
+      "id": "round-manual-reply-p1",
+      "text": "Главное — не забудь удивиться.",
+      "asrText": "Главное не забудь удивиться.",
+      "exactWordMatch": true,
+      "sha256": "6ac386f2579b0a1d32c5dfb9545ef15f64f4de0e2b07bfb577b46e69fd924a76"
+    },
+    {
+      "id": "round-manual-reply-p2",
+      "text": "Главное — не забудь удивиться.",
+      "asrText": "Главное не забудь удивиться.",
+      "exactWordMatch": true,
+      "sha256": "6d3279c73552427e1ea164092177fb0b4a648cfdab521f18145b0f9076ebb98d"
+    },
+    {
+      "id": "round-spares-setup-p1",
+      "text": "Что громче: ора или муда?",
+      "asrText": "Что громче Ора или Муда?",
+      "exactWordMatch": true,
+      "sha256": "416cc9d8cb20ae84a42dcd01323fe87f14d3c5b8a68f3660027b76043ef71122"
+    },
+    {
+      "id": "round-spares-setup-p2",
+      "text": "Что громче: ора или муда?",
+      "asrText": "Что громче? Ора или муда?",
+      "exactWordMatch": true,
+      "sha256": "3d77271f85bd83ca94904c495fcfd4b6b9a2862e04aaa69280f8549f0f9ac2ef"
+    },
+    {
+      "id": "round-spares-reply-p1",
+      "text": "Проверим на твоём корпусе!",
+      "asrText": "Проверим на твоём корпусе.",
+      "exactWordMatch": true,
+      "sha256": "a93f2d3102f0eb5d6ee96d877f0c8f85e9e42bc3ce65a96822df454b4d3ac7eb"
+    },
+    {
+      "id": "round-spares-reply-p2",
+      "text": "Проверим на твоём корпусе!",
+      "asrText": "Проверим на твоём корпусе.",
+      "exactWordMatch": true,
+      "sha256": "338d117eb1c18799d6101fac7c25ed8a7eaf87a5e153c74022b0897f07a6c299"
+    },
+    {
+      "id": "round-rust-setup-p1",
+      "text": "Зацени мою устрашающую позу!",
+      "asrText": "Зацени мою устрашающую позу.",
+      "exactWordMatch": true,
+      "sha256": "ab0cb3a5d7f5fd620fd3b35f5caf672859e6f47fe431a165fc46a5a66127146b"
+    },
+    {
+      "id": "round-rust-setup-p2",
+      "text": "Зацени мою устрашающую позу!",
+      "asrText": "Зацени мою устрашающую позу!",
+      "exactWordMatch": true,
+      "sha256": "95508eb2d02558512119cb2129ceb5f275379dfe75e1233004b68d7ac591fbde"
+    },
+    {
+      "id": "round-rust-reply-p1",
+      "text": "Замри. Хочу запомнить, куда бить!",
+      "asrText": "Замри. Хочу запомнить, куда бить.",
+      "exactWordMatch": true,
+      "sha256": "38d519f7fc30e4e86d7d3d8411a9f779d972a5628da1f5c200bc9af4c95ed2d6"
+    },
+    {
+      "id": "round-rust-reply-p2",
+      "text": "Замри. Хочу запомнить, куда бить!",
+      "asrText": "Замри! Хочу запомнить, куда бить!",
+      "exactWordMatch": true,
+      "sha256": "069edac76fad5ad303431ccf8cd88df31c8caa0a5411bc62d5f19a0e3057abe2"
+    },
+    {
+      "id": "round-floor-setup-p1",
+      "text": "Моему величию здесь тесно!",
+      "asrText": "Моему величию здесь тесно.",
+      "exactWordMatch": true,
+      "sha256": "5db011d3a54351fd54dd4466f5c0c1f064bb97bb05f3ee44ab674561be39dff7"
+    },
+    {
+      "id": "round-floor-setup-p2",
+      "text": "Моему величию здесь тесно!",
+      "asrText": "Моему величию здесь тесно.",
+      "exactWordMatch": true,
+      "sha256": "e69cc87776c0a535ab78b2ccc5603ca2558c5a63373dc956675a0177256e67e5"
+    },
+    {
+      "id": "round-floor-reply-p1",
+      "text": "Пригнись. Тут низкий потолок.",
+      "asrText": "Пригнись. Тут низкий потолок.",
+      "exactWordMatch": true,
+      "sha256": "67de7c44e37720dce96607ee5812f6790d41bd18c2c029f4c9a7ec4ea3968552"
+    },
+    {
+      "id": "round-floor-reply-p2",
+      "text": "Пригнись. Тут низкий потолок.",
+      "asrText": "Пригнись! Тут низкий потолок!",
+      "exactWordMatch": true,
+      "sha256": "a89d9252821ab4f70bdce194836e6eed918531e3e12282adaccaabbd8295b3a1"
+    },
+    {
+      "id": "round-calculate-setup-p1",
+      "text": "Я бы остановил само время!",
+      "asrText": "Я бы остановил само время!",
+      "exactWordMatch": true,
+      "sha256": "c4e45340db14176993ea04882e0e027314a221b5cdd929217fec894b28447d91"
+    },
+    {
+      "id": "round-calculate-setup-p2",
+      "text": "Я бы остановил само время!",
+      "asrText": "Я бы остановил само время!",
+      "exactWordMatch": true,
+      "sha256": "20a58948deaee74dd64cc61298fd7c76a2a8d637e82c950010c1bfc3dd5d5516"
+    },
+    {
+      "id": "round-calculate-reply-p1",
+      "text": "Ради паузы между оправданиями?",
+      "asrText": "Ради паузы между оправданиями?",
+      "exactWordMatch": true,
+      "sha256": "27325b681faaf5e2dc8064e31a74775c4554c48bce9e88a030ff8040878d0a25"
+    },
+    {
+      "id": "round-calculate-reply-p2",
+      "text": "Ради паузы между оправданиями?",
+      "asrText": "Ради паузы между оправданиями.",
+      "exactWordMatch": true,
+      "sha256": "cf193f1257bc7b651eeb08175ed04c8233ac028d8a4e490b5584b645a137df32"
+    },
+    {
+      "id": "round-music-setup-p1",
+      "text": "Это мой звёздный выход!",
+      "asrText": "Это мой звёздный выход!",
+      "exactWordMatch": true,
+      "sha256": "ae588a4fa77c6fdeee16138fd9218610a0577c53955ca0852911c808d50fc66f"
+    },
+    {
+      "id": "round-music-setup-p2",
+      "text": "Это мой звёздный выход!",
+      "asrText": "Это мой звёздный выход!",
+      "exactWordMatch": true,
+      "sha256": "ed5e4b1f182aa2bca279d1365cd12365bf24518148e382e5215f68e1f9e97dd1"
+    },
+    {
+      "id": "round-music-reply-p1",
+      "text": "Постарайся обойтись без вылета.",
+      "asrText": "Постарайся обойтись без вылета.",
+      "exactWordMatch": true,
+      "sha256": "23c4e1ddbeedc3347034adb4dec4b960cdb86b3f3df1e0ca95bedc4800520771"
+    },
+    {
+      "id": "round-music-reply-p2",
+      "text": "Постарайся обойтись без вылета.",
+      "asrText": "Постарайся обойтись без вылета.",
+      "exactWordMatch": true,
+      "sha256": "8bf54d04ffabcd38a9a30daa35495f5e79041b4bc4292794654c452f5529d7be"
+    },
+    {
+      "id": "round-polite-setup-p1",
+      "text": "Склонись перед моим величием!",
+      "asrText": "Склонись перед моим величием.",
+      "exactWordMatch": true,
+      "sha256": "c347abfe92ef9f4d7dfdf8d31d9e66f5e8dadbabb11e0113a999f9b7233b96fd"
+    },
+    {
+      "id": "round-polite-setup-p2",
+      "text": "Склонись перед моим величием!",
+      "asrText": "Склонись перед моим величием.",
+      "exactWordMatch": true,
+      "sha256": "8063201ae6b6ee5b75f86678e05af1af5beb7abe67a48f431d6693ba4a5e8a66"
+    },
+    {
+      "id": "round-polite-reply-p1",
+      "text": "Нагнусь, когда буду тебя собирать.",
+      "asrText": "Нагнусь, когда буду тебя собирать.",
+      "exactWordMatch": true,
+      "sha256": "bd67e72f268b628e1a9935995efc0368f9cbc420b6264e733249ec255b6ecbee"
+    },
+    {
+      "id": "round-polite-reply-p2",
+      "text": "Нагнусь, когда буду тебя собирать.",
+      "asrText": "Нагнусь, когда буду тебя собирать?",
+      "exactWordMatch": true,
+      "sha256": "2ad36c6fd11c84d0f06ec52fdaac780c03e280a3aa4df2426f58f3ecf7c236d1"
+    },
+    {
+      "id": "round-fear-setup-p1",
+      "text": "Ну что, мурашки по металлу?",
+      "asrText": "Ну что, мурашки по металлу.",
+      "exactWordMatch": true,
+      "sha256": "bea5ff4740e57a1b22a3e43f30ddf9e3e5685415e0567bf3f0e1883c2126931c"
+    },
+    {
+      "id": "round-fear-setup-p2",
+      "text": "Ну что, мурашки по металлу?",
+      "asrText": "Ну что, мурашки по металлу?",
+      "exactWordMatch": true,
+      "sha256": "864f06247eace90e6041cf28ba18041ec4718689dd66af2d3b83a479b6802cdc"
+    },
+    {
+      "id": "round-fear-reply-p1",
+      "text": "Нет. Прикидываю, где оставить вмятину.",
+      "asrText": "Нет. Прикидываю, где оставить вмятину.",
+      "exactWordMatch": true,
+      "sha256": "0ed2c62938ccd22fa2307d6654b6da4f50a9c308554e3a7ac8956e44d97fd5cd"
+    },
+    {
+      "id": "round-fear-reply-p2",
+      "text": "Нет. Прикидываю, где оставить вмятину.",
+      "asrText": "Нет, прикидываю, где оставить вмятину.",
+      "exactWordMatch": true,
+      "sha256": "44409e051bce77cb1930058ae33b4c01310b8622345e569320e735bb2a586bcd"
+    },
+    {
+      "id": "round-champion-setup-p1",
+      "text": "Запомни мой непобедимый силуэт!",
+      "asrText": "Запомни мой непобедимый силуэт.",
+      "exactWordMatch": true,
+      "sha256": "91e2cdc4a17fa826eb9ad9690de5919b6b7b39f7c1cd4ee6089fcbec61544eee"
+    },
+    {
+      "id": "round-champion-setup-p2",
+      "text": "Запомни мой непобедимый силуэт!",
+      "asrText": "Запомни мой непобедимый силуэт",
+      "exactWordMatch": true,
+      "sha256": "6b60a684e3dd6046bf9ece59d230538d056c634cd95c0d9e9f886eeb1f2f3dd3"
+    },
+    {
+      "id": "round-champion-reply-p1",
+      "text": "После боя придётся учить новый.",
+      "asrText": "После боя придется учить новый.",
+      "exactWordMatch": true,
+      "sha256": "4d9a4a1f294162413d71cfacdb7da04672dde8c0c613532a135683379d680b7d"
+    },
+    {
+      "id": "round-champion-reply-p2",
+      "text": "После боя придётся учить новый.",
+      "asrText": "После боя придется учить новый.",
+      "exactWordMatch": true,
+      "sha256": "2258d5f754646e1bc2975a9fc42ad585f5a6f353448a8e8058d459dcc4d1106b"
+    },
+    {
+      "id": "round-bolts-setup-p1",
+      "text": "Весь подвал запомнит этот удар!",
+      "asrText": "«Весь подвал запомнит этот удар!»",
+      "exactWordMatch": true,
+      "sha256": "0d845122b32b24c0187d8b869f2db1f606cd66c7f114b2e1403a1d8f5db4ade2"
+    },
+    {
+      "id": "round-bolts-setup-p2",
+      "text": "Весь подвал запомнит этот удар!",
+      "asrText": "«Весь подвал запомнит этот удар!»",
+      "exactWordMatch": true,
+      "sha256": "7c34b7e833b415675eed82bfb220bebf723cd6a299545ef65651cb2720da98f5"
+    },
+    {
+      "id": "round-bolts-reply-p1",
+      "text": "Главное — сам не забудь встать.",
+      "asrText": "Главное, сам не забудь встать.",
+      "exactWordMatch": true,
+      "sha256": "9fc6dbf1c5d37b1aa9c1bcec571af425eb1d12a2f7efee904cfb6a611894a7d1"
+    },
+    {
+      "id": "round-bolts-reply-p2",
+      "text": "Главное — сам не забудь встать.",
+      "asrText": "Главное, сам не забудь встать.",
+      "exactWordMatch": true,
+      "sha256": "117a944b9323f0c7e05ae154130f4084716844be309c2985e47361d1150a908d"
+    }
+  ],
+  "failed": []
+}

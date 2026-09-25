@@ -5,7 +5,6 @@ import { once } from 'node:events';
 import { startServer } from '../server/index.js';
 import { createRefereeClient, REFEREE_SESSION_PREFIX } from '../src/referee-client.js';
 import { buildRoundIntro } from '../shared/round-intro.js';
-import { hasCompleteSpokenCatalog } from '../shared/spoken-catalog.js';
 import { VOICE_CLIPS } from '../shared/voice-clips.js';
 import { RULE_CARDS, getClubRuleCard } from '../shared/club-story.js';
 
@@ -183,9 +182,11 @@ test('mounted player/referee pages share the charter, respect reading control, a
   mountedPage = page; handlers.onStatus({ status: 'connected', message: 'Микрофон у вас' });
   const roster = [{ id: 'p1', name: 'ИСКРА', maxHp: 180, hp: 90, wins: 5 }, { id: 'p2', name: 'ИНЕЙ', maxHp: 180, hp: 0, wins: 2 }];
   const ended = { room: 'ABC234', round: 7, phase: 'matchOver', elapsed: 80, time: 40, winner: 'p1', players: roster, events: [], story: { sequenceId: 'one', stage: 'complete' } };
-  const sent = [], journey = createClubJourney(node(), { send: packet => sent.push(packet), leave() {}, toggleSound() {}, toast() {} });
-  assert.equal(nodes.get('.journey-tts').hidden, hasCompleteSpokenCatalog());
-  assert.equal(nodes.get('[data-tts]').disabled, hasCompleteSpokenCatalog());
+  globalThis.localStorage.setItem('belobog-local-tts','true');
+  const sent = [],journeyMount=node(), journey = createClubJourney(journeyMount, { send: packet => sent.push(packet), leave() {}, toggleSound() {}, toast() {} });
+  assert.equal(globalThis.localStorage.getItem('belobog-local-tts'),undefined,'the retired preference cannot activate a phone voice');
+  assert.doesNotMatch(journeyMount.children[0].innerHTML,/data-tts|голосом устройства/);
+  assert.equal(nodes.has('[data-tts]'),false,'no handler or checkbox revives device speech');
   t.after(() => journey.reset());
   // Deliberately reverse the roster and supply hostile names: both surfaces
   // must keep the correct corner, the same words and plain-text presentation.
@@ -233,10 +234,10 @@ test('mounted player/referee pages share the charter, respect reading control, a
     assert.equal(nodes.get('ack').disabled, true);
   }
   const nextMatch=buildRoundIntro(roster,'ABC234',1,2),nextUrls=nextMatch.beats.map(beat=>VOICE_CLIPS[beat.clip].url);
-  await Promise.resolve();
+  await new Promise(resolve=>setImmediate(resolve));
   assert.ok(nextUrls.every(url=>!voiceFetches.some(fetched=>fetched.endsWith(url))),'the next deck starts with a genuinely cold pair');
   journey.update({...ended,phase:'finishing',finish:{stage:'offer'},story:{stage:'complete',roundIntro:{round:7,matchSerial:1}}},'p1');
-  await Promise.resolve();
+  await new Promise(resolve=>setImmediate(resolve));
   assert.ok(nextUrls.every(url=>voiceFetches.some(fetched=>fetched.endsWith(url))),'mounted journey preloads the rematch during the finale despite its hidden complete UI');
   await Promise.resolve();
 });

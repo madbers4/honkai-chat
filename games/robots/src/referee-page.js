@@ -63,6 +63,7 @@ export function mountRefereePage({ container = document.body, room = new URL(loc
   function updateConnection(info) {
     if (disposed) return;
     connection = info.status; root.dataset.connection = connection;
+    if (connection !== 'connected') audio.updateMusic(state, { connected: false });
     $('connection').textContent = info.message || 'Микрофон свободен';
     const stopped = ['error', 'closed', 'takenOver', 'idle'].includes(connection);
     if (stopped) { audio.stop(); clearPending(); }
@@ -93,8 +94,12 @@ export function mountRefereePage({ container = document.body, room = new URL(loc
   }
   function receive(snapshot, meta) {
     if (disposed) return;
+    // Story suppresses combat events, including round. Clear the last fight's
+    // audio before presenting the new reading cue, even after a fast rematch.
+    if (snapshot.phase === 'story' && state?.phase !== 'story') audio.stop();
     if (snapshot.phase !== state?.phase && snapshot.phase === 'matchOver') finalStep = 0;
     state = snapshot;
+    audio.updateMusic(snapshot, { connected: connection === 'connected' });
     const key = `${snapshot.story?.sequenceId}:${snapshot.story?.ruleIndex}`;
     if (pendingAdvance && (key !== pendingAdvance || snapshot.story?.paused || snapshot.story?.stage !== 'rules')) clearPending();
     $('join').hidden = true; $('live').hidden = false;
@@ -110,6 +115,7 @@ export function mountRefereePage({ container = document.body, room = new URL(loc
     prepareArena(); render();
   }
   function makeClient() {
+    audio.resetMusic();
     client?.stop(); state = null; profileKey = ''; clearPending(); questionIndex = 0; finalStep = 0;
     director = createRefereeDirector({ seed: selectedRoom }); reading = { current: null, next: null };
     favorite = 'neutral'; root.querySelector('[name="ref-favorite"][value="neutral"]').checked = true;
@@ -238,14 +244,15 @@ export function mountRefereePage({ container = document.body, room = new URL(loc
     if (!client?.setFavorite(input.value)) root.querySelector(`[name="ref-favorite"][value="${favorite}"]`).checked = true;
     else $('favoriteStatus').textContent = 'Передаём тайное поручение…';
   }));
-  $('leave').addEventListener('click', () => { $('dialog').close(); client?.stop(); $('join').hidden = false; $('live').hidden = true; $('joinMessage').textContent = 'Пульт закрыт. Бойцы могут продолжать без вашего микрофона.'; });
+  $('leave').addEventListener('click', () => { $('dialog').close(); audio.resetMusic(); client?.stop(); $('join').hidden = false; $('live').hidden = true; $('joinMessage').textContent = 'Пульт закрыт. Бойцы могут продолжать без вашего микрофона.'; });
   $('sound').addEventListener('click', () => { audio.unlock(); const muted = audio.toggle(); $('sound').textContent = muted ? 'Звук выкл.' : 'Звук вкл.'; $('sound').setAttribute('aria-pressed', String(!muted)); });
-  const onVisibility = () => { if (document.hidden) { audio.stop(); $('dialog').close(); } };
+  root.addEventListener('pointerdown', () => audio.music?.unlock());
+  const onVisibility = () => { if (document.hidden) { audio.stop(); $('dialog').close(); } audio.updateMusic(state, { connected: connection === 'connected' }); };
   document.addEventListener('visibilitychange', onVisibility);
   $('private').disabled = true;
   if (validRoomCode(selectedRoom)) makeClient().restore();
   return Object.freeze({ dispose() {
-    if (disposed) return; disposed = true; client?.stop(); arena?.dispose(); audio.stop(); audio.ctx?.close();
+    if (disposed) return; disposed = true; client?.stop(); arena?.dispose(); audio.stop(); audio.disposeMusic(); audio.ctx?.close();
     clearPending(); clearTimeout(noticeTimer); document.removeEventListener('visibilitychange', onVisibility);
     root.remove(); document.body.classList.remove('referee-page');
   } });

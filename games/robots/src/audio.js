@@ -1,5 +1,6 @@
 import { healthPercent } from '../shared/health.js';
 import { createCombatVoice } from './combat-voice.js';
+import { createBattleMusic } from './battle-music.js';
 
 export class GameAudio {
   constructor() { this.muted = localStorage.getItem('belobog-muted') === 'true'; this.voices = new Set(); }
@@ -19,14 +20,27 @@ export class GameAudio {
       this.combatVoice = createCombatVoice({ context: this.ctx, destination: this.master, muted: () => this.muted });
       void this.combatVoice.preload();
     }
+    if (!this.music) {
+      this.music = createBattleMusic({ context: this.ctx });
+      this.updateMusic(this.musicState, { connected: this.musicConnected });
+    }
     this.ctx.resume().catch(() => {});
+    this.music.unlock();
   }
   toggle() {
     this.muted = !this.muted; localStorage.setItem('belobog-muted', this.muted);
     if (this.muted) this.combatVoice?.stop();
     if (this.master) this.master.gain.setTargetAtTime(this.muted ? 0 : 0.28, this.ctx.currentTime, .03);
+    this.music?.update({ muted: this.muted });
     return this.muted;
   }
+  updateMusic(state, { connected = false } = {}) {
+    this.musicState = state; this.musicConnected = connected;
+    this.music?.update({ phase: state?.phase, paused: state?.phase === 'paused' || Boolean(state?.story?.paused),
+      connected, hidden: typeof document !== 'undefined' && document.hidden, muted: this.muted });
+  }
+  resetMusic() { this.musicState = null; this.musicConnected = false; this.music?.reset(); }
+  disposeMusic() { this.resetMusic(); this.music?.dispose(); }
   track(source, ...nodes) {
     this.voices.add(source);
     source.onended = () => { this.voices.delete(source); source.disconnect(); for (const node of nodes) node.disconnect(); };

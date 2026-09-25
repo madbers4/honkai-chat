@@ -22,7 +22,7 @@ void voice.preload(beats);
 $('seek').max=FACE_OFF_DURATION;$('shot').replaceChildren();
 for(const beat of beats)$('shot').add(new Option(`${beat.at.toFixed(2)} / ${beat.chapter} / ${beat.shot}`,String(beat.at+Math.min(1.4,beat.duration*.6))));
 $('unlock').onclick=async()=>{await voice.unlock();await voice.preload(beats);$('unlock').textContent=voice.getCapabilities().unlocked?'Звук включён':'Включить звук';};
-$('tts').onchange=()=>voice.setTtsEnabled($('tts').checked);$('mute').onchange=()=>voice.setMuted($('mute').checked);
+$('retry').onclick=()=>voice.retry();$('mute').onchange=()=>voice.setMuted($('mute').checked);
 $('toggle').onclick=()=>$('tools').hidden=!$('tools').hidden;
 $('play').onclick=()=>{playing=!playing;$('play').textContent=playing?'Пауза':'Воспроизвести';};
 function seek(t){playing=false;elapsed=t;sequence++;voice.cancel();$('play').textContent='Воспроизвести';}
@@ -38,7 +38,7 @@ function render(now){
   voice.update({sequenceId:sequence,elapsed,paused:!playing,beats,enabled:true});
   ui.update({active:true,sequenceId:sequence,elapsed,paused:false,players:actors,beats,voiceStatus:status,reducedMotion});
   $('seek').value=elapsed;const shot=faceoffShotState({story,players:actors,beats,reduced:reducedMotion});
-  $('stats').textContent=`${elapsed.toFixed(2)} / ${FACE_OFF_DURATION} с · ${beat?.pose||'конец'}\n${shot.chapter} / ${shot.shot} / ${shot.primary||'оба'}\nAudio ${audioState} · decoded ${decodes}\nStarts ${starts} · stops ${stops}\n${status.message||''}`;
+  $('stats').textContent=`${elapsed.toFixed(2)} / ${FACE_OFF_DURATION} с · ${beat?.pose||'конец'}\n${shot.chapter} / ${shot.shot} / ${shot.primary||'оба'}\nAudio ${audioState} · decoded ${decodes}\nStarts ${starts} · stops ${stops}\nClip ${status.lastClip||'—'} · pending ${status.loading||0}\n${status.message||''}`;
 }
 requestAnimationFrame(render);
 addEventListener('pagehide',()=>{voice.dispose();ui.dispose();arena.dispose();},{once:true});

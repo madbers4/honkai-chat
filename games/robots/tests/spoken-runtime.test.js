@@ -21,7 +21,7 @@ const fixture=()=>Object.fromEntries(script.utterances.map((utterance,i)=>[utter
 const players=[{id:'one',name:'Настоящее имя'},{id:'two',name:'Второе имя'}];
 const gap=VOICE_START_GRACE+VOICE_BREATHING_ROOM;
 
-test('57 planned IDs activate atomically, with explicit legacy fallback for incomplete or invalid catalogues',()=>{
+test('57 planned IDs activate atomically; missing or invalid catalogues retain only silent captions',()=>{
   const catalog=fixture();assert.equal(SPOKEN_CLIP_IDS.length,57);
   assert.deepEqual([...SPOKEN_CLIP_IDS].sort(),script.utterances.map(line=>line.id).sort());
   assert.deepEqual(SPOKEN_FACEOFF_TURNS.map(turn=>turn.id),script.faceoffOrder);
@@ -29,8 +29,13 @@ test('57 planned IDs activate atomically, with explicit legacy fallback for inco
   for(const patch of[undefined,{duration:NaN},{duration:0},{speaker:'p2'},{url:'https://outside.invalid/file.mp3'},{text:''}]) {
     const partial={...catalog,'faceoff-mode-p1':patch?{...catalog['faceoff-mode-p1'],...patch}:undefined};
     assert.equal(hasCompleteSpokenCatalog(partial),false);
-    assert.ok(buildFaceoff(players,'x',{catalog:partial}).some(beat=>beat.clip==='greeting'));
+    assert.ok(buildFaceoff(players,'x',{catalog:partial}).every(beat=>!beat.clip&&!beat.ttsText&&beat.text));
     assert.ok(!buildFaceoff(players,'x',{catalog:partial}).some(beat=>SPOKEN_CLIP_IDS.includes(beat.clip)));
+  }
+  for(const absent of[{},null]){
+    const scene=buildFaceoff(players,'missing',{catalog:absent});
+    assert.ok(scene.every(beat=>!beat.clip&&!beat.ttsText));assert.ok(Number.isFinite(faceoffDuration(scene)));
+    for(const round of[1,2])assert.ok(buildRoundIntro(players,'missing',round,0,{catalog:absent}).beats.every(beat=>beat.audioUnavailable&&!beat.clip&&!beat.ttsText));
   }
 });
 
@@ -60,7 +65,7 @@ test('all 48 round takes preserve setup then reply while alternating fixed playe
     for(const[index,beat]of intro.beats.entries()){
       const seat=index===0?(round-1)%2:1-(round-1)%2,turn=index===0?'setup':'reply',id=exchange.utterances[turn][`p${seat+1}`];
       assert.equal(beat.clip,id);seen.add(id);assert.equal(beat.speaker,players[seat].id);assert.equal(beat.text,catalog[id].text);
-      assert.equal(beat.text,exchange[`${turn}Text`]);assert.equal(beat.ttsText,beat.text);
+      assert.equal(beat.text,exchange[`${turn}Text`]);assert.equal(beat.ttsText,undefined);
       assert.ok(beat.duration+1e-8>=catalog[id].duration+gap);assert.equal(beat.clipOffset,0);
       assert.equal(activeRoundIntroBeat(intro,beat.at+.38+beat.clipDuration)?.id,beat.id);
     }
@@ -93,7 +98,7 @@ test('preload requests only the selected current and next sequence, never the 57
   const rematch=storyVoicePreload({players,room:'x',round:9,phase:'matchOver',story:{stage:'complete',roundIntro:{round:9,matchSerial:2}}},{catalog});
   assert.deepEqual(rematch,buildRoundIntro(players,'x',1,3,{catalog}).beats,'result screen warms the new deck before the rematch countdown');
   for(const phase of ['finishing','paused']) assert.deepEqual(storyVoicePreload({players,room:'x',round:9,phase,finish:{stage:'offer'},story:{stage:'complete',roundIntro:{round:9,matchSerial:2}}},{catalog}),rematch,'even an immediate rematch has its dialogue warmed during the finale');
-  assert.deepEqual(storyVoicePreload({story:{stage:'roundIntro',refereeConnected:true}},{catalog}),[]);
+  assert.equal(storyVoicePreload({story:{stage:'roundIntro',refereeConnected:true}},{catalog}).length,4,'referee suppresses speech, not the warm pair needed after a disconnect');
   const urls=[],voice=createStoryVoice({clipCatalog:catalog,fetcher:async url=>{urls.push(url);return{ok:true,arrayBuffer:async()=>new ArrayBuffer(1)}}});
   t.after(()=>voice.dispose());await voice.preload(current);await voice.preload(current);
   assert.equal(urls.length,4);assert.ok(urls.every(url=>current.some(beat=>catalog[beat.clip].url===url)));

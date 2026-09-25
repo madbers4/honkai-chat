@@ -40,20 +40,20 @@ export function createFaceoffUI(container) {
       card.card.hidden=(!isPrimary&&!shot.transition)||Math.abs(point.x)>1.13;
       card.card.style.left=`${Math.max(16,Math.min(84,(point.x*.5+.5)*100))}%`;
       card.card.style.top=`${Math.max(height<500?55:73,Math.min(height*.29,(.5-point.y*.5)*height-45))}px`;
-      text(card.status,shot.chapter==='dialogue'?`ПАКЕТ ПАФОСА / ${index?'ДИО':'ДЖОТАРО'}`:shot.chapter==='mode'?'БОЕВОЙ КОНТУР ВКЛЮЧЁН':'ИМЯ В ПАСПОРТЕ / НАСТОЯЩЕЕ');
+      text(card.status,shot.chapter==='dialogue'?`РОЛЬ В ДУЭЛИ / ${index?'ДИО':'ДЖОТАРО'}`:shot.chapter==='mode'?'БОЕВОЙ КОНТУР ВКЛЮЧЁН':'ИМЯ В ПАСПОРТЕ / НАСТОЯЩЕЕ');
     }
     text(heading,paused?'СЦЕНА НА ПАУЗЕ':FACE_OFF_CHAPTERS[shot.chapter]);
     text(mechanism,shot.detail?`${shot.detail==='core'?'01 / РЕАКТОР':'02 / ПРИВОДЫ'}\n${beat?.system||''}`:'');
     mechanism.hidden=!shot.detail||reducedMotion;
     const identity=players.find(player=>player.id===beat?.speaker);
-    text(speaker,beat?.annotation?'СИСТЕМА / ПАКЕТ ПАФОСА':beat?.speaker==='narrator'?'НОВЫЙ БОЙЦОВСКОЙ КЛУБ':identity?.name||'АВТОМАТОН');
+    text(speaker,beat?.speaker==='narrator'?'НОВЫЙ БОЙЦОВСКОЙ КЛУБ':identity?.name||'АВТОМАТОН');
     const key=`${sequenceId}:${beat?.id??''}`;
     if(key!==lastBeat){text(line,beat?.text||'');lastBeat=key;}
     caption.dataset.speaker=beat?.speaker||'narrator';
     const duration=faceoffDuration(beats)||FACE_OFF_DURATION;
     fill.style.transform=`scaleX(${Math.min(1,t/duration)})`;
     text(countdown,paused?'ЖДЁМ ВОЗВРАЩЕНИЯ СОПЕРНИКА':`${Math.ceil(Math.max(0,duration-t))} С ДО БОЯ`);
-    text(voice,voiceStatus.message||'Оригинальные записи / настоящие имена над бойцами');
+    text(voice,voiceStatus.message||'Два записанных актёра / имена над бойцами');
   }
   return{element:root,update,dispose(){if(disposed)return;disposed=true;root.remove();}};
 }

@@ -46,6 +46,20 @@ async function findFile(base, pathname) {
   } catch { return null; }
 }
 
+// HTMLAudio seeks use a single byte range. Unsupported units/multipart requests
+// fall back to the complete representation; false means an unsatisfiable range.
+function byteRange(header, size) {
+  if (typeof header !== 'string') return null;
+  const match = /^bytes=(\d*)-(\d*)$/i.exec(header.trim());
+  if (!match) return null;
+  const [, first, last] = match;
+  if (!size || (!first && !last)) return false;
+  const start = first ? Number(first) : Math.max(0, size - Number(last));
+  const end = first && last ? Math.min(Number(last), size - 1) : size - 1;
+  if (start >= size || start > end) return false;
+  return { start, end };
+}
+
 /** Starts a self-contained production/LAN host. Tests may disable the real-time clock. */
 export async function startServer({
   port = Number(process.env.PORT) || 3000, host = '0.0.0.0',
@@ -90,12 +104,26 @@ export async function startServer({
     const headers = {
       'Content-Type': MIME[path.extname(file.path).toLowerCase()] ?? 'application/octet-stream',
       'Content-Length': file.info.size,
+      'Accept-Ranges': 'bytes',
       'Cache-Control': path.extname(file.path) === '.html' ? 'no-cache' : 'public, max-age=3600',
     };
-    response.writeHead(200, headers);
+    // Range applies only to GET (RFC 9110 §14.2). We expose no strong validator,
+    // so an If-Range condition cannot match: send the full file in that case.
+    const range = request.method === 'GET' && !request.headers['if-range']
+      ? byteRange(request.headers.range, file.info.size) : null;
+    if (range === false) {
+      response.writeHead(416, { ...headers, 'Content-Range': `bytes */${file.info.size}`, 'Content-Length': 0 });
+      return response.end();
+    }
+    if (range) {
+      headers['Content-Range'] = `bytes ${range.start}-${range.end}/${file.info.size}`;
+      headers['Content-Length'] = range.end - range.start + 1;
+    }
+    response.writeHead(range ? 206 : 200, headers);
     if (request.method === 'HEAD') return response.end();
-    const stream = createReadStream(file.path);
+    const stream = createReadStream(file.path, range ?? undefined);
     stream.on('error', () => response.destroy());
+    response.once('close', () => stream.destroy());
     stream.pipe(response);
   });
   const wss = new WebSocketServer({ noServer: true, maxPayload: 8192, perMessageDeflate: false });

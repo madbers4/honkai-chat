@@ -1,82 +1,152 @@
 import { assetUrl } from './app-paths.js';
-import { VOICE_CLIPS } from '../shared/voice-clips.js';
+import { COMBAT_VOICE_CLIPS } from '../shared/combat-voice-clips.js';
 
 const FINISH = new Set(['rake', 'crusher', 'airFinish', 'heavyPress', 'slam']);
 const SECOND = new Set(['cross', 'airCross', 'heavyHook']);
-// Each cue stays inside an active region of the supplied recording. Small
-// envelopes remove edit clicks; the two actors never stack copies of themselves.
-export function combatVoiceCue(event) {
-  const side = event.player === 'p2' ? 'dio' : event.player === 'p1' ? 'jotaro' : null;
-  if (!side) return null;
-  if (event.type === 'ultimate') return { actor: side, clip: 'duo-super', offset: 4.03, duration: 2.8, priority: 2 };
-  if (event.type === 'destruction') return { actor: 'explosion', clip: 'explosion', offset: .1, duration: 2.3, priority: 3 };
-  if (!['attack', 'grabStrike'].includes(event.type)) return null;
-  const finish = FINISH.has(event.variant), second = SECOND.has(event.variant) || event.chain > 1;
-  if (side === 'dio') return { actor: side, clip: finish ? 'dio-attack-2' : 'dio-attack-1',
-    offset: finish ? 9.87 : second ? 1.05 : .345, duration: finish ? 1.25 : .58, priority: finish ? 1 : 0 };
-  return { actor: side, clip: finish ? 'jotaro-attack-3' : second ? 'jotaro-attack-2' : 'jotaro-attack-1',
-    offset: finish ? 5.15 : second ? 1.94 : .37, duration: finish ? 1.2 : .55, priority: finish ? 1 : 0 };
+const ATTACKS = new Set(['jab', 'cross', 'rake', 'dashStrike', 'launcher', 'crusher',
+  'airJab', 'airCross', 'airFinish', 'heavyDrive', 'heavyHook', 'heavyPress', 'slam']);
+const BOUNDARIES = new Set(['round', 'fight']);
+const MAX_SEEN = 256;
+const BREATH = .06;
+
+/** These are whole, offline-edited files. One attack-start owns its cry:
+ * hit/block/launch/slam/ultimatePulse must not voice that attack again. */
+export function combatVoiceCue(event = {}) {
+  if (event.type === 'destruction') return { actor: 'explosion', clip: 'explosion', gain: .7 };
+  const actor = event.player === 'p1' ? 'jotaro' : event.player === 'p2' ? 'dio' : null;
+  if (!actor) return null;
+  if (event.type === 'ultimate') return { actor, clip: actor === 'jotaro' ? 'jotaro-barrage' : 'dio-ultimate', gain: 1.5 };
+  if (event.type === 'finisherStart') return { actor, clip: actor === 'dio' ? 'dio-barrage' : 'jotaro-finisher', gain: 1.5 };
+  if (event.type !== 'grabStrike' && (event.type !== 'attack' || !ATTACKS.has(event.variant))) return null;
+  if (FINISH.has(event.variant)) return { actor, clip: `${actor}-finisher`, gain: 1.5 };
+  // The second held strike can use one complete short run, rather than restarting
+  // the first MUDA for every contact. Jotaro's supplied run is reserved for his ult.
+  if (actor === 'dio' && event.type === 'grabStrike' && event.chain > 1) {
+    return { actor, clip: 'dio-barrage', gain: 1.4 };
+  }
+  const second = SECOND.has(event.variant) || event.chain > 1
+    || (Number.isInteger(event.id) && event.id % 2 === 1);
+  return { actor, clip: `${actor}-single-${second ? 'b' : 'a'}`, gain: 1.5 };
 }
 
-export function createCombatVoice({ context, destination, fetcher = globalThis.fetch, muted = () => false }) {
-  const cache = new Map(), active = new Map(), fades = new Set();
+export function createCombatVoice({ context, destination, fetcher = globalThis.fetch,
+  muted = () => false, loadTimeoutMs = 10000 }) {
+  const cache = new Map(), active = new Map(), fades = new Set(), nextVoiceAt = new Map(), seen = new Set();
   let disposed = false;
-  const clipIds = ['jotaro-attack-1', 'jotaro-attack-2', 'jotaro-attack-3', 'dio-attack-1', 'dio-attack-2', 'duo-super', 'explosion'];
-  async function load(id) {
-    if (disposed || cache.get(id)?.buffer || cache.get(id)?.pending || (cache.get(id)?.attempts ?? 0) >= 2) return;
-    const entry = cache.get(id) || { attempts: 0 }; cache.set(id, entry);
+
+  function load(id) {
+    if (disposed) return Promise.resolve();
+    let entry = cache.get(id);
+    if (entry?.pending) return entry.pending;
+    if (entry?.buffer || (entry?.attempts ?? 0) >= 2) return Promise.resolve();
+    if (!entry) { entry = { attempts: 0 }; cache.set(id, entry); }
     entry.attempts++;
-    const controller = new AbortController(); entry.controller = controller;
-    const timer = setTimeout(() => controller.abort(), 10000);
-    entry.pending = (async () => {
-      const response = await fetcher(assetUrl(VOICE_CLIPS[id].url), { signal: controller.signal });
-      if (!response.ok) throw new Error('Voice clip unavailable');
-      const buffer = await context.decodeAudioData(await response.arrayBuffer());
-      if (!disposed) entry.buffer = buffer;
-    })().catch(() => {}).finally(() => { clearTimeout(timer); entry.pending = null; entry.controller = null; });
-    await entry.pending;
+    const controller = new AbortController();
+    let timer, rejectDeadline;
+    const deadline = new Promise((_, reject) => { rejectDeadline = reject; });
+    entry.cancel = () => { controller.abort(); rejectDeadline(new Error('Optional combat voice cancelled')); };
+    timer = setTimeout(entry.cancel, loadTimeoutMs);
+    const request = (async () => {
+      const response = await fetcher(assetUrl(COMBAT_VOICE_CLIPS[id].url), { signal: controller.signal });
+      if (!response.ok) throw new Error('Optional combat voice unavailable');
+      const bytes = await response.arrayBuffer();
+      if (disposed || controller.signal.aborted) return null;
+      return context.decodeAudioData(bytes);
+    })();
+    entry.pending = Promise.race([request, deadline]).then(buffer => {
+      if (buffer && !disposed && !controller.signal.aborted) entry.buffer = buffer;
+    }).catch(() => {}).finally(() => {
+      clearTimeout(timer); entry.pending = null; entry.cancel = null;
+    });
+    return entry.pending;
   }
+
   function finish(record) {
+    if (!record || record.done) return;
+    record.done = true;
     if (active.get(record.actor) === record) active.delete(record.actor);
-    fades.delete(record); record.source.onended = null;
+    fades.delete(record);
+    record.source.onended = null;
     try { record.source.disconnect(); record.gain.disconnect(); } catch {}
   }
+
   function retire(record, immediate = false) {
-    if (!record) return;
-    active.delete(record.actor);
-    if (immediate) { try { record.source.stop(); } catch {} finish(record); return; }
-    fades.add(record);
+    if (!record || record.done) return;
+    if (active.get(record.actor) === record) active.delete(record.actor);
+    if (immediate) {
+      try { record.source.stop(); } catch {}
+      finish(record); return;
+    }
+    if (record.fading) return;
+    record.fading = true; fades.add(record);
     const now = context.currentTime;
     record.gain.gain.cancelScheduledValues(now);
-    record.gain.gain.setTargetAtTime(0, now, .008);
-    try { record.source.stop(now + .025); } catch { finish(record); }
+    record.gain.gain.setTargetAtTime(0, now, .007);
+    try { record.source.stop(now + .03); } catch { finish(record); }
   }
-  function play(event) {
-    if (event.type === 'ko') retire(active.get(event.player === 'p1' ? 'jotaro' : event.player === 'p2' ? 'dio' : ''), true);
-    if (['round', 'fight', 'win'].includes(event.type)) stop();
-    if (disposed || event.presentationHistorical || muted() || context.state !== 'running') return false;
-    const cue = combatVoiceCue(event); if (!cue) return false;
+
+  function stop(immediate = false) {
+    for (const record of new Set([...active.values(), ...fades])) retire(record, immediate);
+    nextVoiceAt.clear(); seen.clear();
+  }
+
+  function remember(event) {
+    if (event.id == null) return true;
+    // Include the server timestamp: IDs alone can be reused in a new room.
+    const key = `${event.id}:${event.at ?? ''}:${event.player ?? ''}:${event.type}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    if (seen.size > MAX_SEEN) seen.delete(seen.values().next().value);
+    return true;
+  }
+
+  function play(event = {}) {
+    if (disposed || event.presentationHistorical) return false;
+    if (!remember(event)) return false;
+    // Historical KO/round events must not cut a current live voice.
+    if (BOUNDARIES.has(event.type)) { stop(); remember(event); return false; }
+    if (event.type === 'ko') {
+      const actor = event.player === 'p1' ? 'jotaro' : event.player === 'p2' ? 'dio' : null;
+      retire(active.get(actor)); nextVoiceAt.delete(actor); return false;
+    }
+    if (muted() || context.state !== 'running') return false;
+    const cue = combatVoiceCue(event);
+    if (!cue) return false;
     const buffer = cache.get(cue.clip)?.buffer;
-    // No deferred playback: a late download must never speak for an old punch.
+    // A completed download only warms the cache; never queues an old punch.
     if (!buffer) { void load(cue.clip); return false; }
-    const now = context.currentTime, old = active.get(cue.actor);
-    if (old && (now - old.at < .18 || old.priority > cue.priority)) return false;
-    retire(old);
-    const duration = Math.min(cue.duration, buffer.duration - cue.offset);
-    if (duration <= .03) return false;
+    const now = context.currentTime;
+    const old = active.get(cue.actor);
+    if (old && old.until > now) return false;
+    if (old) finish(old); // onended can arrive one frame after the real end.
+    if (now < (nextVoiceAt.get(cue.actor) ?? -Infinity)) return false;
+    if (!Number.isFinite(buffer.duration) || buffer.duration <= .03) return false;
     const source = context.createBufferSource(), gain = context.createGain();
     source.buffer = buffer;
-    gain.gain.setValueAtTime(0, now); gain.gain.linearRampToValueAtTime(cue.actor === 'explosion' ? .7 : 1.65, now + .012);
-    gain.gain.setValueAtTime(cue.actor === 'explosion' ? .7 : 1.65, now + Math.max(.015, duration - .045));
-    gain.gain.linearRampToValueAtTime(0, now + duration);
+    gain.gain.setValueAtTime(cue.gain, now);
     source.connect(gain); gain.connect(destination);
-    const record = { actor: cue.actor, source, gain, at: now, priority: cue.priority };
-    active.set(cue.actor, record); source.onended = () => finish(record);
-    source.start(now, cue.offset, duration); return true;
+    const record = { actor: cue.actor, source, gain, until: now + buffer.duration, done: false, fading: false };
+    active.set(cue.actor, record);
+    source.onended = () => finish(record);
+    nextVoiceAt.set(cue.actor, record.until + (cue.actor === 'explosion' ? 0 : BREATH));
+    try {
+      // No offset or duration argument: preserve the complete prepared word/run.
+      source.start(now);
+      return true;
+    } catch {
+      finish(record); nextVoiceAt.delete(cue.actor); return false;
+    }
   }
-  function stop() { for (const record of new Set([...active.values(), ...fades])) retire(record, true); }
-  return { play, preload: () => Promise.all(clipIds.map(load)), stop,
-    stats: () => ({ active: active.size, fading: fades.size, loaded: [...cache.values()].filter(e => e.buffer).length }),
-    dispose() { if (disposed) return; disposed = true; stop(); for (const entry of cache.values()) entry.controller?.abort(); cache.clear(); },
+
+  return { play, preload: () => Promise.all(Object.keys(COMBAT_VOICE_CLIPS).map(load)),
+    stop: () => stop(),
+    stats: () => ({ active: active.size, fading: fades.size,
+      loaded: [...cache.values()].filter(entry => entry.buffer).length, seen: seen.size }),
+    dispose() {
+      if (disposed) return;
+      disposed = true; stop(true);
+      for (const entry of cache.values()) entry.cancel?.();
+      cache.clear();
+    },
   };
 }

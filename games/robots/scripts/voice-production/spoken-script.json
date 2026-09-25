@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
-  "id": "club-spoken-rerecord-v1",
+  "id": "club-spoken-jojo-v3",
   "language": "ru-RU",
-  "sourceRevision": "c5b72ef",
-  "status": "produced-spoken-v2-technical-validation-complete",
-  "purpose": "Полная перезапись автоматической разговорной озвучки кат-сцены и всех предраундовых пар. Авторские новые реплики, а не дословная транскрипция референсов.",
+  "sourceRevision": "ce1b233",
+  "status": "complete-v3-recordings-technically-verified",
+  "purpose": "Новая цельная JoJo-адаптация дуэли роботов: приближение вместо побега, стальные позы, словесная бравада о времени и ора/муда. Все33 смысловые строки переписаны; все57 аудиозаписей должны быть произведены заново.",
   "counts": {
     "faceoffUtterances": 9,
     "roundExchanges": 12,
@@ -17,9 +17,8 @@
   },
   "scope": {
     "include": [
-      "7 текущих аудиофайлов кат-сцены, включая все 5 исходных диалоговых записей",
-      "9 речевых ходов кат-сцены; greeting разделён на 3 хода p2→p1→p2",
-      "24 смысловые строки 12 предраундовых пар, каждая записана голосами p1 и p2"
+      "Все9 новых речевых ходов противостояния p1/p2",
+      "Все24 новые смысловые строки12 предраундовых пар, каждая обоими голосами:48 записей"
     ],
     "exclude": [
       "210 реплик живого рефери",
@@ -43,36 +42,41 @@
     "directionsMustNeverBeSpoken": true,
     "playerNamesInAudio": false,
     "playerNameDisplay": "Имя остаётся в существующей карточке говорящего. Текст субтитра равен text выбранной записи; нет обещания озвучить выбранное имя.",
-    "aliases": "Джотаро/Дио появляются только в двух соседних репликах старого пакета пафоса; следующая строка объясняет, что имена роботов собственные.",
-    "faceoffClock": "Это план записи. Не вставлять новые MP3 в прежний 48-секундный монтаж без измерения длительностей и нового распределения кадров; три части greeting станут отдельными beats.",
+    "aliases": "Джотаро/Дио — роли в JoJo-пародии. Выбранные имена роботов остаются только в карточках говорящего; динамическая озвучка этих имён не заявляется.",
+    "faceoffClock": "Сохранены9 структурных faceoff IDs. Аудио v2 непригодно: все9 текстов новые. После генерации рассчитать окна по фактической длительности каждой записи, не укорачивать речь под старые таймкоды.",
     "roundClock": {
-      "mode": "measured-per-selected-recording",
-      "minimumBeatDuration": 3.4,
+      "durationPolicy": "derive-from-measured-new-recordings",
       "startupGrace": 0.38,
-      "breathingRoom": 0.12,
-      "formula": "max(minimumBeatDuration, recording.duration + startupGrace + breathingRoom)"
+      "minimumRemainder": 0.12,
+      "maxDurationIsPlanningOnly": true
     },
-    "referenceJudgement": "Референсы и фрагменты — кандидаты по исходным файлам/ранее выполненному ASR/измерениям. В этом задании прослушивание и актёрское сравнение не проводились.",
+    "referenceJudgement": "Для p1 выбран новый CosyVoice3 вариант А по исходному референсу; для p2 сохранён выбранный выразительный full-ICL Dio. Все v3 тексты новые. Первая p1 запись совпадает с выбранной пробой А; выбор рецептов не объявляет все57 файлов прослушанными.",
     "takes": "Для пилота и выбранного финального дубля сохранять неизменённый WAV, seed/model/settings, фактическую длительность. Не запихивать длинную реплику в лимит обрезкой начала/конца.",
     "roundSelection": "Сначала выбрать пару существующим детерминированным deck, затем setup/reply и голос. Нечётный: setup.p1 → reply.p2; чётный: setup.p2 → reply.p1. Нельзя выбирать только clips.a/b.",
     "referee": "При подключённом рефери предраундовая автоозвучка отключена. Суфлёр читает те же setupText/replyText выбранной пары, не старый и не переставленный текст.",
     "approval": "После пилота проверить целые слова и смысл на слух, характер подачи относительно референса, затем измерить громкость и длительность. Ни embedding, ни ASR не подтверждают художественное сходство.",
-    "maxDurationMeaning": "Historical direction targets; actual runtime uses measured MP3 duration. Never trim or accelerate emotional delivery to this target."
+    "maxDurationMeaning": "Historical direction targets; actual runtime uses measured MP3 duration. Never trim or accelerate emotional delivery to this target.",
+    "fictionalTimeStop": "Упоминания остановки времени строго условные («я бы»), не команда игроку и не описание существующей механики.",
+    "synthesisText": "Точный ввод TTS отдельно от canonical text; различаются только пунктуация/регистр. Мужские голоса обоих роботов, без автоматической замены женским device TTS. Speaker identity фиксирована по p1/p2."
   },
   "voices": {
     "p1": {
       "runtimeSeat": 0,
       "label": "Первая машина",
       "primaryReference": "p1-exclamation",
-      "direction": "Подача одобренного Original B: естественная усиленная пунктуация и один смысловой акцент в synthesisText каждой строки. Один исходный голос, не спроектированный новый тембр; слова canonical text сохраняются.",
-      "identity": "Голос всегда принадлежит p1, независимо от очередности реплики, положения на арене и выбранного имени."
+      "direction": "Собранный взрослый мужской голос. Короткие адресные угрозы, сухой юмор, резкий смысловой нажим. Не говорить монотонным диктором и не превращать каждую строку в протяжный крик.",
+      "identity": "Голос всегда принадлежит p1, независимо от очередности реплики, положения на арене и выбранного имени.",
+      "gender": "male",
+      "character": "Джотаро"
     },
     "p2": {
       "runtimeSeat": 1,
       "label": "Вторая машина",
-      "primaryReference": "p2-conversation",
-      "direction": "Обращается прямо к сопернику: короткий разбег, пауза перед насмешкой, смысловой конец открыто вперёд. Не растягивать каждый слог и не превращать все строки в крик.",
-      "identity": "Голос всегда принадлежит p2, независимо от очередности реплики, положения на арене и выбранного имени."
+      "primaryReference": "p2-approved-icl",
+      "direction": "Взрослый мужской голос. Театральное превосходство, насмешливое любопытство, резкие всплески злости; говорит противнику, не зачитывает анонс. Смешок только в окраске, не добавлять произносимых слов.",
+      "identity": "Голос всегда принадлежит p2, независимо от очередности реплики, положения на арене и выбранного имени.",
+      "gender": "male",
+      "character": "Дио"
     }
   },
   "references": {
@@ -98,8 +102,8 @@
         "end": 4.284979166666667,
         "status": "user-selected-original-full-source"
       },
-      "purpose": "Полный выбранный пользователем источник для full ICL всех p1: «Ублюдок! Дио!». Один исполнитель; стерео усредняется, затем PCM16 roundtrip.",
-      "evidence": "Original B user approved; exact reference transcript rechecked by local Whisper large-v3-turbo. Source SHA256 17bad1ef01499370b836f7a5d5761b9150d6fa23036124c095e951a54e883741.",
+      "purpose": "Полный исходный «Ублюдок! Дио!» для выбранного CosyVoice3 zero-shot варианта А. Один исполнитель; стерео усредняется, затем PCM16 roundtrip.",
+      "evidence": "User selected Cosy pilot A: ce38180ec99e01abb523c5416d3bcd865e055b19a2520e496aea7558aa019997. Source SHA256 17bad1ef01499370b836f7a5d5761b9150d6fa23036124c095e951a54e883741.",
       "listeningApproved": false
     },
     "p2-conversation": {
@@ -140,250 +144,59 @@
       "purpose": "Исполнительский ориентир для вопроса с насмешкой, без длинного начального возгласа.",
       "evidence": "Existing ASR places the main question at approximately 1.32–5.46 s; words and name are unreliable.",
       "listeningApproved": false
+    },
+    "p2-approved-icl": {
+      "clip": "greeting",
+      "path": "public/assets/voices/greeting.mp3",
+      "original": "звуки/Приветствие.mp3",
+      "preferredFragment": {
+        "start": 7.7,
+        "end": 11.32,
+        "status": "approved-dio-voice-recipe-not-v3-dialogue"
+      },
+      "refText": "Что ты мне сделаешь, а, Джотаро?",
+      "purpose": "Один мужской голос Дио из одобренного full-ICL рецепта; полный двухголосный greeting не использовать.",
+      "listeningApproved": true,
+      "approvalScope": "Only the earlier voice/style pilot. All v3 dialogue must be synthesized anew."
     }
   },
   "inventory": {
-    "basis": [
-      "shared/faceoff-script.js",
-      "shared/round-intro.js",
-      "shared/club-story.js",
-      "shared/voice-clips.js",
-      "shared/generated-voice-clips.js",
-      "src/story-voice.js",
-      "src/club-journey.js",
-      "public/assets/voices/manifest.json"
+    "status": "v3-rewrite-inventory",
+    "faceoffIds": [
+      "faceoff-mode-p1",
+      "faceoff-mode-p2",
+      "faceoff-greeting-open",
+      "faceoff-greeting-answer",
+      "faceoff-greeting-package",
+      "faceoff-challenge-p1",
+      "faceoff-taunt-p2",
+      "faceoff-resolve-p1",
+      "faceoff-fight-p2"
     ],
-    "faceoff": {
-      "duration": 48,
-      "files": [
-        {
-          "id": "greeting",
-          "file": "Приветствие.mp3",
-          "duration": 11.448,
-          "action": "replace-with-three-separate-utterances",
-          "turns": [
-            "p2",
-            "p1",
-            "p2"
-          ],
-          "currentStart": 13,
-          "notes": "Один MP3, три хода разговора двух актёров. Смена титра в 17.1 и 18.25 с не запускает новый файл. Последний титр — пояснение, не транскрипция."
-        },
-        {
-          "id": "jotaro-dio",
-          "file": "Джот - Ублюдок, ДЫО.mp3",
-          "duration": 4.296,
-          "action": "replace",
-          "turns": [
-            "p1"
-          ],
-          "currentStart": 24.848,
-          "notes": "Титр «ДИО.» не является полной транскрипцией файла."
-        },
-        {
-          "id": "dio-angry",
-          "file": "Дио - Похоже ты Зол, Джотаро.mp3",
-          "duration": 6,
-          "action": "replace",
-          "turns": [
-            "p2"
-          ],
-          "currentStart": 29.494,
-          "notes": "Титр «Протокол дипломатии: отклонён.» — авторская аннотация, не spoken text."
-        },
-        {
-          "id": "jotaro-not-simple",
-          "file": "Джот - Похоже ты и правда не прост.mp3",
-          "duration": 4.128,
-          "action": "replace",
-          "turns": [
-            "p1"
-          ],
-          "currentStart": 35.894,
-          "notes": "Титр «Сложность соперника недооценена.» — авторская аннотация. Не использовать ошибочную ASR как финальный текст."
-        },
-        {
-          "id": "dio-hero",
-          "file": "Дио - Ха, ну вперед, Герой.mp3",
-          "duration": 3.696,
-          "action": "replace",
-          "turns": [
-            "p2"
-          ],
-          "currentStart": 40.372,
-          "notes": "Финальный вызов, заменяется целиком."
-        },
-        {
-          "id": "jotaro-mode",
-          "file": "generated/jotaro-mode.mp3",
-          "duration": 3.2,
-          "action": "regenerate",
-          "turns": [
-            "p1"
-          ],
-          "currentStart": 6.4,
-          "text": "Боевой режим: кабачковое противостояние!"
-        },
-        {
-          "id": "dio-mode",
-          "file": "generated/dio-mode.mp3",
-          "duration": 2.55,
-          "action": "regenerate",
-          "turns": [
-            "p2"
-          ],
-          "currentStart": 9.9,
-          "text": "Твой гарантийный талон уже мёртв."
-        }
-      ],
-      "silentCaptions": [
-        {
-          "at": 0,
-          "speaker": "narrator",
-          "text": "БЕЛОБОГ. ПОДПОЛЬЕ. ГАРАНТИЯ ЗАКОНЧИЛАСЬ НА ВХОДЕ."
-        },
-        {
-          "at": 2,
-          "speaker": "p1",
-          "text": "<имя первого робота>. Претензии принимаются после боя."
-        },
-        {
-          "at": 4.2,
-          "speaker": "p2",
-          "text": "<имя второго робота>. Запасных деталей не обещает."
-        },
-        {
-          "at": 44.518,
-          "speaker": "narrator",
-          "text": "ПАФОС ЗАГРУЖЕН. ТЕПЕРЬ ПОКАЖИТЕ, ЧТО УМЕЕТЕ."
-        }
-      ],
-      "greetingTurns": [
-        {
-          "speaker": "p2",
-          "sourceRange": [
-            0,
-            4.1
-          ],
-          "evidence": "Current subtitle plus existing ASR",
-          "transcriptStatus": "first line known in runtime; not listening-verified here"
-        },
-        {
-          "speaker": "p1",
-          "sourceRange": [
-            4.1,
-            5.25
-          ],
-          "evidence": "Current shot boundary; ASR locates spoken name at 4.58–5.26, so this is NOT a safe extraction range",
-          "transcriptStatus": "short name reply; not listening-verified here"
-        },
-        {
-          "speaker": "p2",
-          "sourceRange": [
-            5.25,
-            11.448
-          ],
-          "evidence": "Current shot and existing ASR",
-          "transcriptStatus": "runtime shows annotation, not source transcript; intentionally rewritten"
-        }
-      ]
-    },
-    "rounds": {
-      "recordedExchangeIds": [
-        "warranty",
-        "spares"
-      ],
-      "recordingsBeingReplaced": [
-        "jotaro-round-1",
-        "jotaro-round-2",
-        "dio-round-1",
-        "dio-round-2"
-      ],
-      "otherPairs": "10 пар / 20 строк сейчас доступны только через opt-in local TTS; новым набором озвучиваются все 12 пар.",
-      "semanticIssue": "Существующие recorded clips привязаны к seat; в чётных раундах reply проигрывается перед setup. Будущая интеграция должна использовать utterances[turn][speaker].",
-      "currentExchanges": [
-        {
-          "id": "warranty",
-          "setup": "Обмен гарантийными обязательствами",
-          "first": "{a}: «Подойди. Проверим твою сборку.»",
-          "reply": "{b}: «Я отменяю твою гарантию!»",
-          "clips": {
-            "a": "jotaro-round-1",
-            "b": "dio-round-2"
-          }
-        },
-        {
-          "id": "quiet",
-          "setup": "Проверка режима тишины",
-          "first": "{a}: «Я работаю бесшумно».",
-          "reply": "{b}: «Тогда треск будет мой. Очень удобно»."
-        },
-        {
-          "id": "manual",
-          "setup": "Разногласия по инструкции",
-          "first": "{a}: «Я изучил все твои слабости».",
-          "reply": "{b}: «Это инструкция от чайника. Но две страницы совпадают»."
-        },
-        {
-          "id": "spares",
-          "setup": "Обмен искрами",
-          "first": "{a}: «Меньше пафоса. Лови искру!»",
-          "reply": "{b}: «Твоя зарядка закончилась!»",
-          "clips": {
-            "a": "jotaro-round-2",
-            "b": "dio-round-1"
-          }
-        },
-        {
-          "id": "rust",
-          "setup": "Спор об отделке",
-          "first": "{a}: «На тебе ржавчина».",
-          "reply": "{b}: «Это выдержка. Я коллекционная модель»."
-        },
-        {
-          "id": "floor",
-          "setup": "Знакомство с ареной",
-          "first": "{a}: «Пол уже знает моё имя».",
-          "reply": "{b}: «Я постараюсь познакомить вас поближе»."
-        },
-        {
-          "id": "calculate",
-          "setup": "Точность прогноза",
-          "first": "{a}: «Я рассчитал исход этого боя».",
-          "reply": "{b}: «Оставь место для исправлений карандашом»."
-        },
-        {
-          "id": "music",
-          "setup": "Настройка выхода",
-          "first": "{a}: «Где моя победная музыка?»",
-          "reply": "{b}: «Пока включили вентиляцию. Начни с неё»."
-        },
-        {
-          "id": "polite",
-          "setup": "Обмен любезностями",
-          "first": "{a}: «Я дам тебе фору».",
-          "reply": "{b}: «Лучше дай розетку. Фора у меня своя»."
-        },
-        {
-          "id": "fear",
-          "setup": "Последняя проверка систем",
-          "first": "{a}: «Мой процессор не знает страха».",
-          "reply": "{b}: «Обновление придёт без предупреждения»."
-        },
-        {
-          "id": "champion",
-          "setup": "Заявка на титул",
-          "first": "{a}: «Перед тобой будущий чемпион».",
-          "reply": "{b}: «А перед тобой проверка настоящего времени»."
-        },
-        {
-          "id": "bolts",
-          "setup": "Техническое напутствие",
-          "first": "{a}: «Держись крепче».",
-          "reply": "{b}: «Это я своим болтам уже сказал»."
-        }
-      ]
-    }
+    "roundExchangeIds": [
+      "warranty",
+      "quiet",
+      "manual",
+      "spares",
+      "rust",
+      "floor",
+      "calculate",
+      "music",
+      "polite",
+      "fear",
+      "champion",
+      "bolts"
+    ],
+    "semanticLineCount": 33,
+    "recordingCount": 57,
+    "carryForwardSpokenAudio": false,
+    "unchanged": [
+      "Авторский устав CLUB_CHARTER",
+      "RULE_CARDS и обучение",
+      "210 реплик живого рефери",
+      "Оригинальные боевые эффекты ORA/MUDA, суператака и взрыв",
+      "Карточки выбранных игроками имён"
+    ]
   },
   "faceoffOrder": [
     "faceoff-mode-p1",
@@ -399,9 +212,9 @@
   "roundExchanges": [
     {
       "id": "warranty",
-      "title": "Обмен гарантийными обязательствами",
-      "setupText": "Подойди. Проверим твою сборку.",
-      "replyText": "Я отменяю твою гарантию!",
+      "title": "Ещё один шаг",
+      "setupText": "Ты всё ещё идёшь ко мне?",
+      "replyText": "Твою броню издалека не помнёшь!",
       "utterances": {
         "setup": {
           "p1": "round-warranty-setup-p1",
@@ -425,9 +238,9 @@
     },
     {
       "id": "quiet",
-      "title": "Проверка режима тишины",
-      "setupText": "Я работаю бесшумно.",
-      "replyText": "Тогда трещать буду я. Удобно!",
+      "title": "Зловещий гул",
+      "setupText": "Слышишь зловещий гул?",
+      "replyText": "Это твои колени. Я бы проверил.",
       "utterances": {
         "setup": {
           "p1": "round-quiet-setup-p1",
@@ -451,9 +264,9 @@
     },
     {
       "id": "manual",
-      "title": "Разногласия по инструкции",
-      "setupText": "Я изучил все твои слабости.",
-      "replyText": "Это инструкция от чайника.",
+      "title": "Безупречный план",
+      "setupText": "У меня есть идеальный план!",
+      "replyText": "Главное — не забудь удивиться.",
       "utterances": {
         "setup": {
           "p1": "round-manual-setup-p1",
@@ -477,9 +290,9 @@
     },
     {
       "id": "spares",
-      "title": "Обмен искрами",
-      "setupText": "Меньше пафоса. Лови искру!",
-      "replyText": "Слабовато. Добавь пафоса!",
+      "title": "Громкость убеждений",
+      "setupText": "Что громче: ора или муда?",
+      "replyText": "Проверим на твоём корпусе!",
       "utterances": {
         "setup": {
           "p1": "round-spares-setup-p1",
@@ -503,9 +316,9 @@
     },
     {
       "id": "rust",
-      "title": "Спор об отделке",
-      "setupText": "На тебе ржавчина.",
-      "replyText": "Это выдержка. Я коллекционный!",
+      "title": "Застывшая поза",
+      "setupText": "Зацени мою устрашающую позу!",
+      "replyText": "Замри. Хочу запомнить, куда бить!",
       "utterances": {
         "setup": {
           "p1": "round-rust-setup-p1",
@@ -529,9 +342,9 @@
     },
     {
       "id": "floor",
-      "title": "Знакомство с ареной",
-      "setupText": "Пол уже знает моё имя.",
-      "replyText": "Сейчас познакомитесь поближе.",
+      "title": "Величие под потолком",
+      "setupText": "Моему величию здесь тесно!",
+      "replyText": "Пригнись. Тут низкий потолок.",
       "utterances": {
         "setup": {
           "p1": "round-floor-setup-p1",
@@ -555,9 +368,9 @@
     },
     {
       "id": "calculate",
-      "title": "Точность прогноза",
-      "setupText": "Я рассчитал исход боя.",
-      "replyText": "Готовь ластик. Будешь исправлять.",
+      "title": "Секунда вечности",
+      "setupText": "Я бы остановил само время!",
+      "replyText": "Ради паузы между оправданиями?",
       "utterances": {
         "setup": {
           "p1": "round-calculate-setup-p1",
@@ -581,9 +394,9 @@
     },
     {
       "id": "music",
-      "title": "Настройка выхода",
-      "setupText": "Где моя победная музыка?",
-      "replyText": "Пока вентилятор. Танцуй!",
+      "title": "Звёздный выход",
+      "setupText": "Это мой звёздный выход!",
+      "replyText": "Постарайся обойтись без вылета.",
       "utterances": {
         "setup": {
           "p1": "round-music-setup-p1",
@@ -607,9 +420,9 @@
     },
     {
       "id": "polite",
-      "title": "Обмен любезностями",
-      "setupText": "Я дам тебе фору.",
-      "replyText": "Лучше розетку. Фора своя.",
+      "title": "Последний поклон",
+      "setupText": "Склонись перед моим величием!",
+      "replyText": "Нагнусь, когда буду тебя собирать.",
       "utterances": {
         "setup": {
           "p1": "round-polite-setup-p1",
@@ -633,9 +446,9 @@
     },
     {
       "id": "fear",
-      "title": "Последняя проверка систем",
-      "setupText": "Мой процессор не знает страха.",
-      "replyText": "Обновление придёт без спроса.",
+      "title": "Нервы из стали",
+      "setupText": "Ну что, мурашки по металлу?",
+      "replyText": "Нет. Прикидываю, где оставить вмятину.",
       "utterances": {
         "setup": {
           "p1": "round-fear-setup-p1",
@@ -659,9 +472,9 @@
     },
     {
       "id": "champion",
-      "title": "Заявка на титул",
-      "setupText": "Перед тобой будущий чемпион.",
-      "replyText": "До будущего ещё дожить надо.",
+      "title": "Непобедимый силуэт",
+      "setupText": "Запомни мой непобедимый силуэт!",
+      "replyText": "После боя придётся учить новый.",
       "utterances": {
         "setup": {
           "p1": "round-champion-setup-p1",
@@ -685,9 +498,9 @@
     },
     {
       "id": "bolts",
-      "title": "Техническое напутствие",
-      "setupText": "Держись крепче.",
-      "replyText": "Я своим болтам уже сказал.",
+      "title": "Удар для истории",
+      "setupText": "Весь подвал запомнит этот удар!",
+      "replyText": "Главное — сам не забудь встать.",
       "utterances": {
         "setup": {
           "p1": "round-bolts-setup-p1",
@@ -714,21 +527,20 @@
     {
       "id": "faceoff-mode-p1",
       "speaker": "p1",
-      "text": "Боевой режим: кабачковое противостояние!",
-      "synthesisText": "Боевой режим! Кабачковое ПРОТИВОСТОЯНИЕ!",
+      "text": "Дио. Сегодня гнётся не моя броня.",
+      "synthesisText": "Дио. Сегодня гнётся не МОЯ броня!",
       "emotionalDirection": {
-        "pace": "Начать собранно, вторую половину ускорить одним броском.",
+        "pace": "Обратись к Дио тихо и прямо; после имени короткая пауза. Последние три слова — ровная угроза, без распева.",
         "pauses": [
           {
-            "after": "режим",
-            "milliseconds": 100
+            "after": "дио",
+            "milliseconds": 120
           }
         ],
         "emphasis": [
-          "кабачковое",
-          "противостояние"
+          "МОЯ"
         ],
-        "arc": "Официальный запуск переходит в вызов; смешное название произносить всерьёз."
+        "arc": "Наметить исход боя как личное обещание, не как уже случившийся результат."
       },
       "reference": {
         "id": "p1-exclamation",
@@ -744,39 +556,38 @@
         "kind": "faceoff",
         "order": 1
       },
-      "maxDuration": 3.6,
+      "maxDuration": 4.0,
       "outputFile": "faceoff-mode-p1.mp3",
       "replaces": {
         "clip": "jotaro-mode",
         "part": null
       },
-      "status": "produced"
+      "status": "script-ready-not-produced"
     },
     {
       "id": "faceoff-mode-p2",
       "speaker": "p2",
-      "text": "Твой гарантийный талон уже мёртв!",
+      "text": "Джотаро! Подвал маловат для моего величия!",
       "emotionalDirection": {
-        "pace": "Неторопливое начало, последние два слова слитно.",
+        "pace": "Выкрикни имя, затем с удовольствием расправь фразу; нажим на собственном величии, финал резкий.",
         "pauses": [
           {
-            "after": "гарантия",
-            "milliseconds": 130
+            "after": "джотаро",
+            "milliseconds": 120
           }
         ],
         "emphasis": [
-          "твоя",
-          "мертва"
+          "МОЕГО"
         ],
-        "arc": "Уверенно сообщает плохую новость именно сопернику; конец с ухмылкой, без смеха поверх слова."
+        "arc": "Дио воображает монументальную сцену, хотя стоит в подвале."
       },
       "reference": {
-        "id": "p2-conversation",
-        "clip": "dio-hero",
+        "id": "p2-approved-icl",
+        "clip": "greeting",
         "preferredFragment": {
-          "start": 0.23,
-          "end": 3.19,
-          "status": "existing-measured-trim-not-listening-approved"
+          "start": 7.7,
+          "end": 11.32,
+          "status": "approved-dio-voice-recipe-not-v3-dialogue"
         }
       },
       "semanticGroup": "mode",
@@ -784,39 +595,39 @@
         "kind": "faceoff",
         "order": 2
       },
-      "maxDuration": 2.65,
+      "maxDuration": 4.0,
       "outputFile": "faceoff-mode-p2.mp3",
       "replaces": {
         "clip": "dio-mode",
         "part": null
       },
-      "status": "produced"
+      "status": "script-ready-not-produced",
+      "synthesisText": "Джотаро! Подвал маловат для МОЕГО величия!"
     },
     {
       "id": "faceoff-greeting-open",
       "speaker": "p2",
-      "text": "Вот мы и встретились, Джотаро!",
+      "text": "Ты приближаешься? Выход в другой стороне.",
       "emotionalDirection": {
-        "pace": "Разбег в первых четырёх словах; имя — один яркий акцент.",
+        "pace": "Первый вопрос с насмешливым удивлением; после него полудоля тишины, затем снисходительно укажи на выход.",
         "pauses": [
           {
-            "after": "встретились",
-            "milliseconds": 160
+            "after": "приближаешься",
+            "milliseconds": 120
           }
         ],
         "emphasis": [
-          "встретились",
-          "Джотаро"
+          "ПРИБЛИЖАЕШЬСЯ"
         ],
-        "arc": "Узнавание переходит в торжествующий вызов. Произношение: Джо́таро."
+        "arc": "Предлагает побег как милость, но хочет, чтобы соперник остался."
       },
       "reference": {
-        "id": "p2-challenge",
+        "id": "p2-approved-icl",
         "clip": "greeting",
         "preferredFragment": {
-          "start": 0,
-          "end": 3.9,
-          "status": "candidate-from-existing-asr-not-listening-approved"
+          "start": 7.7,
+          "end": 11.32,
+          "status": "approved-dio-voice-recipe-not-v3-dialogue"
         }
       },
       "semanticGroup": "legacy-package",
@@ -824,26 +635,27 @@
         "kind": "faceoff",
         "order": 3
       },
-      "maxDuration": 4,
+      "maxDuration": 4.0,
       "outputFile": "faceoff-greeting-open.mp3",
       "replaces": {
         "clip": "greeting",
         "part": "greeting-open"
       },
-      "status": "produced"
+      "status": "script-ready-not-produced",
+      "synthesisText": "Ты ПРИБЛИЖАЕШЬСЯ? Выход в другой стороне!"
     },
     {
       "id": "faceoff-greeting-answer",
       "speaker": "p1",
-      "text": "Дио!",
-      "synthesisText": "ДИО!",
+      "text": "Я иду туда, где надо ударить.",
+      "synthesisText": "Я иду туда, где надо УДАРИТЬ.",
       "emotionalDirection": {
-        "pace": "Один выдох; два слога, без длинного разгона.",
+        "pace": "Ответ без разгона и без улыбки; слегка выделить последнее слово, закончить вниз.",
         "pauses": [],
         "emphasis": [
-          "Дио"
+          "УДАРИТЬ"
         ],
-        "arc": "Резкое узнавание, открытый нажим на первый слог: Ди́о. Хвост голоса сохранить."
+        "arc": "Само приближение — угроза; ни одного объяснения сверх необходимого."
       },
       "reference": {
         "id": "p1-exclamation",
@@ -859,39 +671,38 @@
         "kind": "faceoff",
         "order": 4
       },
-      "maxDuration": 1.2,
+      "maxDuration": 4.0,
       "outputFile": "faceoff-greeting-answer.mp3",
       "replaces": {
         "clip": "greeting",
         "part": "greeting-answer"
       },
-      "status": "produced"
+      "status": "script-ready-not-produced"
     },
     {
       "id": "faceoff-greeting-package",
       "speaker": "p2",
-      "text": "Пакет пафоса старый. Имена — наши!",
+      "text": "Какая дерзость! Даже твои винты дрожат!",
       "emotionalDirection": {
-        "pace": "Первую фразу сказать быстро, вторую чуть раздельнее.",
+        "pace": "Коротко возмутись, затем будто великодушно укажи на чужую дрожь. Не вставлять отдельный смех.",
         "pauses": [
           {
-            "after": "старый",
-            "milliseconds": 180
+            "after": "дерзость",
+            "milliseconds": 120
           }
         ],
         "emphasis": [
-          "пафоса",
-          "наши"
+          "ДЕРЗОСТЬ"
         ],
-        "arc": "На миг признаёт сбой, сразу возвращает уверенность. Не изображать системного диктора."
+        "arc": "Принимает спокойствие соперника за оскорбление и пытается вернуть себе сцену."
       },
       "reference": {
-        "id": "p2-conversation",
-        "clip": "dio-hero",
+        "id": "p2-approved-icl",
+        "clip": "greeting",
         "preferredFragment": {
-          "start": 0.23,
-          "end": 3.19,
-          "status": "existing-measured-trim-not-listening-approved"
+          "start": 7.7,
+          "end": 11.32,
+          "status": "approved-dio-voice-recipe-not-v3-dialogue"
         }
       },
       "semanticGroup": "legacy-package",
@@ -899,32 +710,32 @@
         "kind": "faceoff",
         "order": 5
       },
-      "maxDuration": 3.5,
+      "maxDuration": 4.0,
       "outputFile": "faceoff-greeting-package.mp3",
       "replaces": {
         "clip": "greeting",
         "part": "greeting-package"
       },
-      "status": "produced"
+      "status": "script-ready-not-produced",
+      "synthesisText": "Какая ДЕРЗОСТЬ! Даже твои винты дрожат!"
     },
     {
       "id": "faceoff-challenge-p1",
       "speaker": "p1",
-      "text": "Хватит пафоса! Покажи, на что СПОСОБЕН!",
-      "synthesisText": "Хватит пафоса! Покажи, на что СПОСОБЕН!",
+      "text": "Это твой корпус. Мой уже рядом.",
+      "synthesisText": "Это ТВОЙ корпус. Мой уже рядом!",
       "emotionalDirection": {
-        "pace": "Коротко оборвать первую фразу; вторую направить в соперника.",
+        "pace": "Первую фразу бросить сухо, после точки небольшая пауза; вторую сказать ближе и ниже.",
         "pauses": [
           {
-            "after": "пафоса",
-            "milliseconds": 140
+            "after": "корпус",
+            "milliseconds": 120
           }
         ],
         "emphasis": [
-          "хватит",
-          "покажи"
+          "ТВОЙ"
         ],
-        "arc": "Из раздражения — в собранную угрозу; без повторного чужого имени."
+        "arc": "Спокойно возвращает насмешку о дрожащем железе её автору."
       },
       "reference": {
         "id": "p1-exclamation",
@@ -940,39 +751,33 @@
         "kind": "faceoff",
         "order": 6
       },
-      "maxDuration": 3.5,
+      "maxDuration": 4.0,
       "outputFile": "faceoff-challenge-p1.mp3",
       "replaces": {
         "clip": "jotaro-dio",
         "part": null
       },
-      "status": "produced"
+      "status": "script-ready-not-produced"
     },
     {
       "id": "faceoff-taunt-p2",
       "speaker": "p2",
-      "text": "Злишься? А я ещё не начинал!",
+      "text": "Я бы остановил время ради этой позы!",
       "emotionalDirection": {
-        "pace": "Первое слово отдельно, дальше ускорение к последнему.",
-        "pauses": [
-          {
-            "after": "Злишься",
-            "milliseconds": 160
-          }
-        ],
+        "pace": "Начать торжественно, будто объявляешь чудо; в конце самодовольно упереться в нелепую причину.",
+        "pauses": [],
         "emphasis": [
-          "ещё",
-          "начинал"
+          "ПОЗЫ"
         ],
-        "arc": "Поддеть вопросом и добить хвастовством; конец выше и сильнее начала."
+        "arc": "Условная бравада о времени, а не объявление способности или фактической остановки."
       },
       "reference": {
-        "id": "p2-taunt",
-        "clip": "dio-angry",
+        "id": "p2-approved-icl",
+        "clip": "greeting",
         "preferredFragment": {
-          "start": 1.25,
-          "end": 5.8,
-          "status": "candidate-from-existing-asr-not-listening-approved"
+          "start": 7.7,
+          "end": 11.32,
+          "status": "approved-dio-voice-recipe-not-v3-dialogue"
         }
       },
       "semanticGroup": "personal-challenge",
@@ -980,32 +785,32 @@
         "kind": "faceoff",
         "order": 7
       },
-      "maxDuration": 2.8,
+      "maxDuration": 4.5,
       "outputFile": "faceoff-taunt-p2.mp3",
       "replaces": {
         "clip": "dio-angry",
         "part": null
       },
-      "status": "produced"
+      "status": "script-ready-not-produced",
+      "synthesisText": "Я бы остановил время ради этой ПОЗЫ!"
     },
     {
       "id": "faceoff-resolve-p1",
       "speaker": "p1",
-      "text": "Похоже, ты и правда не прост.",
-      "synthesisText": "Похоже, ты и ПРАВДА не прост!",
+      "text": "Сначала останови болтовню. Потом позируй.",
+      "synthesisText": "Сначала останови БОЛТОВНЮ. Потом позируй.",
       "emotionalDirection": {
-        "pace": "Первое слово с короткой оценочной паузой, остаток ровно.",
+        "pace": "Первую фразу — как короткий приказ, вторую ещё суше; без улыбки до конца записи.",
         "pauses": [
           {
-            "after": "Похоже",
-            "milliseconds": 130
+            "after": "болтовню",
+            "milliseconds": 120
           }
         ],
         "emphasis": [
-          "правда",
-          "не прост"
+          "БОЛТОВНЮ"
         ],
-        "arc": "Признание силы без испуга; последнее слово опустить, не распевать."
+        "arc": "Сбивает сверхъестественный пафос бытовым раздражением."
       },
       "reference": {
         "id": "p1-exclamation",
@@ -1021,43 +826,38 @@
         "kind": "faceoff",
         "order": 8
       },
-      "maxDuration": 3.2,
+      "maxDuration": 3.5,
       "outputFile": "faceoff-resolve-p1.mp3",
       "replaces": {
         "clip": "jotaro-not-simple",
         "part": null
       },
-      "status": "produced"
+      "status": "script-ready-not-produced"
     },
     {
       "id": "faceoff-fight-p2",
       "speaker": "p2",
-      "text": "Ха! Ну вперёд, герой!",
+      "text": "Подходи, железный нахал! Муда!",
       "emotionalDirection": {
-        "pace": "Одно короткое «Ха», затем вызов на одном дыхании.",
+        "pace": "Резко пригласи к бою, затем один отчётливый выкрик «Муда»; не добавлять повторы или новые слова.",
         "pauses": [
           {
-            "after": "Ха",
+            "after": "нахал",
             "milliseconds": 120
-          },
-          {
-            "after": "вперёд",
-            "milliseconds": 80
           }
         ],
         "emphasis": [
-          "вперёд",
-          "герой"
+          "НАХАЛ"
         ],
-        "arc": "Сначала удовольствие от перепалки, затем приглашение подойти. Никакого добавленного смеха в конце."
+        "arc": "Величественный монолог наконец превращается в личную драку."
       },
       "reference": {
-        "id": "p2-conversation",
-        "clip": "dio-hero",
+        "id": "p2-approved-icl",
+        "clip": "greeting",
         "preferredFragment": {
-          "start": 0.23,
-          "end": 3.19,
-          "status": "existing-measured-trim-not-listening-approved"
+          "start": 7.7,
+          "end": 11.32,
+          "status": "approved-dio-voice-recipe-not-v3-dialogue"
         }
       },
       "semanticGroup": "ready",
@@ -1065,32 +865,27 @@
         "kind": "faceoff",
         "order": 9
       },
-      "maxDuration": 2.6,
+      "maxDuration": 3.4,
       "outputFile": "faceoff-fight-p2.mp3",
       "replaces": {
         "clip": "dio-hero",
         "part": null
       },
-      "status": "produced"
+      "status": "script-ready-not-produced",
+      "synthesisText": "Подходи, железный НАХАЛ! Муда!"
     },
     {
       "id": "round-warranty-setup-p1",
       "speaker": "p1",
-      "text": "Подойди. Проверим твою сборку.",
-      "synthesisText": "Подойди! Проверим твою СБОРКУ!",
+      "text": "Ты всё ещё идёшь ко мне?",
+      "synthesisText": "Ты всё ещё ИДЁШЬ ко мне?",
       "emotionalDirection": {
-        "pace": "Две короткие фразы; вторую произнести чуть быстрее.",
-        "pauses": [
-          {
-            "after": "Подойди",
-            "milliseconds": 140
-          }
-        ],
+        "pace": "Один спокойный разбег, затем резкий смысловой акцент. Мужской Джотаро: собранно и коротко, ключевое слово ударить, окончание опустить; без дикторского распева.",
+        "pauses": [],
         "emphasis": [
-          "подойди",
-          "сборку"
+          "ИДЁШЬ"
         ],
-        "arc": "Не просьба, а спокойное обещание разобрать соперника."
+        "arc": "Не верит, что соперник сам сокращает дистанцию; вопрос адресный, не растерянный."
       },
       "reference": {
         "id": "p1-exclamation",
@@ -1108,35 +903,29 @@
         "turn": "setup",
         "order": 1
       },
-      "maxDuration": 2.85,
+      "maxDuration": 4.0,
       "outputFile": "round-warranty-setup-p1.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced"
     },
     {
       "id": "round-warranty-setup-p2",
       "speaker": "p2",
-      "text": "Подойди. Проверим твою сборку.",
+      "text": "Ты всё ещё идёшь ко мне?",
       "emotionalDirection": {
-        "pace": "Две короткие фразы; вторую произнести чуть быстрее.",
-        "pauses": [
-          {
-            "after": "Подойди",
-            "milliseconds": 140
-          }
-        ],
+        "pace": "Один спокойный разбег, затем резкий смысловой акцент. Мужской Дио: театральная уверенность, быстрый подхват и насмешливый нажим на ключевое слово; не добавлять смех или междометия.",
+        "pauses": [],
         "emphasis": [
-          "подойди",
-          "сборку"
+          "МНЕ"
         ],
-        "arc": "Не просьба, а спокойное обещание разобрать соперника."
+        "arc": "Не верит, что соперник сам сокращает дистанцию; вопрос адресный, не растерянный."
       },
       "reference": {
-        "id": "p2-conversation",
-        "clip": "dio-hero",
+        "id": "p2-approved-icl",
+        "clip": "greeting",
         "preferredFragment": {
-          "start": 0.23,
-          "end": 3.19,
-          "status": "existing-measured-trim-not-listening-approved"
+          "start": 7.7,
+          "end": 11.32,
+          "status": "approved-dio-voice-recipe-not-v3-dialogue"
         }
       },
       "semanticGroup": "warranty",
@@ -1146,23 +935,23 @@
         "turn": "setup",
         "order": 1
       },
-      "maxDuration": 2.85,
+      "maxDuration": 4.0,
       "outputFile": "round-warranty-setup-p2.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced",
+      "synthesisText": "Ты всё ещё идёшь ко МНЕ?!"
     },
     {
       "id": "round-warranty-reply-p1",
       "speaker": "p1",
-      "text": "Я отменяю твою гарантию!",
-      "synthesisText": "Я ОТМЕНЯЮ твою гарантию!",
+      "text": "Твою броню издалека не помнёшь!",
+      "synthesisText": "Твою БРОНЮ издалека не помнёшь!",
       "emotionalDirection": {
-        "pace": "Начать сразу, ударение перенести на конец.",
+        "pace": "Подхватить ответ сразу; после первой короткой фразы дать полудолю на смысловой переворот. Мужской Джотаро: собранно и коротко, ключевое слово ударить, окончание опустить; без дикторского распева.",
         "pauses": [],
         "emphasis": [
-          "отменяю",
-          "твою"
+          "БРОНЮ"
         ],
-        "arc": "Ответить угрозой на угрозу, с удовольствием от собственной наглости."
+        "arc": "Отвечает причиной приближения: броня противника, а не собственная храбрость."
       },
       "reference": {
         "id": "p1-exclamation",
@@ -1180,30 +969,29 @@
         "turn": "reply",
         "order": 2
       },
-      "maxDuration": 2.7,
+      "maxDuration": 3.5,
       "outputFile": "round-warranty-reply-p1.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced"
     },
     {
       "id": "round-warranty-reply-p2",
       "speaker": "p2",
-      "text": "Я отменяю твою гарантию!",
+      "text": "Твою броню издалека не помнёшь!",
       "emotionalDirection": {
-        "pace": "Начать сразу, ударение перенести на конец.",
+        "pace": "Подхватить ответ сразу; после первой короткой фразы дать полудолю на смысловой переворот. Мужской Дио: театральная уверенность, быстрый подхват и насмешливый нажим на ключевое слово; не добавлять смех или междометия.",
         "pauses": [],
         "emphasis": [
-          "отменяю",
-          "твою"
+          "ПОМНЁШЬ"
         ],
-        "arc": "Ответить угрозой на угрозу, с удовольствием от собственной наглости."
+        "arc": "Отвечает причиной приближения: броня противника, а не собственная храбрость."
       },
       "reference": {
-        "id": "p2-conversation",
-        "clip": "dio-hero",
+        "id": "p2-approved-icl",
+        "clip": "greeting",
         "preferredFragment": {
-          "start": 0.23,
-          "end": 3.19,
-          "status": "existing-measured-trim-not-listening-approved"
+          "start": 7.7,
+          "end": 11.32,
+          "status": "approved-dio-voice-recipe-not-v3-dialogue"
         }
       },
       "semanticGroup": "warranty",
@@ -1213,22 +1001,23 @@
         "turn": "reply",
         "order": 2
       },
-      "maxDuration": 2.7,
+      "maxDuration": 3.5,
       "outputFile": "round-warranty-reply-p2.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced",
+      "synthesisText": "Твою броню издалека не ПОМНЁШЬ!"
     },
     {
       "id": "round-quiet-setup-p1",
       "speaker": "p1",
-      "text": "Я работаю бесшумно.",
-      "synthesisText": "Я работаю БЕСШУМНО!",
+      "text": "Слышишь зловещий гул?",
+      "synthesisText": "Слышишь зловещий ГУЛ?",
       "emotionalDirection": {
-        "pace": "Негромко, отчётливо, без шёпота.",
+        "pace": "Один спокойный разбег, затем резкий смысловой акцент. Мужской Джотаро: собранно и коротко, ключевое слово ударить, окончание опустить; без дикторского распева.",
         "pauses": [],
         "emphasis": [
-          "бесшумно"
+          "ГУЛ"
         ],
-        "arc": "Хвастается техническим превосходством, будто сообщил доказанный факт."
+        "arc": "Пытается выдать любой звук за предвестие своей силы."
       },
       "reference": {
         "id": "p1-exclamation",
@@ -1246,29 +1035,29 @@
         "turn": "setup",
         "order": 1
       },
-      "maxDuration": 2.2,
+      "maxDuration": 3.4,
       "outputFile": "round-quiet-setup-p1.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced"
     },
     {
       "id": "round-quiet-setup-p2",
       "speaker": "p2",
-      "text": "Я работаю бесшумно.",
+      "text": "Слышишь зловещий гул?",
       "emotionalDirection": {
-        "pace": "Негромко, отчётливо, без шёпота.",
+        "pace": "Один спокойный разбег, затем резкий смысловой акцент. Мужской Дио: театральная уверенность, быстрый подхват и насмешливый нажим на ключевое слово; не добавлять смех или междометия.",
         "pauses": [],
         "emphasis": [
-          "бесшумно"
+          "ЗЛОВЕЩИЙ"
         ],
-        "arc": "Хвастается техническим превосходством, будто сообщил доказанный факт."
+        "arc": "Пытается выдать любой звук за предвестие своей силы."
       },
       "reference": {
-        "id": "p2-conversation",
-        "clip": "dio-hero",
+        "id": "p2-approved-icl",
+        "clip": "greeting",
         "preferredFragment": {
-          "start": 0.23,
-          "end": 3.19,
-          "status": "existing-measured-trim-not-listening-approved"
+          "start": 7.7,
+          "end": 11.32,
+          "status": "approved-dio-voice-recipe-not-v3-dialogue"
         }
       },
       "semanticGroup": "quiet",
@@ -1278,28 +1067,28 @@
         "turn": "setup",
         "order": 1
       },
-      "maxDuration": 2.2,
+      "maxDuration": 3.4,
       "outputFile": "round-quiet-setup-p2.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced",
+      "synthesisText": "Слышишь ЗЛОВЕЩИЙ гул?!"
     },
     {
       "id": "round-quiet-reply-p1",
       "speaker": "p1",
-      "text": "Тогда трещать буду я. Удобно!",
-      "synthesisText": "Тогда ТРЕЩАТЬ буду я! Удобно!",
+      "text": "Это твои колени. Я бы проверил.",
+      "synthesisText": "Это твои КОЛЕНИ. Я бы проверил.",
       "emotionalDirection": {
-        "pace": "Ответ подхватить быстро; последнее слово отдельно.",
+        "pace": "Подхватить ответ сразу; после первой короткой фразы дать полудолю на смысловой переворот. Мужской Джотаро: собранно и коротко, ключевое слово ударить, окончание опустить; без дикторского распева.",
         "pauses": [
           {
-            "after": "я",
-            "milliseconds": 140
+            "after": "колени",
+            "milliseconds": 120
           }
         ],
         "emphasis": [
-          "трещать",
-          "удобно"
+          "КОЛЕНИ"
         ],
-        "arc": "Делает чужое хвастовство поводом для собственной шутки."
+        "arc": "Приземляет мистику до скрипящих суставов; совет произносит нарочито заботливо."
       },
       "reference": {
         "id": "p1-exclamation",
@@ -1317,35 +1106,34 @@
         "turn": "reply",
         "order": 2
       },
-      "maxDuration": 2.7,
+      "maxDuration": 4.0,
       "outputFile": "round-quiet-reply-p1.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced"
     },
     {
       "id": "round-quiet-reply-p2",
       "speaker": "p2",
-      "text": "Тогда трещать буду я. Удобно!",
+      "text": "Это твои колени. Я бы проверил.",
       "emotionalDirection": {
-        "pace": "Ответ подхватить быстро; последнее слово отдельно.",
+        "pace": "Подхватить ответ сразу; после первой короткой фразы дать полудолю на смысловой переворот. Мужской Дио: театральная уверенность, быстрый подхват и насмешливый нажим на ключевое слово; не добавлять смех или междометия.",
         "pauses": [
           {
-            "after": "я",
-            "milliseconds": 140
+            "after": "колени",
+            "milliseconds": 120
           }
         ],
         "emphasis": [
-          "трещать",
-          "удобно"
+          "ТВОИ"
         ],
-        "arc": "Делает чужое хвастовство поводом для собственной шутки."
+        "arc": "Приземляет мистику до скрипящих суставов; совет произносит нарочито заботливо."
       },
       "reference": {
-        "id": "p2-conversation",
-        "clip": "dio-hero",
+        "id": "p2-approved-icl",
+        "clip": "greeting",
         "preferredFragment": {
-          "start": 0.23,
-          "end": 3.19,
-          "status": "existing-measured-trim-not-listening-approved"
+          "start": 7.7,
+          "end": 11.32,
+          "status": "approved-dio-voice-recipe-not-v3-dialogue"
         }
       },
       "semanticGroup": "quiet",
@@ -1355,23 +1143,23 @@
         "turn": "reply",
         "order": 2
       },
-      "maxDuration": 2.7,
+      "maxDuration": 4.0,
       "outputFile": "round-quiet-reply-p2.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced",
+      "synthesisText": "Это ТВОИ колени! Я бы проверил."
     },
     {
       "id": "round-manual-setup-p1",
       "speaker": "p1",
-      "text": "Я изучил все твои слабости.",
-      "synthesisText": "Я изучил ВСЕ твои слабости!",
+      "text": "У меня есть идеальный план!",
+      "synthesisText": "У меня есть идеальный ПЛАН!",
       "emotionalDirection": {
-        "pace": "Ровный разбег, притормозить на предпоследнем слове.",
+        "pace": "Один спокойный разбег, затем резкий смысловой акцент. Мужской Джотаро: собранно и коротко, ключевое слово ударить, окончание опустить; без дикторского распева.",
         "pauses": [],
         "emphasis": [
-          "все",
-          "слабости"
+          "ПЛАН"
         ],
-        "arc": "Уверенный доклад о подготовке, без вопросительной интонации."
+        "arc": "Уверенно предъявляет невидимый козырь, не раскрывая деталей."
       },
       "reference": {
         "id": "p1-exclamation",
@@ -1389,30 +1177,29 @@
         "turn": "setup",
         "order": 1
       },
-      "maxDuration": 2.8,
+      "maxDuration": 3.5,
       "outputFile": "round-manual-setup-p1.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced"
     },
     {
       "id": "round-manual-setup-p2",
       "speaker": "p2",
-      "text": "Я изучил все твои слабости.",
+      "text": "У меня есть идеальный план!",
       "emotionalDirection": {
-        "pace": "Ровный разбег, притормозить на предпоследнем слове.",
+        "pace": "Один спокойный разбег, затем резкий смысловой акцент. Мужской Дио: театральная уверенность, быстрый подхват и насмешливый нажим на ключевое слово; не добавлять смех или междометия.",
         "pauses": [],
         "emphasis": [
-          "все",
-          "слабости"
+          "ИДЕАЛЬНЫЙ"
         ],
-        "arc": "Уверенный доклад о подготовке, без вопросительной интонации."
+        "arc": "Уверенно предъявляет невидимый козырь, не раскрывая деталей."
       },
       "reference": {
-        "id": "p2-conversation",
-        "clip": "dio-hero",
+        "id": "p2-approved-icl",
+        "clip": "greeting",
         "preferredFragment": {
-          "start": 0.23,
-          "end": 3.19,
-          "status": "existing-measured-trim-not-listening-approved"
+          "start": 7.7,
+          "end": 11.32,
+          "status": "approved-dio-voice-recipe-not-v3-dialogue"
         }
       },
       "semanticGroup": "manual",
@@ -1422,27 +1209,28 @@
         "turn": "setup",
         "order": 1
       },
-      "maxDuration": 2.8,
+      "maxDuration": 3.5,
       "outputFile": "round-manual-setup-p2.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced",
+      "synthesisText": "У меня есть ИДЕАЛЬНЫЙ план!"
     },
     {
       "id": "round-manual-reply-p1",
       "speaker": "p1",
-      "text": "Это инструкция от чайника.",
-      "synthesisText": "Это инструкция от ЧАЙНИКА.",
+      "text": "Главное — не забудь удивиться.",
+      "synthesisText": "Главное — не забудь УДИВИТЬСЯ.",
       "emotionalDirection": {
-        "pace": "Начать буднично, слово-разоблачение оставить на конец.",
+        "pace": "Подхватить ответ сразу; после первой короткой фразы дать полудолю на смысловой переворот. Мужской Джотаро: собранно и коротко, ключевое слово ударить, окончание опустить; без дикторского распева.",
         "pauses": [
           {
-            "after": "инструкция",
-            "milliseconds": 100
+            "after": "главное",
+            "milliseconds": 120
           }
         ],
         "emphasis": [
-          "чайника"
+          "УДИВИТЬСЯ"
         ],
-        "arc": "Не смеяться заранее: комизм в том, насколько спокойно исправляет соперника."
+        "arc": "Уже предвкушает чужое удивление; не сообщает фактический результат раунда."
       },
       "reference": {
         "id": "p1-exclamation",
@@ -1460,34 +1248,34 @@
         "turn": "reply",
         "order": 2
       },
-      "maxDuration": 2.55,
+      "maxDuration": 3.4,
       "outputFile": "round-manual-reply-p1.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced"
     },
     {
       "id": "round-manual-reply-p2",
       "speaker": "p2",
-      "text": "Это инструкция от чайника.",
+      "text": "Главное — не забудь удивиться.",
       "emotionalDirection": {
-        "pace": "Начать буднично, слово-разоблачение оставить на конец.",
+        "pace": "Подхватить ответ сразу; после первой короткой фразы дать полудолю на смысловой переворот. Мужской Дио: театральная уверенность, быстрый подхват и насмешливый нажим на ключевое слово; не добавлять смех или междометия.",
         "pauses": [
           {
-            "after": "инструкция",
-            "milliseconds": 100
+            "after": "главное",
+            "milliseconds": 120
           }
         ],
         "emphasis": [
-          "чайника"
+          "НЕ"
         ],
-        "arc": "Не смеяться заранее: комизм в том, насколько спокойно исправляет соперника."
+        "arc": "Уже предвкушает чужое удивление; не сообщает фактический результат раунда."
       },
       "reference": {
-        "id": "p2-conversation",
-        "clip": "dio-hero",
+        "id": "p2-approved-icl",
+        "clip": "greeting",
         "preferredFragment": {
-          "start": 0.23,
-          "end": 3.19,
-          "status": "existing-measured-trim-not-listening-approved"
+          "start": 7.7,
+          "end": 11.32,
+          "status": "approved-dio-voice-recipe-not-v3-dialogue"
         }
       },
       "semanticGroup": "manual",
@@ -1497,28 +1285,28 @@
         "turn": "reply",
         "order": 2
       },
-      "maxDuration": 2.55,
+      "maxDuration": 3.4,
       "outputFile": "round-manual-reply-p2.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced",
+      "synthesisText": "Главное — НЕ забудь удивиться!"
     },
     {
       "id": "round-spares-setup-p1",
       "speaker": "p1",
-      "text": "Меньше пафоса. Лови искру!",
-      "synthesisText": "Меньше пафоса! ЛОВИ искру!",
+      "text": "Что громче: ора или муда?",
+      "synthesisText": "Что громче: ОРА или муда?",
       "emotionalDirection": {
-        "pace": "Первую фразу отрезать, вторую резко бросить вперёд.",
+        "pace": "Один спокойный разбег, затем резкий смысловой акцент. Мужской Джотаро: собранно и коротко, ключевое слово ударить, окончание опустить; без дикторского распева.",
         "pauses": [
           {
-            "after": "пафоса",
+            "after": "громче",
             "milliseconds": 120
           }
         ],
         "emphasis": [
-          "меньше",
-          "лови"
+          "ОРА"
         ],
-        "arc": "Раздражение становится азартом; это реплика перед раундом, не сигнал реального попадания."
+        "arc": "Сравнивает два боевых выкрика как оружие; коротко, без серии повторов."
       },
       "reference": {
         "id": "p1-exclamation",
@@ -1536,35 +1324,34 @@
         "turn": "setup",
         "order": 1
       },
-      "maxDuration": 2.6,
+      "maxDuration": 3.5,
       "outputFile": "round-spares-setup-p1.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced"
     },
     {
       "id": "round-spares-setup-p2",
       "speaker": "p2",
-      "text": "Меньше пафоса. Лови искру!",
+      "text": "Что громче: ора или муда?",
       "emotionalDirection": {
-        "pace": "Первую фразу отрезать, вторую резко бросить вперёд.",
+        "pace": "Один спокойный разбег, затем резкий смысловой акцент. Мужской Дио: театральная уверенность, быстрый подхват и насмешливый нажим на ключевое слово; не добавлять смех или междометия.",
         "pauses": [
           {
-            "after": "пафоса",
+            "after": "громче",
             "milliseconds": 120
           }
         ],
         "emphasis": [
-          "меньше",
-          "лови"
+          "МУДА"
         ],
-        "arc": "Раздражение становится азартом; это реплика перед раундом, не сигнал реального попадания."
+        "arc": "Сравнивает два боевых выкрика как оружие; коротко, без серии повторов."
       },
       "reference": {
-        "id": "p2-conversation",
-        "clip": "dio-hero",
+        "id": "p2-approved-icl",
+        "clip": "greeting",
         "preferredFragment": {
-          "start": 0.23,
-          "end": 3.19,
-          "status": "existing-measured-trim-not-listening-approved"
+          "start": 7.7,
+          "end": 11.32,
+          "status": "approved-dio-voice-recipe-not-v3-dialogue"
         }
       },
       "semanticGroup": "spares",
@@ -1574,28 +1361,23 @@
         "turn": "setup",
         "order": 1
       },
-      "maxDuration": 2.6,
+      "maxDuration": 3.5,
       "outputFile": "round-spares-setup-p2.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced",
+      "synthesisText": "Что громче: ора или МУДА?!"
     },
     {
       "id": "round-spares-reply-p1",
       "speaker": "p1",
-      "text": "Слабовато. Добавь пафоса!",
-      "synthesisText": "Слабовато. ДОБАВЬ пафоса!",
+      "text": "Проверим на твоём корпусе!",
+      "synthesisText": "Проверим на ТВОЁМ корпусе!",
       "emotionalDirection": {
-        "pace": "Короткая оценка, пауза, затем ответный вызов.",
-        "pauses": [
-          {
-            "after": "Слабовато",
-            "milliseconds": 160
-          }
-        ],
+        "pace": "Подхватить ответ сразу; после первой короткой фразы дать полудолю на смысловой переворот. Мужской Джотаро: собранно и коротко, ключевое слово ударить, окончание опустить; без дикторского распева.",
+        "pauses": [],
         "emphasis": [
-          "добавь",
-          "пафоса"
+          "ТВОЁМ"
         ],
-        "arc": "Возвращает противнику его же слово; закончить вызывающе."
+        "arc": "Предлагает очень пристрастный опыт с противником в роли мишени."
       },
       "reference": {
         "id": "p1-exclamation",
@@ -1613,35 +1395,29 @@
         "turn": "reply",
         "order": 2
       },
-      "maxDuration": 2.5,
+      "maxDuration": 3.4,
       "outputFile": "round-spares-reply-p1.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced"
     },
     {
       "id": "round-spares-reply-p2",
       "speaker": "p2",
-      "text": "Слабовато. Добавь пафоса!",
+      "text": "Проверим на твоём корпусе!",
       "emotionalDirection": {
-        "pace": "Короткая оценка, пауза, затем ответный вызов.",
-        "pauses": [
-          {
-            "after": "Слабовато",
-            "milliseconds": 160
-          }
-        ],
+        "pace": "Подхватить ответ сразу; после первой короткой фразы дать полудолю на смысловой переворот. Мужской Дио: театральная уверенность, быстрый подхват и насмешливый нажим на ключевое слово; не добавлять смех или междометия.",
+        "pauses": [],
         "emphasis": [
-          "добавь",
-          "пафоса"
+          "ПРОВЕРИМ"
         ],
-        "arc": "Возвращает противнику его же слово; закончить вызывающе."
+        "arc": "Предлагает очень пристрастный опыт с противником в роли мишени."
       },
       "reference": {
-        "id": "p2-conversation",
-        "clip": "dio-hero",
+        "id": "p2-approved-icl",
+        "clip": "greeting",
         "preferredFragment": {
-          "start": 0.23,
-          "end": 3.19,
-          "status": "existing-measured-trim-not-listening-approved"
+          "start": 7.7,
+          "end": 11.32,
+          "status": "approved-dio-voice-recipe-not-v3-dialogue"
         }
       },
       "semanticGroup": "spares",
@@ -1651,22 +1427,23 @@
         "turn": "reply",
         "order": 2
       },
-      "maxDuration": 2.5,
+      "maxDuration": 3.4,
       "outputFile": "round-spares-reply-p2.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced",
+      "synthesisText": "ПРОВЕРИМ на твоём корпусе!"
     },
     {
       "id": "round-rust-setup-p1",
       "speaker": "p1",
-      "text": "На тебе ржавчина.",
-      "synthesisText": "На тебе РЖАВЧИНА!",
+      "text": "Зацени мою устрашающую позу!",
+      "synthesisText": "Зацени мою устрашающую ПОЗУ!",
       "emotionalDirection": {
-        "pace": "Сразу к замечанию, небольшой акцент на последнем слове.",
+        "pace": "Один спокойный разбег, затем резкий смысловой акцент. Мужской Джотаро: собранно и коротко, ключевое слово ударить, окончание опустить; без дикторского распева.",
         "pauses": [],
         "emphasis": [
-          "ржавчина"
+          "ПОЗУ"
         ],
-        "arc": "Замечает недостаток, как опытный механик на осмотре."
+        "arc": "Хвастается позой всерьёз, не смеясь над собственной нелепостью."
       },
       "reference": {
         "id": "p1-exclamation",
@@ -1684,29 +1461,29 @@
         "turn": "setup",
         "order": 1
       },
-      "maxDuration": 2.1,
+      "maxDuration": 3.4,
       "outputFile": "round-rust-setup-p1.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced"
     },
     {
       "id": "round-rust-setup-p2",
       "speaker": "p2",
-      "text": "На тебе ржавчина.",
+      "text": "Зацени мою устрашающую позу!",
       "emotionalDirection": {
-        "pace": "Сразу к замечанию, небольшой акцент на последнем слове.",
+        "pace": "Один спокойный разбег, затем резкий смысловой акцент. Мужской Дио: театральная уверенность, быстрый подхват и насмешливый нажим на ключевое слово; не добавлять смех или междометия.",
         "pauses": [],
         "emphasis": [
-          "ржавчина"
+          "МОЮ"
         ],
-        "arc": "Замечает недостаток, как опытный механик на осмотре."
+        "arc": "Хвастается позой всерьёз, не смеясь над собственной нелепостью."
       },
       "reference": {
-        "id": "p2-conversation",
-        "clip": "dio-hero",
+        "id": "p2-approved-icl",
+        "clip": "greeting",
         "preferredFragment": {
-          "start": 0.23,
-          "end": 3.19,
-          "status": "existing-measured-trim-not-listening-approved"
+          "start": 7.7,
+          "end": 11.32,
+          "status": "approved-dio-voice-recipe-not-v3-dialogue"
         }
       },
       "semanticGroup": "rust",
@@ -1716,28 +1493,28 @@
         "turn": "setup",
         "order": 1
       },
-      "maxDuration": 2.1,
+      "maxDuration": 3.4,
       "outputFile": "round-rust-setup-p2.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced",
+      "synthesisText": "Зацени МОЮ устрашающую позу!"
     },
     {
       "id": "round-rust-reply-p1",
       "speaker": "p1",
-      "text": "Это выдержка. Я коллекционный!",
-      "synthesisText": "Это ВЫДЕРЖКА! Я коллекционный!",
+      "text": "Замри. Хочу запомнить, куда бить!",
+      "synthesisText": "Замри. Хочу запомнить, КУДА бить!",
       "emotionalDirection": {
-        "pace": "Первую фразу — поправка; вторую с заметным подъёмом.",
+        "pace": "Подхватить ответ сразу; после первой короткой фразы дать полудолю на смысловой переворот. Мужской Джотаро: собранно и коротко, ключевое слово ударить, окончание опустить; без дикторского распева.",
         "pauses": [
           {
-            "after": "выдержка",
-            "milliseconds": 130
+            "after": "замри",
+            "milliseconds": 120
           }
         ],
         "emphasis": [
-          "выдержка",
-          "коллекционный"
+          "КУДА"
         ],
-        "arc": "Обида на миг, затем гордая защита собственного вида."
+        "arc": "Словно собирается сделать снимок, но выдаёт настоящую цель последними словами."
       },
       "reference": {
         "id": "p1-exclamation",
@@ -1755,35 +1532,34 @@
         "turn": "reply",
         "order": 2
       },
-      "maxDuration": 2.8,
+      "maxDuration": 3.5,
       "outputFile": "round-rust-reply-p1.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced"
     },
     {
       "id": "round-rust-reply-p2",
       "speaker": "p2",
-      "text": "Это выдержка. Я коллекционный!",
+      "text": "Замри. Хочу запомнить, куда бить!",
       "emotionalDirection": {
-        "pace": "Первую фразу — поправка; вторую с заметным подъёмом.",
+        "pace": "Подхватить ответ сразу; после первой короткой фразы дать полудолю на смысловой переворот. Мужской Дио: театральная уверенность, быстрый подхват и насмешливый нажим на ключевое слово; не добавлять смех или междометия.",
         "pauses": [
           {
-            "after": "выдержка",
-            "milliseconds": 130
+            "after": "замри",
+            "milliseconds": 120
           }
         ],
         "emphasis": [
-          "выдержка",
-          "коллекционный"
+          "ЗАМРИ"
         ],
-        "arc": "Обида на миг, затем гордая защита собственного вида."
+        "arc": "Словно собирается сделать снимок, но выдаёт настоящую цель последними словами."
       },
       "reference": {
-        "id": "p2-conversation",
-        "clip": "dio-hero",
+        "id": "p2-approved-icl",
+        "clip": "greeting",
         "preferredFragment": {
-          "start": 0.23,
-          "end": 3.19,
-          "status": "existing-measured-trim-not-listening-approved"
+          "start": 7.7,
+          "end": 11.32,
+          "status": "approved-dio-voice-recipe-not-v3-dialogue"
         }
       },
       "semanticGroup": "rust",
@@ -1793,23 +1569,23 @@
         "turn": "reply",
         "order": 2
       },
-      "maxDuration": 2.8,
+      "maxDuration": 3.5,
       "outputFile": "round-rust-reply-p2.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced",
+      "synthesisText": "ЗАМРИ! Хочу запомнить, куда бить."
     },
     {
       "id": "round-floor-setup-p1",
       "speaker": "p1",
-      "text": "Пол уже знает моё имя.",
-      "synthesisText": "Пол УЖЕ знает моё имя!",
+      "text": "Моему величию здесь тесно!",
+      "synthesisText": "Моему величию здесь ТЕСНО!",
       "emotionalDirection": {
-        "pace": "Произнести как легенду о себе, без длинного распева.",
+        "pace": "Один спокойный разбег, затем резкий смысловой акцент. Мужской Джотаро: собранно и коротко, ключевое слово ударить, окончание опустить; без дикторского распева.",
         "pauses": [],
         "emphasis": [
-          "уже",
-          "моё"
+          "ТЕСНО"
         ],
-        "arc": "Хвастовство опытом; выбранное имя не произносится."
+        "arc": "Обвиняет маленький клуб в том, что он недостаточно велик для него."
       },
       "reference": {
         "id": "p1-exclamation",
@@ -1827,30 +1603,29 @@
         "turn": "setup",
         "order": 1
       },
-      "maxDuration": 2.7,
+      "maxDuration": 3.4,
       "outputFile": "round-floor-setup-p1.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced"
     },
     {
       "id": "round-floor-setup-p2",
       "speaker": "p2",
-      "text": "Пол уже знает моё имя.",
+      "text": "Моему величию здесь тесно!",
       "emotionalDirection": {
-        "pace": "Произнести как легенду о себе, без длинного распева.",
+        "pace": "Один спокойный разбег, затем резкий смысловой акцент. Мужской Дио: театральная уверенность, быстрый подхват и насмешливый нажим на ключевое слово; не добавлять смех или междометия.",
         "pauses": [],
         "emphasis": [
-          "уже",
-          "моё"
+          "МОЕМУ"
         ],
-        "arc": "Хвастовство опытом; выбранное имя не произносится."
+        "arc": "Обвиняет маленький клуб в том, что он недостаточно велик для него."
       },
       "reference": {
-        "id": "p2-conversation",
-        "clip": "dio-hero",
+        "id": "p2-approved-icl",
+        "clip": "greeting",
         "preferredFragment": {
-          "start": 0.23,
-          "end": 3.19,
-          "status": "existing-measured-trim-not-listening-approved"
+          "start": 7.7,
+          "end": 11.32,
+          "status": "approved-dio-voice-recipe-not-v3-dialogue"
         }
       },
       "semanticGroup": "floor",
@@ -1860,23 +1635,28 @@
         "turn": "setup",
         "order": 1
       },
-      "maxDuration": 2.7,
+      "maxDuration": 3.4,
       "outputFile": "round-floor-setup-p2.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced",
+      "synthesisText": "МОЕМУ величию здесь тесно!"
     },
     {
       "id": "round-floor-reply-p1",
       "speaker": "p1",
-      "text": "Сейчас познакомитесь поближе.",
-      "synthesisText": "Сейчас познакомитесь ПОБЛИЖЕ!",
+      "text": "Пригнись. Тут низкий потолок.",
+      "synthesisText": "Пригнись. Тут НИЗКИЙ потолок.",
       "emotionalDirection": {
-        "pace": "Небольшой нажим в начале, плавно довести до конца.",
-        "pauses": [],
-        "emphasis": [
-          "сейчас",
-          "поближе"
+        "pace": "Подхватить ответ сразу; после первой короткой фразы дать полудолю на смысловой переворот. Мужской Джотаро: собранно и коротко, ключевое слово ударить, окончание опустить; без дикторского распева.",
+        "pauses": [
+          {
+            "after": "пригнись",
+            "milliseconds": 120
+          }
         ],
-        "arc": "Спокойно обещает уронить соперника; не комментирует ещё не случившееся падение."
+        "emphasis": [
+          "НИЗКИЙ"
+        ],
+        "arc": "Даёт совершенно практичный совет; комизм в спокойствии ответа."
       },
       "reference": {
         "id": "p1-exclamation",
@@ -1894,30 +1674,34 @@
         "turn": "reply",
         "order": 2
       },
-      "maxDuration": 2.75,
+      "maxDuration": 3.4,
       "outputFile": "round-floor-reply-p1.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced"
     },
     {
       "id": "round-floor-reply-p2",
       "speaker": "p2",
-      "text": "Сейчас познакомитесь поближе.",
+      "text": "Пригнись. Тут низкий потолок.",
       "emotionalDirection": {
-        "pace": "Небольшой нажим в начале, плавно довести до конца.",
-        "pauses": [],
-        "emphasis": [
-          "сейчас",
-          "поближе"
+        "pace": "Подхватить ответ сразу; после первой короткой фразы дать полудолю на смысловой переворот. Мужской Дио: театральная уверенность, быстрый подхват и насмешливый нажим на ключевое слово; не добавлять смех или междометия.",
+        "pauses": [
+          {
+            "after": "пригнись",
+            "milliseconds": 120
+          }
         ],
-        "arc": "Спокойно обещает уронить соперника; не комментирует ещё не случившееся падение."
+        "emphasis": [
+          "ПРИГНИСЬ"
+        ],
+        "arc": "Даёт совершенно практичный совет; комизм в спокойствии ответа."
       },
       "reference": {
-        "id": "p2-conversation",
-        "clip": "dio-hero",
+        "id": "p2-approved-icl",
+        "clip": "greeting",
         "preferredFragment": {
-          "start": 0.23,
-          "end": 3.19,
-          "status": "existing-measured-trim-not-listening-approved"
+          "start": 7.7,
+          "end": 11.32,
+          "status": "approved-dio-voice-recipe-not-v3-dialogue"
         }
       },
       "semanticGroup": "floor",
@@ -1927,23 +1711,23 @@
         "turn": "reply",
         "order": 2
       },
-      "maxDuration": 2.75,
+      "maxDuration": 3.4,
       "outputFile": "round-floor-reply-p2.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced",
+      "synthesisText": "ПРИГНИСЬ! Тут низкий потолок."
     },
     {
       "id": "round-calculate-setup-p1",
       "speaker": "p1",
-      "text": "Я рассчитал исход боя.",
-      "synthesisText": "Я РАССЧИТАЛ исход боя!",
+      "text": "Я бы остановил само время!",
+      "synthesisText": "Я бы ОСТАНОВИЛ само время!",
       "emotionalDirection": {
-        "pace": "Строго, по делу; не замедлять каждое слово.",
+        "pace": "Один спокойный разбег, затем резкий смысловой акцент. Мужской Джотаро: собранно и коротко, ключевое слово ударить, окончание опустить; без дикторского распева.",
         "pauses": [],
         "emphasis": [
-          "рассчитал",
-          "исход"
+          "ОСТАНОВИЛ"
         ],
-        "arc": "Подаёт собственную победу как готовый расчёт."
+        "arc": "Рисуется невозможным масштабом; слово «бы» сохраняет условность угрозы."
       },
       "reference": {
         "id": "p1-exclamation",
@@ -1961,30 +1745,29 @@
         "turn": "setup",
         "order": 1
       },
-      "maxDuration": 2.55,
+      "maxDuration": 3.5,
       "outputFile": "round-calculate-setup-p1.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced"
     },
     {
       "id": "round-calculate-setup-p2",
       "speaker": "p2",
-      "text": "Я рассчитал исход боя.",
+      "text": "Я бы остановил само время!",
       "emotionalDirection": {
-        "pace": "Строго, по делу; не замедлять каждое слово.",
+        "pace": "Один спокойный разбег, затем резкий смысловой акцент. Мужской Дио: театральная уверенность, быстрый подхват и насмешливый нажим на ключевое слово; не добавлять смех или междометия.",
         "pauses": [],
         "emphasis": [
-          "рассчитал",
-          "исход"
+          "САМО"
         ],
-        "arc": "Подаёт собственную победу как готовый расчёт."
+        "arc": "Рисуется невозможным масштабом; слово «бы» сохраняет условность угрозы."
       },
       "reference": {
-        "id": "p2-conversation",
-        "clip": "dio-hero",
+        "id": "p2-approved-icl",
+        "clip": "greeting",
         "preferredFragment": {
-          "start": 0.23,
-          "end": 3.19,
-          "status": "existing-measured-trim-not-listening-approved"
+          "start": 7.7,
+          "end": 11.32,
+          "status": "approved-dio-voice-recipe-not-v3-dialogue"
         }
       },
       "semanticGroup": "calculate",
@@ -1994,28 +1777,23 @@
         "turn": "setup",
         "order": 1
       },
-      "maxDuration": 2.55,
+      "maxDuration": 3.5,
       "outputFile": "round-calculate-setup-p2.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced",
+      "synthesisText": "Я бы остановил САМО время!"
     },
     {
       "id": "round-calculate-reply-p1",
       "speaker": "p1",
-      "text": "Готовь ластик. Будешь исправлять.",
-      "synthesisText": "Готовь ЛАСТИК! Будешь исправлять!",
+      "text": "Ради паузы между оправданиями?",
+      "synthesisText": "Ради паузы между ОПРАВДАНИЯМИ?",
       "emotionalDirection": {
-        "pace": "Первую фразу отдельно, вторую с улыбкой на конце.",
-        "pauses": [
-          {
-            "after": "ластик",
-            "milliseconds": 140
-          }
-        ],
+        "pace": "Подхватить ответ сразу; после первой короткой фразы дать полудолю на смысловой переворот. Мужской Джотаро: собранно и коротко, ключевое слово ударить, окончание опустить; без дикторского распева.",
+        "pauses": [],
         "emphasis": [
-          "ластик",
-          "исправлять"
+          "ОПРАВДАНИЯМИ"
         ],
-        "arc": "Разрушает уверенность соперника одной бытовой деталью."
+        "arc": "Уточняет цель чуда с язвительной вежливостью, не удивляется его масштабу."
       },
       "reference": {
         "id": "p1-exclamation",
@@ -2033,35 +1811,29 @@
         "turn": "reply",
         "order": 2
       },
-      "maxDuration": 2.75,
+      "maxDuration": 3.4,
       "outputFile": "round-calculate-reply-p1.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced"
     },
     {
       "id": "round-calculate-reply-p2",
       "speaker": "p2",
-      "text": "Готовь ластик. Будешь исправлять.",
+      "text": "Ради паузы между оправданиями?",
       "emotionalDirection": {
-        "pace": "Первую фразу отдельно, вторую с улыбкой на конце.",
-        "pauses": [
-          {
-            "after": "ластик",
-            "milliseconds": 140
-          }
-        ],
+        "pace": "Подхватить ответ сразу; после первой короткой фразы дать полудолю на смысловой переворот. Мужской Дио: театральная уверенность, быстрый подхват и насмешливый нажим на ключевое слово; не добавлять смех или междометия.",
+        "pauses": [],
         "emphasis": [
-          "ластик",
-          "исправлять"
+          "ПАУЗЫ"
         ],
-        "arc": "Разрушает уверенность соперника одной бытовой деталью."
+        "arc": "Уточняет цель чуда с язвительной вежливостью, не удивляется его масштабу."
       },
       "reference": {
-        "id": "p2-conversation",
-        "clip": "dio-hero",
+        "id": "p2-approved-icl",
+        "clip": "greeting",
         "preferredFragment": {
-          "start": 0.23,
-          "end": 3.19,
-          "status": "existing-measured-trim-not-listening-approved"
+          "start": 7.7,
+          "end": 11.32,
+          "status": "approved-dio-voice-recipe-not-v3-dialogue"
         }
       },
       "semanticGroup": "calculate",
@@ -2071,23 +1843,23 @@
         "turn": "reply",
         "order": 2
       },
-      "maxDuration": 2.75,
+      "maxDuration": 3.4,
       "outputFile": "round-calculate-reply-p2.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced",
+      "synthesisText": "Ради ПАУЗЫ между оправданиями?!"
     },
     {
       "id": "round-music-setup-p1",
       "speaker": "p1",
-      "text": "Где моя победная музыка?",
-      "synthesisText": "Где моя ПОБЕДНАЯ музыка?!",
+      "text": "Это мой звёздный выход!",
+      "synthesisText": "Это мой ЗВЁЗДНЫЙ выход!",
       "emotionalDirection": {
-        "pace": "Вопрос начать с претензии, конец поднять.",
+        "pace": "Один спокойный разбег, затем резкий смысловой акцент. Мужской Джотаро: собранно и коротко, ключевое слово ударить, окончание опустить; без дикторского распева.",
         "pauses": [],
         "emphasis": [
-          "моя",
-          "победная"
+          "ЗВЁЗДНЫЙ"
         ],
-        "arc": "Уже требует церемонию, хотя бой не начался."
+        "arc": "Присваивает себе всю сцену и публику клуба."
       },
       "reference": {
         "id": "p1-exclamation",
@@ -2105,30 +1877,29 @@
         "turn": "setup",
         "order": 1
       },
-      "maxDuration": 2.65,
+      "maxDuration": 3.4,
       "outputFile": "round-music-setup-p1.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced"
     },
     {
       "id": "round-music-setup-p2",
       "speaker": "p2",
-      "text": "Где моя победная музыка?",
+      "text": "Это мой звёздный выход!",
       "emotionalDirection": {
-        "pace": "Вопрос начать с претензии, конец поднять.",
+        "pace": "Один спокойный разбег, затем резкий смысловой акцент. Мужской Дио: театральная уверенность, быстрый подхват и насмешливый нажим на ключевое слово; не добавлять смех или междометия.",
         "pauses": [],
         "emphasis": [
-          "моя",
-          "победная"
+          "МОЙ"
         ],
-        "arc": "Уже требует церемонию, хотя бой не начался."
+        "arc": "Присваивает себе всю сцену и публику клуба."
       },
       "reference": {
-        "id": "p2-conversation",
-        "clip": "dio-hero",
+        "id": "p2-approved-icl",
+        "clip": "greeting",
         "preferredFragment": {
-          "start": 0.23,
-          "end": 3.19,
-          "status": "existing-measured-trim-not-listening-approved"
+          "start": 7.7,
+          "end": 11.32,
+          "status": "approved-dio-voice-recipe-not-v3-dialogue"
         }
       },
       "semanticGroup": "music",
@@ -2138,28 +1909,23 @@
         "turn": "setup",
         "order": 1
       },
-      "maxDuration": 2.65,
+      "maxDuration": 3.4,
       "outputFile": "round-music-setup-p2.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced",
+      "synthesisText": "Это МОЙ звёздный выход!"
     },
     {
       "id": "round-music-reply-p1",
       "speaker": "p1",
-      "text": "Пока вентилятор. Танцуй!",
-      "synthesisText": "Пока ВЕНТИЛЯТОР. Танцуй!",
+      "text": "Постарайся обойтись без вылета.",
+      "synthesisText": "ПОСТАРАЙСЯ обойтись без вылета.",
       "emotionalDirection": {
-        "pace": "Первую часть почти как объявление; последнее слово резко.",
-        "pauses": [
-          {
-            "after": "вентилятор",
-            "milliseconds": 160
-          }
-        ],
+        "pace": "Подхватить ответ сразу; после первой короткой фразы дать полудолю на смысловой переворот. Мужской Джотаро: собранно и коротко, ключевое слово ударить, окончание опустить; без дикторского распева.",
+        "pauses": [],
         "emphasis": [
-          "вентилятор",
-          "танцуй"
+          "ПОСТАРАЙСЯ"
         ],
-        "arc": "Подменяет фанфары шумом клуба и наслаждается ответом."
+        "arc": "Подхватывает слово «выход» угрозой отправить соперника в полёт; это насмешка, не обещание ring-out правила."
       },
       "reference": {
         "id": "p1-exclamation",
@@ -2177,35 +1943,29 @@
         "turn": "reply",
         "order": 2
       },
-      "maxDuration": 2.35,
+      "maxDuration": 3.4,
       "outputFile": "round-music-reply-p1.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced"
     },
     {
       "id": "round-music-reply-p2",
       "speaker": "p2",
-      "text": "Пока вентилятор. Танцуй!",
+      "text": "Постарайся обойтись без вылета.",
       "emotionalDirection": {
-        "pace": "Первую часть почти как объявление; последнее слово резко.",
-        "pauses": [
-          {
-            "after": "вентилятор",
-            "milliseconds": 160
-          }
-        ],
+        "pace": "Подхватить ответ сразу; после первой короткой фразы дать полудолю на смысловой переворот. Мужской Дио: театральная уверенность, быстрый подхват и насмешливый нажим на ключевое слово; не добавлять смех или междометия.",
+        "pauses": [],
         "emphasis": [
-          "вентилятор",
-          "танцуй"
+          "ВЫЛЕТА"
         ],
-        "arc": "Подменяет фанфары шумом клуба и наслаждается ответом."
+        "arc": "Подхватывает слово «выход» угрозой отправить соперника в полёт; это насмешка, не обещание ring-out правила."
       },
       "reference": {
-        "id": "p2-conversation",
-        "clip": "dio-hero",
+        "id": "p2-approved-icl",
+        "clip": "greeting",
         "preferredFragment": {
-          "start": 0.23,
-          "end": 3.19,
-          "status": "existing-measured-trim-not-listening-approved"
+          "start": 7.7,
+          "end": 11.32,
+          "status": "approved-dio-voice-recipe-not-v3-dialogue"
         }
       },
       "semanticGroup": "music",
@@ -2215,23 +1975,23 @@
         "turn": "reply",
         "order": 2
       },
-      "maxDuration": 2.35,
+      "maxDuration": 3.4,
       "outputFile": "round-music-reply-p2.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced",
+      "synthesisText": "Постарайся обойтись без ВЫЛЕТА."
     },
     {
       "id": "round-polite-setup-p1",
       "speaker": "p1",
-      "text": "Я дам тебе фору.",
-      "synthesisText": "Я дам тебе ФОРУ!",
+      "text": "Склонись перед моим величием!",
+      "synthesisText": "СКЛОНИСЬ перед моим величием!",
       "emotionalDirection": {
-        "pace": "Не спешить в начале, конец чуть вниз.",
+        "pace": "Один спокойный разбег, затем резкий смысловой акцент. Мужской Джотаро: собранно и коротко, ключевое слово ударить, окончание опустить; без дикторского распева.",
         "pauses": [],
         "emphasis": [
-          "дам",
-          "фору"
+          "СКЛОНИСЬ"
         ],
-        "arc": "Покровительственно делает ненужный подарок."
+        "arc": "Требует поклон; p1 может передразнивать царственную манеру с каменным лицом."
       },
       "reference": {
         "id": "p1-exclamation",
@@ -2249,30 +2009,29 @@
         "turn": "setup",
         "order": 1
       },
-      "maxDuration": 2.15,
+      "maxDuration": 3.4,
       "outputFile": "round-polite-setup-p1.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced"
     },
     {
       "id": "round-polite-setup-p2",
       "speaker": "p2",
-      "text": "Я дам тебе фору.",
+      "text": "Склонись перед моим величием!",
       "emotionalDirection": {
-        "pace": "Не спешить в начале, конец чуть вниз.",
+        "pace": "Один спокойный разбег, затем резкий смысловой акцент. Мужской Дио: театральная уверенность, быстрый подхват и насмешливый нажим на ключевое слово; не добавлять смех или междометия.",
         "pauses": [],
         "emphasis": [
-          "дам",
-          "фору"
+          "МОИМ"
         ],
-        "arc": "Покровительственно делает ненужный подарок."
+        "arc": "Требует поклон; p1 может передразнивать царственную манеру с каменным лицом."
       },
       "reference": {
-        "id": "p2-conversation",
-        "clip": "dio-hero",
+        "id": "p2-approved-icl",
+        "clip": "greeting",
         "preferredFragment": {
-          "start": 0.23,
-          "end": 3.19,
-          "status": "existing-measured-trim-not-listening-approved"
+          "start": 7.7,
+          "end": 11.32,
+          "status": "approved-dio-voice-recipe-not-v3-dialogue"
         }
       },
       "semanticGroup": "polite",
@@ -2282,28 +2041,23 @@
         "turn": "setup",
         "order": 1
       },
-      "maxDuration": 2.15,
+      "maxDuration": 3.4,
       "outputFile": "round-polite-setup-p2.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced",
+      "synthesisText": "Склонись перед МОИМ величием!"
     },
     {
       "id": "round-polite-reply-p1",
       "speaker": "p1",
-      "text": "Лучше розетку. Фора своя.",
-      "synthesisText": "Лучше РОЗЕТКУ. Фора своя!",
+      "text": "Нагнусь, когда буду тебя собирать.",
+      "synthesisText": "Нагнусь, когда буду тебя СОБИРАТЬ.",
       "emotionalDirection": {
-        "pace": "Перебить по смыслу первым словом; после паузы поставить точку.",
-        "pauses": [
-          {
-            "after": "розетку",
-            "milliseconds": 150
-          }
-        ],
+        "pace": "Подхватить ответ сразу; после первой короткой фразы дать полудолю на смысловой переворот. Мужской Джотаро: собранно и коротко, ключевое слово ударить, окончание опустить; без дикторского распева.",
+        "pauses": [],
         "emphasis": [
-          "розетку",
-          "своя"
+          "СОБИРАТЬ"
         ],
-        "arc": "Практичная просьба превращается в ответное хвастовство."
+        "arc": "Будто соглашается на поклон, затем превращает его в сбор разбросанных деталей."
       },
       "reference": {
         "id": "p1-exclamation",
@@ -2321,35 +2075,29 @@
         "turn": "reply",
         "order": 2
       },
-      "maxDuration": 2.5,
+      "maxDuration": 3.5,
       "outputFile": "round-polite-reply-p1.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced"
     },
     {
       "id": "round-polite-reply-p2",
       "speaker": "p2",
-      "text": "Лучше розетку. Фора своя.",
+      "text": "Нагнусь, когда буду тебя собирать.",
       "emotionalDirection": {
-        "pace": "Перебить по смыслу первым словом; после паузы поставить точку.",
-        "pauses": [
-          {
-            "after": "розетку",
-            "milliseconds": 150
-          }
-        ],
+        "pace": "Подхватить ответ сразу; после первой короткой фразы дать полудолю на смысловой переворот. Мужской Дио: театральная уверенность, быстрый подхват и насмешливый нажим на ключевое слово; не добавлять смех или междометия.",
+        "pauses": [],
         "emphasis": [
-          "розетку",
-          "своя"
+          "ТЕБЯ"
         ],
-        "arc": "Практичная просьба превращается в ответное хвастовство."
+        "arc": "Будто соглашается на поклон, затем превращает его в сбор разбросанных деталей."
       },
       "reference": {
-        "id": "p2-conversation",
-        "clip": "dio-hero",
+        "id": "p2-approved-icl",
+        "clip": "greeting",
         "preferredFragment": {
-          "start": 0.23,
-          "end": 3.19,
-          "status": "existing-measured-trim-not-listening-approved"
+          "start": 7.7,
+          "end": 11.32,
+          "status": "approved-dio-voice-recipe-not-v3-dialogue"
         }
       },
       "semanticGroup": "polite",
@@ -2359,23 +2107,23 @@
         "turn": "reply",
         "order": 2
       },
-      "maxDuration": 2.5,
+      "maxDuration": 3.5,
       "outputFile": "round-polite-reply-p2.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced",
+      "synthesisText": "Нагнусь, когда буду ТЕБЯ собирать!"
     },
     {
       "id": "round-fear-setup-p1",
       "speaker": "p1",
-      "text": "Мой процессор не знает страха.",
-      "synthesisText": "Мой процессор не знает СТРАХА!",
+      "text": "Ну что, мурашки по металлу?",
+      "synthesisText": "Ну что, мурашки по МЕТАЛЛУ?",
       "emotionalDirection": {
-        "pace": "Одна законченная фраза, уверенный низкий конец.",
+        "pace": "Один спокойный разбег, затем резкий смысловой акцент. Мужской Джотаро: собранно и коротко, ключевое слово ударить, окончание опустить; без дикторского распева.",
         "pauses": [],
         "emphasis": [
-          "не знает",
-          "страха"
+          "МЕТАЛЛУ"
         ],
-        "arc": "Настоящая бравада машины, без пародии на безэмоциональный синтезатор."
+        "arc": "Пытается вызвать признание страха; вопрос ближе к вызову, чем к любопытству."
       },
       "reference": {
         "id": "p1-exclamation",
@@ -2393,30 +2141,29 @@
         "turn": "setup",
         "order": 1
       },
-      "maxDuration": 2.9,
+      "maxDuration": 3.5,
       "outputFile": "round-fear-setup-p1.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced"
     },
     {
       "id": "round-fear-setup-p2",
       "speaker": "p2",
-      "text": "Мой процессор не знает страха.",
+      "text": "Ну что, мурашки по металлу?",
       "emotionalDirection": {
-        "pace": "Одна законченная фраза, уверенный низкий конец.",
+        "pace": "Один спокойный разбег, затем резкий смысловой акцент. Мужской Дио: театральная уверенность, быстрый подхват и насмешливый нажим на ключевое слово; не добавлять смех или междометия.",
         "pauses": [],
         "emphasis": [
-          "не знает",
-          "страха"
+          "МУРАШКИ"
         ],
-        "arc": "Настоящая бравада машины, без пародии на безэмоциональный синтезатор."
+        "arc": "Пытается вызвать признание страха; вопрос ближе к вызову, чем к любопытству."
       },
       "reference": {
-        "id": "p2-conversation",
-        "clip": "dio-hero",
+        "id": "p2-approved-icl",
+        "clip": "greeting",
         "preferredFragment": {
-          "start": 0.23,
-          "end": 3.19,
-          "status": "existing-measured-trim-not-listening-approved"
+          "start": 7.7,
+          "end": 11.32,
+          "status": "approved-dio-voice-recipe-not-v3-dialogue"
         }
       },
       "semanticGroup": "fear",
@@ -2426,23 +2173,28 @@
         "turn": "setup",
         "order": 1
       },
-      "maxDuration": 2.9,
+      "maxDuration": 3.5,
       "outputFile": "round-fear-setup-p2.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced",
+      "synthesisText": "Ну что, МУРАШКИ по металлу?!"
     },
     {
       "id": "round-fear-reply-p1",
       "speaker": "p1",
-      "text": "Обновление придёт без спроса.",
-      "synthesisText": "ОБНОВЛЕНИЕ придёт без спроса!",
+      "text": "Нет. Прикидываю, где оставить вмятину.",
+      "synthesisText": "Нет. Прикидываю, где оставить ВМЯТИНУ.",
       "emotionalDirection": {
-        "pace": "Предупреждение спокойно до последних двух слов.",
-        "pauses": [],
-        "emphasis": [
-          "обновление",
-          "без спроса"
+        "pace": "Подхватить ответ сразу; после первой короткой фразы дать полудолю на смысловой переворот. Мужской Джотаро: собранно и коротко, ключевое слово ударить, окончание опустить; без дикторского распева.",
+        "pauses": [
+          {
+            "after": "нет",
+            "milliseconds": 120
+          }
         ],
-        "arc": "Делает обычное обновление угрозой; не произносить как техническую подсказку игроку."
+        "emphasis": [
+          "ВМЯТИНУ"
+        ],
+        "arc": "Отрицает страх одним словом и продолжает холодный осмотр цели."
       },
       "reference": {
         "id": "p1-exclamation",
@@ -2460,30 +2212,34 @@
         "turn": "reply",
         "order": 2
       },
-      "maxDuration": 2.8,
+      "maxDuration": 3.5,
       "outputFile": "round-fear-reply-p1.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced"
     },
     {
       "id": "round-fear-reply-p2",
       "speaker": "p2",
-      "text": "Обновление придёт без спроса.",
+      "text": "Нет. Прикидываю, где оставить вмятину.",
       "emotionalDirection": {
-        "pace": "Предупреждение спокойно до последних двух слов.",
-        "pauses": [],
-        "emphasis": [
-          "обновление",
-          "без спроса"
+        "pace": "Подхватить ответ сразу; после первой короткой фразы дать полудолю на смысловой переворот. Мужской Дио: театральная уверенность, быстрый подхват и насмешливый нажим на ключевое слово; не добавлять смех или междометия.",
+        "pauses": [
+          {
+            "after": "нет",
+            "milliseconds": 120
+          }
         ],
-        "arc": "Делает обычное обновление угрозой; не произносить как техническую подсказку игроку."
+        "emphasis": [
+          "НЕТ"
+        ],
+        "arc": "Отрицает страх одним словом и продолжает холодный осмотр цели."
       },
       "reference": {
-        "id": "p2-conversation",
-        "clip": "dio-hero",
+        "id": "p2-approved-icl",
+        "clip": "greeting",
         "preferredFragment": {
-          "start": 0.23,
-          "end": 3.19,
-          "status": "existing-measured-trim-not-listening-approved"
+          "start": 7.7,
+          "end": 11.32,
+          "status": "approved-dio-voice-recipe-not-v3-dialogue"
         }
       },
       "semanticGroup": "fear",
@@ -2493,23 +2249,23 @@
         "turn": "reply",
         "order": 2
       },
-      "maxDuration": 2.8,
+      "maxDuration": 3.5,
       "outputFile": "round-fear-reply-p2.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced",
+      "synthesisText": "НЕТ! Прикидываю, где оставить вмятину."
     },
     {
       "id": "round-champion-setup-p1",
       "speaker": "p1",
-      "text": "Перед тобой будущий чемпион.",
-      "synthesisText": "Перед тобой будущий ЧЕМПИОН!",
+      "text": "Запомни мой непобедимый силуэт!",
+      "synthesisText": "Запомни мой непобедимый СИЛУЭТ!",
       "emotionalDirection": {
-        "pace": "Развернуть фразу к собеседнику, титул подчеркнуть.",
+        "pace": "Один спокойный разбег, затем резкий смысловой акцент. Мужской Джотаро: собранно и коротко, ключевое слово ударить, окончание опустить; без дикторского распева.",
         "pauses": [],
         "emphasis": [
-          "будущий",
-          "чемпион"
+          "СИЛУЭТ"
         ],
-        "arc": "Торжественно объявляет себя, но реального победителя не назначает."
+        "arc": "Позирует будущей легендой; самолюбование направлено в соперника."
       },
       "reference": {
         "id": "p1-exclamation",
@@ -2527,30 +2283,29 @@
         "turn": "setup",
         "order": 1
       },
-      "maxDuration": 2.8,
+      "maxDuration": 3.4,
       "outputFile": "round-champion-setup-p1.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced"
     },
     {
       "id": "round-champion-setup-p2",
       "speaker": "p2",
-      "text": "Перед тобой будущий чемпион.",
+      "text": "Запомни мой непобедимый силуэт!",
       "emotionalDirection": {
-        "pace": "Развернуть фразу к собеседнику, титул подчеркнуть.",
+        "pace": "Один спокойный разбег, затем резкий смысловой акцент. Мужской Дио: театральная уверенность, быстрый подхват и насмешливый нажим на ключевое слово; не добавлять смех или междометия.",
         "pauses": [],
         "emphasis": [
-          "будущий",
-          "чемпион"
+          "НЕПОБЕДИМЫЙ"
         ],
-        "arc": "Торжественно объявляет себя, но реального победителя не назначает."
+        "arc": "Позирует будущей легендой; самолюбование направлено в соперника."
       },
       "reference": {
-        "id": "p2-conversation",
-        "clip": "dio-hero",
+        "id": "p2-approved-icl",
+        "clip": "greeting",
         "preferredFragment": {
-          "start": 0.23,
-          "end": 3.19,
-          "status": "existing-measured-trim-not-listening-approved"
+          "start": 7.7,
+          "end": 11.32,
+          "status": "approved-dio-voice-recipe-not-v3-dialogue"
         }
       },
       "semanticGroup": "champion",
@@ -2560,23 +2315,23 @@
         "turn": "setup",
         "order": 1
       },
-      "maxDuration": 2.8,
+      "maxDuration": 3.4,
       "outputFile": "round-champion-setup-p2.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced",
+      "synthesisText": "Запомни мой НЕПОБЕДИМЫЙ силуэт!"
     },
     {
       "id": "round-champion-reply-p1",
       "speaker": "p1",
-      "text": "До будущего ещё дожить надо.",
-      "synthesisText": "До будущего ещё ДОЖИТЬ надо!",
+      "text": "После боя придётся учить новый.",
+      "synthesisText": "После боя придётся учить НОВЫЙ.",
       "emotionalDirection": {
-        "pace": "Начать с подхвата слова противника, конец с нажимом.",
+        "pace": "Подхватить ответ сразу; после первой короткой фразы дать полудолю на смысловой переворот. Мужской Джотаро: собранно и коротко, ключевое слово ударить, окончание опустить; без дикторского распева.",
         "pauses": [],
         "emphasis": [
-          "будущего",
-          "дожить"
+          "НОВЫЙ"
         ],
-        "arc": "Коротко возвращает хвастуна в настоящий момент; угроза относится к роботу."
+        "arc": "Обещает изменить очертания корпуса, сохраняя сухой тон обычной поправки."
       },
       "reference": {
         "id": "p1-exclamation",
@@ -2594,30 +2349,29 @@
         "turn": "reply",
         "order": 2
       },
-      "maxDuration": 2.9,
+      "maxDuration": 3.5,
       "outputFile": "round-champion-reply-p1.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced"
     },
     {
       "id": "round-champion-reply-p2",
       "speaker": "p2",
-      "text": "До будущего ещё дожить надо.",
+      "text": "После боя придётся учить новый.",
       "emotionalDirection": {
-        "pace": "Начать с подхвата слова противника, конец с нажимом.",
+        "pace": "Подхватить ответ сразу; после первой короткой фразы дать полудолю на смысловой переворот. Мужской Дио: театральная уверенность, быстрый подхват и насмешливый нажим на ключевое слово; не добавлять смех или междометия.",
         "pauses": [],
         "emphasis": [
-          "будущего",
-          "дожить"
+          "УЧИТЬ"
         ],
-        "arc": "Коротко возвращает хвастуна в настоящий момент; угроза относится к роботу."
+        "arc": "Обещает изменить очертания корпуса, сохраняя сухой тон обычной поправки."
       },
       "reference": {
-        "id": "p2-conversation",
-        "clip": "dio-hero",
+        "id": "p2-approved-icl",
+        "clip": "greeting",
         "preferredFragment": {
-          "start": 0.23,
-          "end": 3.19,
-          "status": "existing-measured-trim-not-listening-approved"
+          "start": 7.7,
+          "end": 11.32,
+          "status": "approved-dio-voice-recipe-not-v3-dialogue"
         }
       },
       "semanticGroup": "champion",
@@ -2627,22 +2381,23 @@
         "turn": "reply",
         "order": 2
       },
-      "maxDuration": 2.9,
+      "maxDuration": 3.5,
       "outputFile": "round-champion-reply-p2.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced",
+      "synthesisText": "После боя придётся УЧИТЬ новый."
     },
     {
       "id": "round-bolts-setup-p1",
       "speaker": "p1",
-      "text": "Держись крепче.",
-      "synthesisText": "Держись КРЕПЧЕ!",
+      "text": "Весь подвал запомнит этот удар!",
+      "synthesisText": "Весь подвал запомнит этот УДАР!",
       "emotionalDirection": {
-        "pace": "Два слова с прямым нажимом, без затяжной паузы.",
+        "pace": "Один спокойный разбег, затем резкий смысловой акцент. Мужской Джотаро: собранно и коротко, ключевое слово ударить, окончание опустить; без дикторского распева.",
         "pauses": [],
         "emphasis": [
-          "крепче"
+          "УДАР"
         ],
-        "arc": "Предупреждает соперника перед рывком."
+        "arc": "Обещает зрелище всем вокруг, но фразу адресует одному противнику."
       },
       "reference": {
         "id": "p1-exclamation",
@@ -2660,29 +2415,29 @@
         "turn": "setup",
         "order": 1
       },
-      "maxDuration": 1.65,
+      "maxDuration": 3.5,
       "outputFile": "round-bolts-setup-p1.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced"
     },
     {
       "id": "round-bolts-setup-p2",
       "speaker": "p2",
-      "text": "Держись крепче.",
+      "text": "Весь подвал запомнит этот удар!",
       "emotionalDirection": {
-        "pace": "Два слова с прямым нажимом, без затяжной паузы.",
+        "pace": "Один спокойный разбег, затем резкий смысловой акцент. Мужской Дио: театральная уверенность, быстрый подхват и насмешливый нажим на ключевое слово; не добавлять смех или междометия.",
         "pauses": [],
         "emphasis": [
-          "крепче"
+          "ВЕСЬ"
         ],
-        "arc": "Предупреждает соперника перед рывком."
+        "arc": "Обещает зрелище всем вокруг, но фразу адресует одному противнику."
       },
       "reference": {
-        "id": "p2-conversation",
-        "clip": "dio-hero",
+        "id": "p2-approved-icl",
+        "clip": "greeting",
         "preferredFragment": {
-          "start": 0.23,
-          "end": 3.19,
-          "status": "existing-measured-trim-not-listening-approved"
+          "start": 7.7,
+          "end": 11.32,
+          "status": "approved-dio-voice-recipe-not-v3-dialogue"
         }
       },
       "semanticGroup": "bolts",
@@ -2692,28 +2447,28 @@
         "turn": "setup",
         "order": 1
       },
-      "maxDuration": 1.65,
+      "maxDuration": 3.5,
       "outputFile": "round-bolts-setup-p2.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced",
+      "synthesisText": "ВЕСЬ подвал запомнит этот удар!"
     },
     {
       "id": "round-bolts-reply-p1",
       "speaker": "p1",
-      "text": "Я своим болтам уже сказал.",
-      "synthesisText": "Я своим болтам УЖЕ сказал!",
+      "text": "Главное — сам не забудь встать.",
+      "synthesisText": "Главное — САМ не забудь встать.",
       "emotionalDirection": {
-        "pace": "Подхватить сразу; перед последними словами едва задержаться.",
+        "pace": "Подхватить ответ сразу; после первой короткой фразы дать полудолю на смысловой переворот. Мужской Джотаро: собранно и коротко, ключевое слово ударить, окончание опустить; без дикторского распева.",
         "pauses": [
           {
-            "after": "болтам",
-            "milliseconds": 90
+            "after": "главное",
+            "milliseconds": 120
           }
         ],
         "emphasis": [
-          "болтам",
-          "уже"
+          "САМ"
         ],
-        "arc": "Шутит над собой, но не сдаётся; произнести с уверенностью."
+        "arc": "Оставляет хвастуну его публику, сомневаясь лишь в том, кто окажется внизу."
       },
       "reference": {
         "id": "p1-exclamation",
@@ -2731,35 +2486,34 @@
         "turn": "reply",
         "order": 2
       },
-      "maxDuration": 2.7,
+      "maxDuration": 3.5,
       "outputFile": "round-bolts-reply-p1.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced"
     },
     {
       "id": "round-bolts-reply-p2",
       "speaker": "p2",
-      "text": "Я своим болтам уже сказал.",
+      "text": "Главное — сам не забудь встать.",
       "emotionalDirection": {
-        "pace": "Подхватить сразу; перед последними словами едва задержаться.",
+        "pace": "Подхватить ответ сразу; после первой короткой фразы дать полудолю на смысловой переворот. Мужской Дио: театральная уверенность, быстрый подхват и насмешливый нажим на ключевое слово; не добавлять смех или междометия.",
         "pauses": [
           {
-            "after": "болтам",
-            "milliseconds": 90
+            "after": "главное",
+            "milliseconds": 120
           }
         ],
         "emphasis": [
-          "болтам",
-          "уже"
+          "ВСТАТЬ"
         ],
-        "arc": "Шутит над собой, но не сдаётся; произнести с уверенностью."
+        "arc": "Оставляет хвастуну его публику, сомневаясь лишь в том, кто окажется внизу."
       },
       "reference": {
-        "id": "p2-conversation",
-        "clip": "dio-hero",
+        "id": "p2-approved-icl",
+        "clip": "greeting",
         "preferredFragment": {
-          "start": 0.23,
-          "end": 3.19,
-          "status": "existing-measured-trim-not-listening-approved"
+          "start": 7.7,
+          "end": 11.32,
+          "status": "approved-dio-voice-recipe-not-v3-dialogue"
         }
       },
       "semanticGroup": "bolts",
@@ -2769,38 +2523,43 @@
         "turn": "reply",
         "order": 2
       },
-      "maxDuration": 2.7,
+      "maxDuration": 3.5,
       "outputFile": "round-bolts-reply-p2.mp3",
-      "status": "produced"
+      "status": "script-ready-not-produced",
+      "synthesisText": "Главное — сам не забудь ВСТАТЬ."
     }
   ],
   "production": {
+    "status": "not-produced",
+    "scriptRevision": "jojo-v3",
     "totalRecordings": 57,
-    "totalDecodedSeconds": 144.331958,
-    "automaticSpeechScope": "9 faceoff turns and all 12 two-turn round exchanges in both voices",
-    "effects": "byte-identical original assets",
-    "p2": {
-      "method": "Qwen Base full ICL from supplied greeting excerpt",
-      "listeningApprovedIds": [
-        "faceoff-mode-p2"
-      ]
-    },
+    "producedRecordings": 0,
+    "totalDecodedSeconds": null,
+    "automaticSpeechScope": "9 faceoff turns and12 setup/reply pairs in both fixed male voices",
+    "oldSpokenAssetsReusable": false,
+    "effects": "unchanged original assets",
     "p1": {
-      "method": "Qwen Base full ICL from the complete user-supplied jotaro-dio.mp3, ref_text Ублюдок! Дио!",
-      "selection": "User approved Original B with emphatic accents; all other p1 recordings follow this recipe",
-      "listeningApprovedIds": [
-        "faceoff-challenge-p1"
-      ]
+      "character": "Джотаро",
+      "gender": "male",
+      "method": "Original B voice recipe only; complete jotaro-dio.mp3 full ICL",
+      "listeningApprovedIds": []
+    },
+    "p2": {
+      "character": "Дио",
+      "gender": "male",
+      "method": "Previously approved Dio full-ICL recipe only; single-actor greeting7.70–11.32",
+      "listeningApprovedIds": []
     },
     "asr": {
-      "exactWordMatches": 56,
-      "documentedNameSpellingExceptions": [
-        "faceoff-greeting-open"
-      ]
+      "exactWordMatches": 0,
+      "documentedNameSpellingExceptions": []
     },
-    "reports": [
-      "dio-pack-analysis.json",
-      "jotaro-pack-analysis.json"
+    "reports": [],
+    "requiredBeforeRelease": [
+      "Generate all57 new spoken assets; no copied v2 speech",
+      "Check exact spoken words and male speaker consistency",
+      "Measure actual durations and rebuild the aggregate catalog atomically",
+      "Verify full scene playback; no stale speech or device female voice fallback"
     ]
   }
 }

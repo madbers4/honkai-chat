@@ -1,44 +1,72 @@
 # Recorded conversation runtime
 
-`shared/spoken-catalog.js` defines the compact release schema: nine cinematic
-turns and four takes (setup/reply × p1/p2) for each of the twelve round exchanges.
-Runtime does not import `scripts/voice-production/spoken-script.json`; that JSON
-is a production source and is compared with the shared ID schema only in tests.
+The story player accepts the 57 IDs in `shared/spoken-catalog.js`, with fixed
+`p1`/`p2` actors and versioned local MP3 URLs from the current catalogue. It is
+compatible with the existing v2 package and later approved packages; no audio
+assets or generated metadata are changed by the runtime update. Original combat
+effects remain a separate player and are never downloaded as story dialogue.
 
-The new conversation pack activates atomically when all 57 entries exist in
-`GENERATED_VOICE_CLIPS`. Each requires its matching `p1`/`p2` speaker, nonempty
-exact recording text, a finite positive measured duration, and a local MP3 URL
-under `/assets/voices/`. Both voices of one semantic round line must have the
-same text. Existing six generated entries may remain beside the new entries.
-Partial/invalid packs use the old cinema and optional device-speech fallback.
+A complete catalogue activates all nine cinematic turns and the four takes
+(setup/reply × p1/p2) for each of twelve round exchanges. Missing or invalid
+catalogues produce silent captions, never archived dialogue. Both voices of a
+semantic line have matching recording text. Setup always precedes reply; even
+rounds change the opening seat, not the meaning. Referee text uses the same
+selected captions. Silent name cards and rule cards stay silent.
 
-After activation, the cinema chooses nine new recordings only. Name cards and
-the opening/final titles stay silent. Before each round the chosen setup always
-precedes its reply. Odd/even rounds alternate the opening seat, selecting that
-seat's recording of the same semantic line. The old pack lacks the cross-seat
-takes, so its even rounds use captions/optional local speech instead of playing
-an answer as a setup. The referee uses these same shared selected captions.
+Device speech has been removed from the runtime, game UI and review page. There
+is no `speechSynthesis` access, no `setTtsEnabled()` API and no voice selection.
+The retired `belobog-local-tts` preference is discarded on journey creation.
+The sound/mute control remains. Player names are shown as text, not promised as
+synthesized speech. Old preferences and partial catalogues cannot enable a
+phone's female or other system voice.
 
-Beat windows are at least `recording.duration + 0.38 s + 0.12 s`: the scheduler's
-complete-first-syllable late-start grace plus breathing room. Existing minimum
-shot windows remain, but there is no upper cutoff, playback speed-up, or trim.
-Server scene/countdown timing, acting, camera, UI, and voice share those windows.
-Pause, reconnect, mute, two-person skip, and original battle effects retain their
-existing paths. Exact recording text is used verbatim; player names remain on
-cards and are not promised as synthesized speech.
+Windows remain at least the measured recording length + 0.38 seconds of start
+jitter allowance + 0.12 seconds of breathing room. There is no speech speed-up or
+truncation. Server, camera, pose and UI share this schedule. The player preserves
+pause/resume from the actual audio start; reconnects, mute and late joins never
+replay expired lines. Downloading an overdue line does not play it belatedly.
 
-Preload selects the current cinematic nine plus the upcoming round's two takes,
-or the current/next round's four takes. The finale warms round one of the next
-match's freshly shuffled deck before players can request a rematch. It never
-downloads all 57 at once. With a
-complete pack the now-unused optional local-device speech checkbox is hidden;
-the sound/mute control remains. A present referee suppresses automatic round
-speech while the cinema still plays its recorded performance.
+Preload selects the cinematic nine and first round's two files, or the current
+and next round's four files. The finale warms the next match's round one before
+an immediate rematch. Referee presence suppresses playback, not preloading, so
+a referee disconnect does not leave an avoidably cold next exchange. At most
+three downloads run concurrently (injectable limit clamped to 1–4), including
+retries; the whole 57-file pack is never requested in one sweep. Bytes fetched
+before the audio gesture are decoded on unlock. Audio requests revalidate HTTP
+cache entries; the one immediate retry explicitly reloads the URL.
 
-Validation: `tests/spoken-runtime.test.js` supplies an explicitly artificial
-in-memory catalogue (including long emotional pauses) and verifies all 57 IDs,
-48 round takes, exact text, side assignment, timing, preload bounds and full
-late-start playback. It does not write fake metadata or MP3s to production.
-Actual production audio is validated independently by the asset acceptance
-suite. The existing camera, mounted player/referee, and lifecycle tests also
-derive their boundaries from the selected recordings.
+Each download has a deadline that settles even if its transport ignores abort.
+Two failures produce an honest caption-only status and a retry button. Automatic
+retries have a five-second per-file cooldown, and the explicit retry only warms
+the currently selected recordings. Disposal aborts active downloads and settles
+queued jobs. Failures in an old scene do not strand the current scene's status.
+
+API changes: `createStoryVoice` no longer reads `speech`/`Utterance` options;
+unknown legacy options are harmless. It adds `concurrency`, `retryAfterMs`,
+`now`, `retry()` and `preload(beats,{retryFailed})`. Status includes `loading`,
+`retryAvailable`, `started`, and `lastClip`; the review page displays the clip ID
+and counters. Existing unlock/mute/update/cancel/dispose paths remain.
+
+Runtime imports only shared JS metadata, not the production JSON or scripts.
+Tests retain coverage for exact recording text, 57 IDs, all 48 round takes,
+late-start endings, mute, reconnect, referee, a cold immediate rematch,
+pre-gesture decode, transport deadlines, bounded concurrency and explicit retry.
+
+## Evidence from the pre-change public build
+
+A read-only request to `http://158.160.23.44:3001/robots/` returned HTML with
+`Cache-Control: no-cache` and entry `index-DCOwxP3Z.js`. Its modules
+`main-CdpCXmjL.js` and `round-intro-Dwsbq7S6.js` had a one-hour public cache policy.
+The first contained `speechSynthesis`, `localService` and `belobog-local-tts`.
+The second contained all 57 distinct `spoken-v2` URLs and the legacy fallback.
+Its actual `faceoff-mode-p1` entry still said «Боевой режим: кабачковое
+противостояние!» and had duration 3.31 seconds. Hearing that phrase therefore did
+not, by itself, prove an old cached MP3 was selected: the v2 script contained it.
+
+The old source restored an enabled device-TTS preference for an incomplete
+catalogue, then chose the first local Russian voice without an actor/sex
+constraint and spoke the fallback `ttsText`. That is a concrete possible female
+voice path, reproduced by the former tests. It does not prove which path the
+user's phone took. The update removes this entire path instead of attributing
+the report to cache without device evidence. A new approved recording package
+must still be integrated separately before its new performance can be heard.

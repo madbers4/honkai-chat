@@ -1,177 +1,177 @@
-// Full-ICL Dio pack; see docs/DIO-SPOKEN-PACK.md.
+// New JoJo dialogue; selected actor recipe and evidence: docs/JOJO-AUDIO-V3.md.
 export const GENERATED_DIO_VOICE_CLIPS = Object.freeze({
   "faceoff-mode-p2": {
-    "url": "/assets/voices/spoken-v2/faceoff-mode-p2.mp3",
-    "text": "Твой гарантийный талон уже мёртв!",
-    "duration": 2.63,
-    "speaker": "p2"
+    "url": "/assets/voices/spoken-v3/faceoff-mode-p2.mp3",
+    "text": "Джотаро! Подвал маловат для моего величия!",
+    "speaker": "p2",
+    "duration": 4.26
   },
   "faceoff-greeting-open": {
-    "url": "/assets/voices/spoken-v2/faceoff-greeting-open.mp3",
-    "text": "Вот мы и встретились, Джотаро!",
-    "duration": 1.99,
-    "speaker": "p2"
+    "url": "/assets/voices/spoken-v3/faceoff-greeting-open.mp3",
+    "text": "Ты приближаешься? Выход в другой стороне.",
+    "speaker": "p2",
+    "duration": 3.66
   },
   "faceoff-greeting-package": {
-    "url": "/assets/voices/spoken-v2/faceoff-greeting-package.mp3",
-    "text": "Пакет пафоса старый. Имена — наши!",
-    "duration": 3.4,
-    "speaker": "p2"
+    "url": "/assets/voices/spoken-v3/faceoff-greeting-package.mp3",
+    "text": "Какая дерзость! Даже твои винты дрожат!",
+    "speaker": "p2",
+    "duration": 3.23
   },
   "faceoff-taunt-p2": {
-    "url": "/assets/voices/spoken-v2/faceoff-taunt-p2.mp3",
-    "text": "Злишься? А я ещё не начинал!",
-    "duration": 2.38,
-    "speaker": "p2"
+    "url": "/assets/voices/spoken-v3/faceoff-taunt-p2.mp3",
+    "text": "Я бы остановил время ради этой позы!",
+    "speaker": "p2",
+    "duration": 2.72
   },
   "faceoff-fight-p2": {
-    "url": "/assets/voices/spoken-v2/faceoff-fight-p2.mp3",
-    "text": "Ха! Ну вперёд, герой!",
-    "duration": 2.45,
-    "speaker": "p2"
+    "url": "/assets/voices/spoken-v3/faceoff-fight-p2.mp3",
+    "text": "Подходи, железный нахал! Муда!",
+    "speaker": "p2",
+    "duration": 3.53
   },
   "round-warranty-setup-p2": {
-    "url": "/assets/voices/spoken-v2/round-warranty-setup-p2.mp3",
-    "text": "Подойди. Проверим твою сборку.",
-    "duration": 2.48,
-    "speaker": "p2"
+    "url": "/assets/voices/spoken-v3/round-warranty-setup-p2.mp3",
+    "text": "Ты всё ещё идёшь ко мне?",
+    "speaker": "p2",
+    "duration": 1.99
   },
   "round-warranty-reply-p2": {
-    "url": "/assets/voices/spoken-v2/round-warranty-reply-p2.mp3",
-    "text": "Я отменяю твою гарантию!",
-    "duration": 2.62,
-    "speaker": "p2"
+    "url": "/assets/voices/spoken-v3/round-warranty-reply-p2.mp3",
+    "text": "Твою броню издалека не помнёшь!",
+    "speaker": "p2",
+    "duration": 2.24
   },
   "round-quiet-setup-p2": {
-    "url": "/assets/voices/spoken-v2/round-quiet-setup-p2.mp3",
-    "text": "Я работаю бесшумно.",
-    "duration": 2.12,
-    "speaker": "p2"
+    "url": "/assets/voices/spoken-v3/round-quiet-setup-p2.mp3",
+    "text": "Слышишь зловещий гул?",
+    "speaker": "p2",
+    "duration": 1.99
   },
   "round-quiet-reply-p2": {
-    "url": "/assets/voices/spoken-v2/round-quiet-reply-p2.mp3",
-    "text": "Тогда трещать буду я. Удобно!",
-    "duration": 2.72,
-    "speaker": "p2"
+    "url": "/assets/voices/spoken-v3/round-quiet-reply-p2.mp3",
+    "text": "Это твои колени. Я бы проверил.",
+    "speaker": "p2",
+    "duration": 3.09
   },
   "round-manual-setup-p2": {
-    "url": "/assets/voices/spoken-v2/round-manual-setup-p2.mp3",
-    "text": "Я изучил все твои слабости.",
-    "duration": 2.43,
-    "speaker": "p2"
+    "url": "/assets/voices/spoken-v3/round-manual-setup-p2.mp3",
+    "text": "У меня есть идеальный план!",
+    "speaker": "p2",
+    "duration": 2.04
   },
   "round-manual-reply-p2": {
-    "url": "/assets/voices/spoken-v2/round-manual-reply-p2.mp3",
-    "text": "Это инструкция от чайника.",
-    "duration": 2.39,
-    "speaker": "p2"
+    "url": "/assets/voices/spoken-v3/round-manual-reply-p2.mp3",
+    "text": "Главное — не забудь удивиться.",
+    "speaker": "p2",
+    "duration": 2.19
   },
   "round-spares-setup-p2": {
-    "url": "/assets/voices/spoken-v2/round-spares-setup-p2.mp3",
-    "text": "Меньше пафоса. Лови искру!",
-    "duration": 2.87,
-    "speaker": "p2"
+    "url": "/assets/voices/spoken-v3/round-spares-setup-p2.mp3",
+    "text": "Что громче: ора или муда?",
+    "speaker": "p2",
+    "duration": 2.76
   },
   "round-spares-reply-p2": {
-    "url": "/assets/voices/spoken-v2/round-spares-reply-p2.mp3",
-    "text": "Слабовато. Добавь пафоса!",
-    "duration": 2.79,
-    "speaker": "p2"
+    "url": "/assets/voices/spoken-v3/round-spares-reply-p2.mp3",
+    "text": "Проверим на твоём корпусе!",
+    "speaker": "p2",
+    "duration": 2.31
   },
   "round-rust-setup-p2": {
-    "url": "/assets/voices/spoken-v2/round-rust-setup-p2.mp3",
-    "text": "На тебе ржавчина.",
-    "duration": 1.33,
-    "speaker": "p2"
+    "url": "/assets/voices/spoken-v3/round-rust-setup-p2.mp3",
+    "text": "Зацени мою устрашающую позу!",
+    "speaker": "p2",
+    "duration": 3.25
   },
   "round-rust-reply-p2": {
-    "url": "/assets/voices/spoken-v2/round-rust-reply-p2.mp3",
-    "text": "Это выдержка. Я коллекционный!",
-    "duration": 2.73,
-    "speaker": "p2"
+    "url": "/assets/voices/spoken-v3/round-rust-reply-p2.mp3",
+    "text": "Замри. Хочу запомнить, куда бить!",
+    "speaker": "p2",
+    "duration": 3.59
   },
   "round-floor-setup-p2": {
-    "url": "/assets/voices/spoken-v2/round-floor-setup-p2.mp3",
-    "text": "Пол уже знает моё имя.",
-    "duration": 2.28,
-    "speaker": "p2"
+    "url": "/assets/voices/spoken-v3/round-floor-setup-p2.mp3",
+    "text": "Моему величию здесь тесно!",
+    "speaker": "p2",
+    "duration": 2.29
   },
   "round-floor-reply-p2": {
-    "url": "/assets/voices/spoken-v2/round-floor-reply-p2.mp3",
-    "text": "Сейчас познакомитесь поближе.",
-    "duration": 2.14,
-    "speaker": "p2"
+    "url": "/assets/voices/spoken-v3/round-floor-reply-p2.mp3",
+    "text": "Пригнись. Тут низкий потолок.",
+    "speaker": "p2",
+    "duration": 3.12
   },
   "round-calculate-setup-p2": {
-    "url": "/assets/voices/spoken-v2/round-calculate-setup-p2.mp3",
-    "text": "Я рассчитал исход боя.",
-    "duration": 1.99,
-    "speaker": "p2"
+    "url": "/assets/voices/spoken-v3/round-calculate-setup-p2.mp3",
+    "text": "Я бы остановил само время!",
+    "speaker": "p2",
+    "duration": 2.15
   },
   "round-calculate-reply-p2": {
-    "url": "/assets/voices/spoken-v2/round-calculate-reply-p2.mp3",
-    "text": "Готовь ластик. Будешь исправлять.",
-    "duration": 2.91,
-    "speaker": "p2"
+    "url": "/assets/voices/spoken-v3/round-calculate-reply-p2.mp3",
+    "text": "Ради паузы между оправданиями?",
+    "speaker": "p2",
+    "duration": 3.13
   },
   "round-music-setup-p2": {
-    "url": "/assets/voices/spoken-v2/round-music-setup-p2.mp3",
-    "text": "Где моя победная музыка?",
-    "duration": 2.25,
-    "speaker": "p2"
+    "url": "/assets/voices/spoken-v3/round-music-setup-p2.mp3",
+    "text": "Это мой звёздный выход!",
+    "speaker": "p2",
+    "duration": 1.92
   },
   "round-music-reply-p2": {
-    "url": "/assets/voices/spoken-v2/round-music-reply-p2.mp3",
-    "text": "Пока вентилятор. Танцуй!",
-    "duration": 2.73,
-    "speaker": "p2"
+    "url": "/assets/voices/spoken-v3/round-music-reply-p2.mp3",
+    "text": "Постарайся обойтись без вылета.",
+    "speaker": "p2",
+    "duration": 2.57
   },
   "round-polite-setup-p2": {
-    "url": "/assets/voices/spoken-v2/round-polite-setup-p2.mp3",
-    "text": "Я дам тебе фору.",
-    "duration": 1.56,
-    "speaker": "p2"
+    "url": "/assets/voices/spoken-v3/round-polite-setup-p2.mp3",
+    "text": "Склонись перед моим величием!",
+    "speaker": "p2",
+    "duration": 2.32
   },
   "round-polite-reply-p2": {
-    "url": "/assets/voices/spoken-v2/round-polite-reply-p2.mp3",
-    "text": "Лучше розетку. Фора своя.",
-    "duration": 2.24,
-    "speaker": "p2"
+    "url": "/assets/voices/spoken-v3/round-polite-reply-p2.mp3",
+    "text": "Нагнусь, когда буду тебя собирать.",
+    "speaker": "p2",
+    "duration": 2.87
   },
   "round-fear-setup-p2": {
-    "url": "/assets/voices/spoken-v2/round-fear-setup-p2.mp3",
-    "text": "Мой процессор не знает страха.",
-    "duration": 2.24,
-    "speaker": "p2"
+    "url": "/assets/voices/spoken-v3/round-fear-setup-p2.mp3",
+    "text": "Ну что, мурашки по металлу?",
+    "speaker": "p2",
+    "duration": 2.72
   },
   "round-fear-reply-p2": {
-    "url": "/assets/voices/spoken-v2/round-fear-reply-p2.mp3",
-    "text": "Обновление придёт без спроса.",
-    "duration": 2.56,
-    "speaker": "p2"
+    "url": "/assets/voices/spoken-v3/round-fear-reply-p2.mp3",
+    "text": "Нет. Прикидываю, где оставить вмятину.",
+    "speaker": "p2",
+    "duration": 3.52
   },
   "round-champion-setup-p2": {
-    "url": "/assets/voices/spoken-v2/round-champion-setup-p2.mp3",
-    "text": "Перед тобой будущий чемпион.",
-    "duration": 2.73,
-    "speaker": "p2"
+    "url": "/assets/voices/spoken-v3/round-champion-setup-p2.mp3",
+    "text": "Запомни мой непобедимый силуэт!",
+    "speaker": "p2",
+    "duration": 2.69
   },
   "round-champion-reply-p2": {
-    "url": "/assets/voices/spoken-v2/round-champion-reply-p2.mp3",
-    "text": "До будущего ещё дожить надо.",
-    "duration": 2.61,
-    "speaker": "p2"
+    "url": "/assets/voices/spoken-v3/round-champion-reply-p2.mp3",
+    "text": "После боя придётся учить новый.",
+    "speaker": "p2",
+    "duration": 3.03
   },
   "round-bolts-setup-p2": {
-    "url": "/assets/voices/spoken-v2/round-bolts-setup-p2.mp3",
-    "text": "Держись крепче.",
-    "duration": 1.29,
-    "speaker": "p2"
+    "url": "/assets/voices/spoken-v3/round-bolts-setup-p2.mp3",
+    "text": "Весь подвал запомнит этот удар!",
+    "speaker": "p2",
+    "duration": 2.64
   },
   "round-bolts-reply-p2": {
-    "url": "/assets/voices/spoken-v2/round-bolts-reply-p2.mp3",
-    "text": "Я своим болтам уже сказал.",
-    "duration": 2.25,
-    "speaker": "p2"
+    "url": "/assets/voices/spoken-v3/round-bolts-reply-p2.mp3",
+    "text": "Главное — сам не забудь встать.",
+    "speaker": "p2",
+    "duration": 2.5
   }
 });

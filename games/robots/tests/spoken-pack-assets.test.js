@@ -31,7 +31,7 @@ function decodedDuration(bytes) {
     assert.equal((h >>> 10) & 3, 1, '24 kHz');
     assert.equal((h >>> 6) & 3, 3, 'mono');
     const rate = bitrates[(h >>> 12) & 15];
-    assert.ok(rate > 0);
+    assert.ok(rate > 0 && rate <= 64, 'compact dialogue stays at or below 64 kbit/s');
     offset += Math.floor(72000 * rate / 24000) + ((h >>> 9) & 1);
     counted++;
   }
@@ -48,7 +48,7 @@ test('every scripted spoken line ships complete audio with an accurate server du
     assert.ok(clip, `missing recording: ${line.id}`);
     assert.equal(clip.text, line.text, line.id);
     assert.equal(clip.speaker, line.speaker, line.id);
-    assert.match(clip.url, /^\/assets\/voices\/spoken-v2\/[a-z0-9-]+\.mp3$/, 'new URLs cannot reuse cached legacy audio');
+    assert.match(clip.url, /^\/assets\/voices\/spoken-v3\/[a-z0-9-]+\.mp3$/, 'new URLs cannot reuse cached legacy audio');
     const bytes = bytesFor(clip), duration = decodedDuration(bytes);
     assert.ok(Math.abs(clip.duration - duration) < .0001, `${line.id}: catalog ${clip.duration}, decoded ${duration}`);
     assert.ok(duration > .15 && duration < 15, `${line.id}: plausible complete utterance`);
@@ -58,15 +58,12 @@ test('every scripted spoken line ships complete audio with an accurate server du
   }
 });
 
-test('both listening-approved takes and all original combat effects remain byte-identical', () => {
-  const dio = GENERATED_VOICE_CLIPS['faceoff-mode-p2'];
-  assert.ok(dio);
-  assert.equal(dio.text, 'Твой гарантийный талон уже мёртв!');
-  assert.equal(sha256(bytesFor(dio)), '639de7c08eddd6c2aff517a6d0edc4f316e1a47c697c58e87f0137d7e43a1ed1');
-  const jotaro = GENERATED_VOICE_CLIPS['faceoff-challenge-p1'];
-  assert.ok(jotaro);
-  assert.equal(jotaro.text, 'Хватит пафоса! Покажи, на что СПОСОБЕН!');
-  assert.equal(sha256(bytesFor(jotaro)), 'b70455f4432e6b4cc56d989c0cf17734e87e21a7bf5f2440cc35cec814642544');
+test('every dialogue is newly recorded while reference originals stay intact', () => {
+  assert.equal(Object.keys(GENERATED_VOICE_CLIPS).length, 57, 'no legacy voices in the active pack');
+  for (const line of script.utterances) {
+    const old = readFileSync(new URL(`../public/assets/voices/spoken-v2/${line.id}.mp3`, import.meta.url));
+    assert.notEqual(sha256(bytesFor(GENERATED_VOICE_CLIPS[line.id])), sha256(old), `${line.id}: old audio must not be reused`);
+  }
   const original = JSON.parse(readFileSync(new URL('../public/assets/voices/manifest.json', import.meta.url), 'utf8'));
   for (const id of script.scope.preservedAssetIds) {
     const clip = original.clips[id];

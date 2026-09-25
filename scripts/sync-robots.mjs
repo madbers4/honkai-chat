@@ -10,7 +10,9 @@ if (!source) throw new Error('Usage: node scripts/sync-robots.mjs <robot-game-ch
 const files = execFileSync('git', ['ls-files', '-z', '--', 'src', 'public', 'shared', 'server', 'tests', 'scripts', 'index.html', 'vite.config.js',
   'docs/generated-voice-pack.md', 'docs/generated-voice-pack-analysis.json',
   'docs/DIO-SPOKEN-PACK.md', 'docs/JOTARO-SPOKEN-PACK.md',
-  'docs/SPOKEN-RUNTIME.md', 'docs/SPOKEN-VOICE-SCRIPT.md'], { cwd: source, encoding: 'utf8' }).split('\0').filter(Boolean);
+  'docs/SPOKEN-RUNTIME.md', 'docs/SPOKEN-VOICE-SCRIPT.md', 'docs/JOJO-AUDIO-V3.md',
+  'docs/COMBAT-VOICE-V3.md', 'docs/combat-voice-v3-analysis.json', 'docs/BATTLE-MUSIC.md',
+  'docs/COSYVOICE-P1-CLI.md', 'docs/VOICE-METHOD-PILOT-NOTES.md'], { cwd: source, encoding: 'utf8' }).split('\0').filter(Boolean);
 const destination = path.join(root, 'games/robots');
 for (const file of files) {
   const target = path.join(destination, file);

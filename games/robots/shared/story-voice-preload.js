@@ -6,7 +6,8 @@ import { buildRoundIntro } from './round-intro.js';
 export function storyVoicePreload(snapshot = {}, options) {
   const story=snapshot.story||{},info=story.roundIntro||{},round=info.round||snapshot.round||1;
   const players=snapshot.players||[],room=snapshot.room||'',serial=info.matchSerial||0;
-  if (story.refereeConnected && story.stage!=='faceoff') return [];
+  // The referee suppresses playback, not preloading: it can disconnect just
+  // before a round, and the recorded cinema always plays in either case.
   if (['workshop','rules','faceoff'].includes(story.stage)||!story.stage) {
     return [...buildFaceoff(players,room,options).filter(beat=>beat.at+beat.duration>(story.stage==='faceoff'?story.elapsed||0:0)),
       ...buildRoundIntro(players,room,1,serial,options).beats];

@@ -3,7 +3,6 @@ import { CLUB_STORY, RULE_CARDS, getClubRuleCard } from '../shared/club-story.js
 import { buildFaceoff } from '../shared/faceoff-script.js';
 import { buildRoundIntro } from '../shared/round-intro.js';
 import { storyVoicePreload } from '../shared/story-voice-preload.js';
-import { hasCompleteSpokenCatalog } from '../shared/spoken-catalog.js';
 import { cleanRobotName, cleanCharacter } from '../shared/fighter-profile.js';
 import { normalizeCustomization } from '../shared/robot-customization.js';
 import { createCustomizationUI } from './customization-ui.js';
@@ -26,12 +25,12 @@ export function createClubJourney(container, { send, leave, toggleSound, toast, 
   root.innerHTML = `
     <header class="journey-header"><div><span class="journey-brand">ФОНТЕЙНКА ПРЕДСТАВЛЯЕТ</span><strong>КОРОТКАЯ ИСТОРИЯ <i>№ <span data-room></span></i></strong></div>
       <nav aria-label="Подготовка бойца"><button data-tab="passport" aria-pressed="true">01 <span>ПАСПОРТ</span></button><button data-tab="appearance" aria-pressed="false">02 <span>ВНЕШНОСТЬ</span></button></nav>
-      <div class="journey-tools"><button data-sound aria-label="Переключить звук">ЗВУК</button><button data-leave aria-label="Выйти из комнаты">×</button></div></header>
+      <div class="journey-tools"><button data-voice-retry hidden aria-label="Повторить загрузку озвучки">↻ ОЗВУЧКА</button><button data-sound aria-label="Переключить звук">ЗВУК</button><button data-leave aria-label="Выйти из комнаты">×</button></div></header>
     <div class="journey-workshop">
       <div class="journey-passport">
         <article class="journey-introduction"><span class="journey-kicker">БЕЛОБОГ · ПОДЗЕМНАЯ ГАЛЕРЕЯ</span><h2>Гарантии нет.<br><em>Характер есть.</em></h2><p data-prologue></p><p class="journey-intro-small">Сегодня клуб запомнит две машины.<br>Начнём с твоей.</p></article>
         <div class="journey-profile"><span class="journey-kicker">ПАСПОРТ БОЙЦА</span><label>КАК ТЕБЯ ОБЪЯВЯТ?<input data-name maxlength="20" placeholder="Например, Барон Кабачок" aria-label="Имя твоего робота" autocomplete="nickname"></label><label>ХАРАКТЕР<input data-character maxlength="60" placeholder="Скромный. Пока не включён." aria-label="Характер твоего робота" autocomplete="off"></label><button class="journey-customize" data-customize>ПОДОБРАТЬ ВНЕШНОСТЬ <span>→</span></button>
-          <label class="journey-tts"><input type="checkbox" data-tts> Дополнительные реплики голосом устройства</label><small data-voice-status></small></div>
+          <small data-voice-status></small></div>
         <aside class="journey-invite"><div class="journey-invite-tabs"><button data-invite-role="fighter" aria-pressed="true">СОПЕРНИК</button><button data-invite-role="referee" aria-pressed="false">РЕФЕРИ · ПО ЖЕЛАНИЮ</button></div><div class="journey-qr"><canvas aria-label="QR-код приглашения"></canvas><div><span data-invite-caption></span><strong data-invite-code></strong><button data-copy>КОПИРОВАТЬ ↗</button></div></div><input data-invite-link readonly aria-label="Приглашение в комнату"><p data-invite-detail></p><div class="journey-roster" aria-live="polite"></div></aside>
       </div>
       <div class="journey-appearance" hidden></div>
@@ -48,14 +47,11 @@ export function createClubJourney(container, { send, leave, toggleSound, toast, 
   const faceoff = createFaceoffUI(q('.journey-faceoff'));
   const roundUI = createRoundIntroUI(q('.journey-round-intro'));
   let roundKey, roundIntro, preloadKey;
-  const voice = createStoryVoice({ onStatus(value) { voiceStatus = value; text(q('[data-voice-status]'), value.message); } });
+  const voice = createStoryVoice({ onStatus(value) { voiceStatus = value; text(q('[data-voice-status]'), value.message); q('[data-voice-retry]').hidden=!value.retryAvailable; } });
   voice.setMuted(muted);
   text(q('[data-sound]'), muted ? 'БЕЗ ЗВУКА' : 'ЗВУК ВКЛ.');
-  const packedConversations=hasCompleteSpokenCatalog();
-  q('.journey-tts').hidden=packedConversations;
-  q('[data-tts]').disabled=packedConversations;
-  q('[data-tts]').checked = !packedConversations && localStorage.getItem('belobog-local-tts') === 'true';
-  voice.setTtsEnabled(q('[data-tts]').checked);
+  // Retire the old opt-in rather than restoring a phone's default voice.
+  try { localStorage.removeItem('belobog-local-tts'); } catch {}
   text(q('[data-prologue]'), CLUB_STORY.prologue[0]);
 
   function profile() { return { name: cleanRobotName(q('[data-name]').value), character: cleanCharacter(q('[data-character]').value), customization: workshop?.value() || look }; }
@@ -96,7 +92,7 @@ export function createClubJourney(container, { send, leave, toggleSound, toast, 
   });
   q('[data-leave]').addEventListener('click', leave);
   q('[data-sound]').addEventListener('click', () => { voice.unlock(); toggleSound(); });
-  q('[data-tts]').addEventListener('change', () => { voice.unlock(); voice.setTtsEnabled(q('[data-tts]').checked); localStorage.setItem('belobog-local-tts', String(q('[data-tts]').checked)); });
+  q('[data-voice-retry]').addEventListener('click', () => { void voice.unlock(); void voice.retry(); });
   for (const button of root.querySelectorAll('[data-invite-role]')) button.addEventListener('click', () => { inviteRole = button.dataset.inviteRole; refreshInvite(); });
   q('[data-copy]').addEventListener('click', async () => {
     const input = q('[data-invite-link]');
@@ -181,7 +177,7 @@ export function createClubJourney(container, { send, leave, toggleSound, toast, 
         faceoff.update(frame); voice.update({ ...frame, enabled: !isMuted });
         next.disabled = story.paused || story.elapsed < 3 || story.skipVotes.includes(id);
         text(next, story.skipVotes.includes(id) ? 'ПРОПУСК: ЖДЁМ ВТОРОГО' : 'ПРОПУСТИТЬ ВДВОЁМ →');
-        text(q('[data-stage-caption]'), 'ПЕРЕД ПЕРВЫМ ГОНГОМ'); text(q('[data-stage-status]'), 'Имена настоящие. Пафос достался с прошивкой.');
+        text(q('[data-stage-caption]'), 'ПЕРЕД ПЕРВЫМ ГОНГОМ'); text(q('[data-stage-status]'), 'Дуэль в духе JoJo. Имена бойцов — над роботами.');
       }
       lastStage = story.stage;
       return true;

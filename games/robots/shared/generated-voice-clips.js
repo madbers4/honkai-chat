@@ -1,7 +1,7 @@
 import { GENERATED_DIO_VOICE_CLIPS } from './generated-dio-voice-clips.js';
 import { GENERATED_JOTARO_VOICE_CLIPS } from './generated-jotaro-voice-clips.js';
-// Keep the first pack for the explicit incomplete-catalog fallback only.
-// New conversations switch together once both complete actor packs are present.
+// Historical assets remain available to offline production and explicit tests.
+// They are never part of the current automatic dialogue catalog.
 export const LEGACY_GENERATED_VOICE_CLIPS = Object.freeze({
   "jotaro-mode": {
     "url": "/assets/voices/generated/jotaro-mode.mp3",
@@ -42,7 +42,6 @@ export const LEGACY_GENERATED_VOICE_CLIPS = Object.freeze({
 });
 
 export const GENERATED_VOICE_CLIPS = Object.freeze({
-  ...LEGACY_GENERATED_VOICE_CLIPS,
   ...GENERATED_DIO_VOICE_CLIPS,
   ...GENERATED_JOTARO_VOICE_CLIPS,
 });

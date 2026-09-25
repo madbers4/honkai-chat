@@ -1,0 +1,345 @@
+{
+  "recipe": "offline-combat-edits-v3",
+  "sourceSelection": "2/5 ms waveform envelopes; diagnostic CPU Whisper-small, ru and ja, without target-text prompts",
+  "listeningApproved": false,
+  "asrLimitation": "Whisper invents normal words and music labels for short ORA/MUDA cries. No exact-word pass or listening approval is claimed.",
+  "format": "mono 24 kHz MP3 CBR 80 kbit/s; active-RMS target -18 dBFS (-19 explosion), pre-encode peak ceiling -3.5 dBFS",
+  "processing": "Preserve pitch, speed and internal timing. Only fixed source cuts, constant gain, short edge fades and one long explosion-tail fade.",
+  "generatorSha256": "f293c37f936b4bab3ac8e2aa94697f1a43b62e4ce75ca83a6ed7ac13933d7fb1",
+  "generatorHashEncoding": "UTF-8 with LF line endings",
+  "ffmpegVersion": "ffmpeg version 7.1-essentials_build-www.gyan.dev Copyright (c) 2000-2024 the FFmpeg developers",
+  "sources": {
+    "jotaro-attack-1": {
+      "url": "/assets/voices/jotaro-attack-1.mp3",
+      "sha256": "b431db10848aa8456bd50dbb1ffb6aff44e0ca6ea34be2094015b014af5499d1",
+      "bytes": 70317,
+      "decodedDuration": 8.748979166666667
+    },
+    "jotaro-attack-2": {
+      "url": "/assets/voices/jotaro-attack-2.mp3",
+      "sha256": "ed0f9f1b790ed825143114397a6a73f5910c271774ac65fc1e3a6af2ee4d0bc9",
+      "bytes": 70509,
+      "decodedDuration": 8.772979166666667
+    },
+    "jotaro-attack-3": {
+      "url": "/assets/voices/jotaro-attack-3.mp3",
+      "sha256": "568aaa985e415fcda99da6c7b797688560d7861db0661e6fe42946e4b2620145",
+      "bytes": 115053,
+      "decodedDuration": 14.340979166666667
+    },
+    "dio-attack-1": {
+      "url": "/assets/voices/dio-attack-1.mp3",
+      "sha256": "179145b679a588e75a6ecf37762aa0910e805955864b76bfb60cda9f81e36803",
+      "bytes": 47277,
+      "decodedDuration": 5.868979166666667
+    },
+    "dio-attack-2": {
+      "url": "/assets/voices/dio-attack-2.mp3",
+      "sha256": "d9c656f956a1a713e4ff04929bd85b1273c759e46256296d9cc7b092bcbdfa27",
+      "bytes": 116013,
+      "decodedDuration": 14.460979166666666
+    },
+    "explosion": {
+      "url": "/assets/voices/explosion.mp3",
+      "sha256": "1bd3dacc65bfc6f7b821007673bc11cc3ebc688d212276b3563ca657de4fde38",
+      "bytes": 252909,
+      "decodedDuration": 10.488
+    }
+  },
+  "clips": [
+    {
+      "id": "jotaro-single-a",
+      "actor": "jotaro",
+      "role": "single",
+      "source": "jotaro-attack-1",
+      "sourceInterval": [
+        0.35,
+        1.55
+      ],
+      "sourceFrames": [
+        16800,
+        74400
+      ],
+      "boundaryBasis": "Whole first isolated cry; silent gaps on both sides.",
+      "gainDB": -2.538,
+      "fadeIn": 0.006,
+      "fadeOut": 0.018,
+      "duration": 1.2,
+      "bytes": 12764,
+      "sha256": "7b57b2641ad478223bdebe1c4573a170cbc58f6aab8f97f741581fd60f010559",
+      "sampleRate": 24000,
+      "channels": 1,
+      "samplePeakDBFS": -5.763,
+      "clippedSamples": 0,
+      "edgeRMS": [
+        0.0002911612973548472,
+        0.00013661215780302882
+      ]
+    },
+    {
+      "id": "jotaro-single-b",
+      "actor": "jotaro",
+      "role": "single",
+      "source": "jotaro-attack-2",
+      "sourceInterval": [
+        0.4,
+        1.55
+      ],
+      "sourceFrames": [
+        19200,
+        74400
+      ],
+      "boundaryBasis": "Whole first isolated cry; preserves the sustained vowel and decay.",
+      "gainDB": -0.289,
+      "fadeIn": 0.006,
+      "fadeOut": 0.018,
+      "duration": 1.15,
+      "bytes": 12284,
+      "sha256": "d00fd7b35a28d56acdaf9667b33278eb02e19520f46ac2c14a5b640b8283de3e",
+      "sampleRate": 24000,
+      "channels": 1,
+      "samplePeakDBFS": -5.937,
+      "clippedSamples": 0,
+      "edgeRMS": [
+        0.00039955548709258437,
+        0.00017640649457462132
+      ]
+    },
+    {
+      "id": "jotaro-finisher",
+      "actor": "jotaro",
+      "role": "finisher",
+      "source": "jotaro-attack-2",
+      "sourceInterval": [
+        1.89,
+        3.47
+      ],
+      "sourceFrames": [
+        90720,
+        166560
+      ],
+      "boundaryBasis": "Whole second isolated cry, through its natural tail.",
+      "gainDB": -3.337,
+      "fadeIn": 0.006,
+      "fadeOut": 0.035,
+      "duration": 1.58,
+      "bytes": 16604,
+      "sha256": "4ae5bb94fb3a3cb5d2948fb0af8517b9a0f26a918650da2c7088513c0a47fe78",
+      "sampleRate": 24000,
+      "channels": 1,
+      "samplePeakDBFS": -6.116,
+      "clippedSamples": 0,
+      "edgeRMS": [
+        4.0356644603889436e-05,
+        2.2812744646216743e-05
+      ]
+    },
+    {
+      "id": "jotaro-barrage",
+      "actor": "jotaro",
+      "role": "barrage",
+      "source": "jotaro-attack-3",
+      "sourceInterval": [
+        0.39,
+        3.85
+      ],
+      "sourceFrames": [
+        18720,
+        184800
+      ],
+      "boundaryBasis": "Whole first ORA run; ends after the final voiced peak and decay.",
+      "gainDB": -3.381,
+      "fadeIn": 0.006,
+      "fadeOut": 0.1,
+      "duration": 3.46,
+      "bytes": 35564,
+      "sha256": "1ca15178e0743ae2ae2154f0e3d2c794e6b0caa2b2b311ceef671decedef0e5b",
+      "sampleRate": 24000,
+      "channels": 1,
+      "samplePeakDBFS": -5.202,
+      "clippedSamples": 0,
+      "edgeRMS": [
+        3.5900862712878734e-05,
+        0.00010278806439600885
+      ]
+    },
+    {
+      "id": "dio-single-a",
+      "actor": "dio",
+      "role": "single",
+      "source": "dio-attack-1",
+      "sourceInterval": [
+        0.31,
+        0.722
+      ],
+      "sourceFrames": [
+        14880,
+        34656
+      ],
+      "boundaryBasis": "First MUDA articulation, two vowel groups; boundary is the valley before the next onset.",
+      "gainDB": -3.507,
+      "fadeIn": 0.006,
+      "fadeOut": 0.009,
+      "duration": 0.412,
+      "bytes": 5084,
+      "sha256": "1712adb521cfce699f9bc882a3a510e7ae3dec4281ff1473476bc5c6e98d12ce",
+      "sampleRate": 24000,
+      "channels": 1,
+      "samplePeakDBFS": -6.759,
+      "clippedSamples": 0,
+      "edgeRMS": [
+        0.0002200829767389223,
+        0.006817800924181938
+      ]
+    },
+    {
+      "id": "dio-single-b",
+      "actor": "dio",
+      "role": "single",
+      "source": "dio-attack-1",
+      "sourceInterval": [
+        0.722,
+        1.066
+      ],
+      "sourceFrames": [
+        34656,
+        51168
+      ],
+      "boundaryBasis": "Second MUDA articulation; both syllabic groups, ending at the next inter-cry valley.",
+      "gainDB": -0.83,
+      "fadeIn": 0.006,
+      "fadeOut": 0.009,
+      "duration": 0.344,
+      "bytes": 4364,
+      "sha256": "92a206dc41541f7218275041f49c611b36092e44951cfadb591d376e181d40e8",
+      "sampleRate": 24000,
+      "channels": 1,
+      "samplePeakDBFS": -5.791,
+      "clippedSamples": 0,
+      "edgeRMS": [
+        0.006609524600207806,
+        0.006682938896119595
+      ]
+    },
+    {
+      "id": "dio-finisher",
+      "actor": "dio",
+      "role": "finisher",
+      "source": "dio-attack-1",
+      "sourceInterval": [
+        1.066,
+        2.1
+      ],
+      "sourceFrames": [
+        51168,
+        100800
+      ],
+      "boundaryBasis": "Last extended MUDA of the first run plus early reverb; late echo is faded, not a vowel.",
+      "gainDB": -2.219,
+      "fadeIn": 0.006,
+      "fadeOut": 0.14,
+      "duration": 1.034,
+      "bytes": 11324,
+      "sha256": "7f6dca133540d35c3d1c7fb17fc999b02a008b6593f3c5b9ed701f9ed0bb21bf",
+      "sampleRate": 24000,
+      "channels": 1,
+      "samplePeakDBFS": -6.7,
+      "clippedSamples": 0,
+      "edgeRMS": [
+        0.007221875712275505,
+        0.0003043480683118105
+      ]
+    },
+    {
+      "id": "dio-barrage",
+      "actor": "dio",
+      "role": "barrage",
+      "source": "dio-attack-1",
+      "sourceInterval": [
+        0.31,
+        2.1
+      ],
+      "sourceFrames": [
+        14880,
+        100800
+      ],
+      "boundaryBasis": "Complete short MUDA run including its extended last cry; later reverb excluded.",
+      "gainDB": -2.399,
+      "fadeIn": 0.006,
+      "fadeOut": 0.14,
+      "duration": 1.79,
+      "bytes": 18764,
+      "sha256": "14fc2710e5d2df9308f294884f429616fcf23c7f698c65fdbcf8001a872182e4",
+      "sampleRate": 24000,
+      "channels": 1,
+      "samplePeakDBFS": -5.735,
+      "clippedSamples": 0,
+      "edgeRMS": [
+        0.0002602322492748499,
+        0.0002892290649469942
+      ]
+    },
+    {
+      "id": "dio-ultimate",
+      "actor": "dio",
+      "role": "ultimate",
+      "source": "dio-attack-2",
+      "sourceInterval": [
+        9.83,
+        13.68
+      ],
+      "sourceFrames": [
+        471840,
+        656640
+      ],
+      "boundaryBasis": "Whole final MUDA run after the long silent gap. Excludes the preceding spoken threat.",
+      "gainDB": -3.292,
+      "fadeIn": 0.006,
+      "fadeOut": 0.1,
+      "duration": 3.85,
+      "bytes": 39404,
+      "sha256": "483a6f75b301f8da894a4ada66abaa79eaab4cb3cbb9ee4b43ff24fcfe2fab3c",
+      "sampleRate": 24000,
+      "channels": 1,
+      "samplePeakDBFS": -5.533,
+      "clippedSamples": 0,
+      "edgeRMS": [
+        4.509059635893209e-06,
+        0.0
+      ]
+    },
+    {
+      "id": "explosion",
+      "actor": "explosion",
+      "role": "destruction",
+      "source": "explosion",
+      "sourceInterval": [
+        0.025,
+        5.15
+      ],
+      "sourceFrames": [
+        1200,
+        247200
+      ],
+      "boundaryBasis": "Initial blast and main decay; long secondary rumble removed with a 600 ms tail fade. No voice source mixed in.",
+      "gainDB": -16.862,
+      "fadeIn": 0.003,
+      "fadeOut": 0.6,
+      "duration": 5.125,
+      "bytes": 52124,
+      "sha256": "d8c9982334f3ebd282f3cbd70ce55add24adc4c6aa8e6aa032c9ef499f4b4723",
+      "sampleRate": 24000,
+      "channels": 1,
+      "samplePeakDBFS": -14.386,
+      "clippedSamples": 0,
+      "edgeRMS": [
+        7.236992587422719e-07,
+        5.2754410717170686e-05
+      ]
+    }
+  ],
+  "oldPreloadBytes": 750267,
+  "newPreloadBytes": 208280,
+  "savedBytes": 541987,
+  "savedPercent": 72.24
+}

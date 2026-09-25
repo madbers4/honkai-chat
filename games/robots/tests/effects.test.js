@@ -711,15 +711,16 @@ test('cold victory, destroyed, paused and legacy snapshots never dereference a m
   assertFiniteGeometry(scene);
 });
 
-test('industrial set stays merged, receives robot spill light and disposes its resources', async () => {
+test('club set stays merged, receives robot spill light and disposes its resources', async () => {
   const { createIndustrialEnvironment } = await import('../src/environment.js');
   const scene = new THREE.Scene();
   const { createDeckSurface } = await import('../src/deck-surface.js');
   const environment = createIndustrialEnvironment(scene, new THREE.Texture({ width: 2172, height: 724 }), createDeckSurface({ resolution: 512 }));
-  assert.ok(environment.group.children.length <= 15, 'detailed pipes and deck do not become hundreds of draw calls');
-  const deck = environment.group.getObjectByName('industrial-deck');
+  assert.ok(environment.group.children.length <= 15, 'detailed room pieces do not become hundreds of root objects');
+  const deck = environment.group.getObjectByName('continuous-club-stone-floor');
   assert.ok(deck.receiveShadow && deck.material.isMeshStandardMaterial);
-  assert.ok(deck.material.roughnessMap && deck.material.metalnessMap, 'paint and exposed steel have distinct response to robot light');
+  assert.ok(deck.material.roughnessMap && deck.material.bumpMap, 'worn stone receives robot light through its material');
+  assert.equal(deck.material.metalness, 0, 'the fight club floor is stone, not a steel platform');
   const geometries = new Set(), materials = new Set();
   environment.group.traverse(object => { if (object.geometry) geometries.add(object.geometry); if (object.material) materials.add(object.material); });
   let disposed = 0;

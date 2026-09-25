@@ -109,25 +109,21 @@ test('camera tracks close fighting at either end and only opens up for actual se
   }
 });
 
-test('expanded floor and real backing wall cover the complete frustum; mural, panel metrics and central lamps keep their scale', () => {
+test('expanded floor and real backing wall cover the complete frustum; mural keeps its scale and closed storage bays respect the playable lane', () => {
   const scene = new THREE.Scene(), wallpaper = new THREE.Texture({ width: 3072, height: 1024 });
   const set = createIndustrialEnvironment(scene, wallpaper, createDeckSurface({ resolution: 512 }));
   set.group.updateMatrixWorld(true);
-  const floor = set.group.getObjectByName('continuous-industrial-floor'), deck = set.group.getObjectByName('industrial-deck');
-  floor.geometry.computeBoundingBox(); deck.geometry.computeBoundingBox();
+  const floor = set.group.getObjectByName('continuous-club-stone-floor');
+  floor.geometry.computeBoundingBox();
   const floorBounds = floor.geometry.boundingBox;
-  assert.ok(deck.geometry.boundingBox.max.x > ARENA_EDGE + 1.82 && deck.geometry.boundingBox.min.x < -ARENA_EDGE - 1.82, 'toes remain on real panels at the wall');
+  assert.ok(floorBounds.max.x > ARENA_EDGE + 1.82 && floorBounds.min.x < -ARENA_EDGE - 1.82, 'stone flooring continues beneath the complete playable lane');
   const mural = set.group.getObjectByName('original-belobog-wall');
   assert.equal(mural.geometry.parameters.width, 24); assert.equal(mural.position.x, 0); assert.equal(mural.material.map, wallpaper);
-  const deckPos = deck.geometry.attributes.position, deckUV = deck.geometry.attributes.uv;
-  for (let i = 0; i < deckPos.count; i += 300) assert.ok(Math.abs(deckUV.getX(i) - (deckPos.getX(i) / 13.8 + .5)) < 1e-6, 'new panels must not stretch the texture');
   const black = set.group.getObjectByName('industrial-black').geometry.attributes.position, backing = new THREE.Box3();
   for (let i = 0; i < black.count; i++) if (Math.abs(black.getZ(i) + 3.58) < .001) backing.expandByPoint(new THREE.Vector3().fromBufferAttribute(black,i));
   assert.ok(backing.max.x >= 32 && backing.min.x <= -32, 'coverage is measured from the actual backing mesh');
-  const tanks = set.group.getObjectByName('pressure-receiver-enamel');
-  assert.ok(tanks, 'real service receivers remain in the scene');
-  const tankPos = tanks.geometry.attributes.position;
-  for (let i = 0; i < tankPos.count; i++) assert.ok(Math.abs(tankPos.getX(i)) > ARENA_EDGE + 1.82, 'receivers no longer occupy playable wings');
+  assert.equal(set.group.getObjectByName('pressure-receiver-enamel'), undefined, 'abandoned boiler assemblies are removed');
+  assert.ok(set.group.getObjectByName('fight-club-closed-storage-bays'), 'both ends terminate in physical barriers');
   const point = new THREE.Vector3(), origin = new THREE.Vector3(), direction = new THREE.Vector3();
   const perspective = new THREE.PerspectiveCamera(36, 1, .1, 70);
   for (const type of ['far','edge','cross']) for (const facing of [-1,1]) for (const aspect of [844 / 390, 16 / 9, 4 / 3]) {

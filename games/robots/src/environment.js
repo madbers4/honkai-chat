@@ -2,8 +2,8 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { createPaperPosters } from './posters.js';
-import { createPressureReservoirs } from './pressure-reservoir.js';
-import { applyDeckUV } from './deck-surface.js';
+import { createClubBoundaries } from './club-boundaries.js';
+import { createClubFloor } from './club-floor.js';
 import { ARENA_EDGE } from '../shared/constants.js';
 
 export const ARENA_SET = Object.freeze({
@@ -11,22 +11,17 @@ export const ARENA_SET = Object.freeze({
   floorWidth: 88, floorDepth: 84, wallHalfWidth: 32, wallHeight: 22,
 });
 
-/** Authored industrial set: merged by finish, real rounded plumbing and open deck grates. */
+/** Fight-club set: preserved source mural, real masonry, stone floor and closed storage bays. */
 export function createIndustrialEnvironment(scene, wallpaper, deckSurface, posterTexture = null) {
   const group = new THREE.Group();
-  group.name = 'Belobog — pressure plant and service deck';
+  group.name = 'Belobog — underground fight club';
   const owned = new Set();
   const keep = resource => { owned.add(resource); return resource; };
   const materials = {
-    deck: deckSurface.material,
-    panel: new THREE.MeshStandardMaterial({ color: '#46565c', roughness: .55, metalness: .55 }),
     steel: new THREE.MeshStandardMaterial({ color: '#7e8b8e', roughness: .38, metalness: .78 }),
     iron: new THREE.MeshStandardMaterial({ color: '#26383e', roughness: .55, metalness: .64 }),
     black: new THREE.MeshStandardMaterial({ color: '#101d22', roughness: .76, metalness: .3 }),
     copper: new THREE.MeshStandardMaterial({ color: '#8b6245', roughness: .44, metalness: .7 }),
-    worn: new THREE.MeshStandardMaterial({ color: '#807849', roughness: .73, metalness: .3 }),
-    red: new THREE.MeshStandardMaterial({ color: '#923d31', roughness: .47, metalness: .52 }),
-    glass: new THREE.MeshStandardMaterial({ color: '#bbc8bc', roughness: .2, metalness: .22 }),
     brick: new THREE.MeshStandardMaterial({ color: '#3e3632', vertexColors: true, roughness: .98, metalness: 0 }),
     amber: new THREE.MeshStandardMaterial({ color: '#ffe4a2', emissive: '#ffb853', emissiveIntensity: 1.8, roughness: .3 }),
     cyan: new THREE.MeshStandardMaterial({ color: '#c1f3ef', emissive: '#56d9d7', emissiveIntensity: 1.8, roughness: .3 }),
@@ -53,14 +48,13 @@ export function createIndustrialEnvironment(scene, wallpaper, deckSurface, poste
     `);
   };
   materials.brick.customProgramCacheKey = () => 'belobog-weathered-masonry-v1';
-  Object.entries(materials).forEach(([name, material]) => { if (name !== 'deck') keep(material); });
+  Object.values(materials).forEach(keep);
   const batches = new Map();
   const matrix = new THREE.Matrix4(), rotation = new THREE.Quaternion(), pos = new THREE.Vector3();
   const unit = new THREE.Vector3(1, 1, 1), axisY = new THREE.Vector3(0, 1, 0);
   function add(geometry, finish, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0) {
     rotation.setFromEuler(new THREE.Euler(rx, ry, rz));
     geometry.applyMatrix4(matrix.compose(pos.set(x, y, z), rotation, unit));
-    if (finish === 'deck') applyDeckUV(geometry);
     if (!batches.has(finish)) batches.set(finish, []);
     batches.get(finish).push(geometry);
   }
@@ -70,10 +64,6 @@ export function createIndustrialEnvironment(scene, wallpaper, deckSurface, poste
     add(new THREE.CylinderGeometry(radiusTop, radius, length, segments), finish, x, y, z,
       axis === 'z' ? Math.PI / 2 : 0, 0, axis === 'x' ? Math.PI / 2 : 0);
   }
-  function torus(radius, tube, finish, x, y, z, axis = 'z', arc = Math.PI * 2) {
-    add(new THREE.TorusGeometry(radius, tube, 7, 32, arc), finish, x, y, z,
-      axis === 'y' ? Math.PI / 2 : 0, axis === 'x' ? Math.PI / 2 : 0);
-  }
   function rod(from, to, radius, finish, segments = 10) {
     const a = new THREE.Vector3(...from), b = new THREE.Vector3(...to), direction = b.clone().sub(a);
     const geometry = new THREE.CylinderGeometry(radius, radius, direction.length(), segments);
@@ -82,68 +72,8 @@ export function createIndustrialEnvironment(scene, wallpaper, deckSurface, poste
     if (!batches.has(finish)) batches.set(finish, []);
     batches.get(finish).push(geometry);
   }
-  function route(points, radius, finish, bend = .24) {
-    const path = new THREE.CurvePath();
-    let previous = new THREE.Vector3(...points[0]);
-    for (let i = 1; i < points.length - 1; i++) {
-      const corner = new THREE.Vector3(...points[i]), next = new THREE.Vector3(...points[i + 1]);
-      const before = previous.clone().sub(corner).normalize().multiplyScalar(bend).add(corner);
-      const after = next.clone().sub(corner).normalize().multiplyScalar(bend).add(corner);
-      path.add(new THREE.LineCurve3(previous, before));
-      path.add(new THREE.QuadraticBezierCurve3(before, corner, after)); previous = after;
-    }
-    path.add(new THREE.LineCurve3(previous, new THREE.Vector3(...points.at(-1))));
-    add(new THREE.TubeGeometry(path, Math.max(28, points.length * 14), radius, 12, false), finish);
-  }
-  function flange(x, y, z, radius, axis = 'y') {
-    cylinder(radius, .085, 'steel', x, y, z, axis);
-    cylinder(radius * .86, .12, 'iron', x, y, z, axis);
-    for (let j = 0; j < 6; j++) {
-      const a = j * Math.PI / 3, u = Math.cos(a) * radius * .77, v = Math.sin(a) * radius * .77;
-      cylinder(.026, .16, 'copper', x + (axis === 'x' ? 0 : u), y + (axis === 'y' ? 0 : v), z + (axis === 'z' ? 0 : axis === 'y' ? v : u), axis, .026, 6);
-    }
-  }
-  function valve(x, y, z, radius = .23) {
-    cylinder(.085, .22, 'copper', x, y, z - .10, 'z');
-    torus(radius, .035, 'red', x, y, z);
-    cylinder(.07, .10, 'red', x, y, z, 'z', .07, 8);
-    for (let j = 0; j < 3; j++) {
-      const a = j * Math.PI * 2 / 3;
-      rod([x, y, z], [x + Math.cos(a) * radius, y + Math.sin(a) * radius, z], .021, 'red');
-    }
-  }
-
-  // Deck panels have thickness and bevel highlights. Their top lies just below authoritative feet.
-  const floorGeometry = new THREE.PlaneGeometry(ARENA_SET.floorWidth, ARENA_SET.floorDepth);
-  floorGeometry.rotateX(-Math.PI / 2); floorGeometry.translate(0, -.12, 1.5);
-  const floor = new THREE.Mesh(keep(applyDeckUV(floorGeometry)), materials.deck);
-  floor.name = 'continuous-industrial-floor';
-  floor.receiveShadow = true; group.add(floor);
-  const deckEdge = ARENA_SET.deckHalfWidth, serviceCenter = deckEdge + .85;
-  for (let x = -deckEdge; x < deckEdge - .1; x += 2.3) for (const z of [-1.59, -.53, .53, 1.59]) {
-    box(2.275, .10, 1.035, 'deck', x + 1.14, -.057, z, .023);
-    for (const dx of [-.98, .98]) for (const dz of [-.37, .37]) cylinder(.029, .018, 'steel', x + 1.14 + dx, -.003, z + dz, 'y', .029, 6);
-  }
-  for (const z of [-2.21, 2.21]) {
-    box(deckEdge * 2 + 1.3, .18, .15, 'steel', 0, -.045, z, .025);
-    box(deckEdge * 2 + 1.45, .17, .18, 'iron', 0, -.09, z + Math.sign(z) * .14, .022);
-    for (let x = -deckEdge + .1; x <= deckEdge - .1; x += .68) {
-      box(.32, .007, .085, 'worn', x, .049, z, .001, 0);
-      if (z > 0 && Math.round(x * 100) % 2 === 0) box(.23, .024, .04, x < 0 ? 'amber' : 'cyan', x, -.012, z + .088, .004);
-    }
-  }
-  // Side drains have actual openings and shadows, not a printed grill texture.
-  for (const x of [-ARENA_EDGE, ARENA_EDGE]) {
-    box(1.76, .07, .76, 'black', x, -.015, -1.3, .02);
-    for (const z of [-1.66, -.94]) box(1.8, .055, .07, 'steel', x, .029, z, .01);
-    for (const dx of [-.86, .86]) box(.07, .055, .71, 'steel', x + dx, .029, -1.3, .01);
-    for (let j = 0; j < 18; j++) box(.027, .047, .64, 'steel', x - .78 + j * .092, .02, -1.3, .009);
-  }
-  for (const side of [-1, 1]) {
-    box(.16, .18, 4.75, 'iron', side * (deckEdge + .28), -.045, 0, .025);
-    box(.10, .04, 4.45, 'worn', side * (deckEdge + .28), .051, 0, .008);
-    box(2.2, .15, 1.45, 'deck', side * serviceCenter, -.045, -2.39, .025);
-  }
+  const floor = createClubFloor({ deckSurface });
+  group.add(floor.group);
 
   const ratio = wallpaper.image.width / wallpaper.image.height;
   const wall = new THREE.Mesh(keep(new THREE.PlaneGeometry(24, 24 / ratio)), keep(new THREE.MeshBasicMaterial({ map: wallpaper, color: '#a3a9aa', toneMapped: false })));
@@ -174,25 +104,14 @@ export function createIndustrialEnvironment(scene, wallpaper, deckSurface, poste
     }
     box(20, .63, .14, 'iron', side * 22, .22, -3.39, .025);
   }
-  // Two different service assemblies frame the supplied wall without occupying the fighting lane.
-  const receivers = createPressureReservoirs({ centerDistance: serviceCenter });
-  group.add(receivers.group);
+  // A continuous lintel covers the photographed wall's upper termination.
+  box(24.4, .26, .28, 'iron', 0, 7.83, -3.26, .025);
+  box(24.5, .065, .32, 'steel', 0, 7.68, -3.245, .015);
+  const boundaries = createClubBoundaries();
+  group.add(boundaries.group);
+  // Existing wall lamps retain their positions and authored colour temperatures.
   for (const side of [-1, 1]) {
-    const sx = side * serviceCenter, serviceX = offset => side * (serviceCenter + offset), tone = side < 0 ? 'amber' : 'cyan';
-    route([[sx, 2.50, -2.4], [sx, 2.81, -2.4], [serviceX(.65), 2.81, -2.4], [serviceX(.65), 4.97, -2.55], [side * 4.8, 4.97, -2.76]], .13, 'iron', .27);
-    flange(serviceX(.65), 3.62, -2.4, .22);
-    for (const y of [3.1, 4.5]) {
-      torus(.15, .024, 'steel', serviceX(.65), y, -2.48, 'y');
-      box(.44, .095, .1, 'iron', serviceX(.65), y, -2.94, .02);
-      rod([serviceX(.65), y, -2.94], [serviceX(.65), y, -2.49], .038, 'steel');
-    }
-    route([[sx - side * .48, .88, -2.35], [serviceX(-.92), .88, -2.35], [serviceX(-.92), .2, -2.35], [serviceX(-2.05), .2, -2.35]], .064, 'copper', .15);
-    valve(serviceX(-.92), .87, -2.07);
-    for (let j = 0; j < 3; j++) {
-      const x = sx + side * (.60 + j * .08);
-      const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(x, 2.1, -2.65), new THREE.Vector3(x + side * .16, 1.2, -2.5), new THREE.Vector3(x + side * .09, .3, -2.8)]);
-      add(new THREE.TubeGeometry(curve, 18, .018, 6, false), 'black');
-    }
+    const tone = side < 0 ? 'amber' : 'cyan';
     // Cast lamp housing, inset diffuser and individual guard ribs.
     const lampX = side * 5.8;
     box(.91, .24, .42, 'iron', lampX, 4.82, -2.75, .065);
@@ -200,14 +119,16 @@ export function createIndustrialEnvironment(scene, wallpaper, deckSurface, poste
     for (const dx of [-.35, -.18, 0, .18, .35]) rod([lampX + dx, 4.69, -2.46], [lampX + dx, 4.90, -2.46], .016, 'steel');
     for (const y of [4.69, 4.90]) rod([lampX - .38, y, -2.46], [lampX + .38, y, -2.46], .018, 'steel');
   }
-  route([[-8.1, 4.15, -2.99], [-8.1, 5.42, -2.99], [8.1, 5.42, -2.99], [8.1, 4.15, -2.99]], .06, 'copper', .32);
-  for (const x of [-6, -3, 0, 3, 6]) flange(x, 5.42, -2.99, .105, 'x');
   // Sagging supply cables span between physical anchor cleats.
   for (let j = 0; j < 3; j++) {
     const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(-7.9, 4.85 + j * .08, -3.03), new THREE.Vector3(-3.6, 4.40 + j * .08, -3.06), new THREE.Vector3(1.4, 4.54 + j * .08, -3.07), new THREE.Vector3(7.9, 4.99 + j * .08, -3.02)]);
     add(new THREE.TubeGeometry(curve, 48, .018, 6, false), j === 2 ? 'copper' : 'black');
   }
 
+  for (const [x,y] of [[-7.9,4.93],[7.9,5.07]]) {
+    box(.12,.45,.12,'iron',x,y,-3.06,.015);
+    for (const dy of [-.16,.16]) cylinder(.025,.10,'copper',x,y+dy,-2.97,'z',.025,6);
+  }
   for (const [finish, geometries] of batches) {
     const compatible = geometries.map(item => item.index ? item.toNonIndexed() : item);
     const geometry = keep(mergeGeometries(compatible));
@@ -223,5 +144,5 @@ export function createIndustrialEnvironment(scene, wallpaper, deckSurface, poste
   const posters = createPaperPosters(posterTexture);
   if (posterTexture) group.add(posters.group);
   scene.add(group);
-  return { group, dispose() { posters.dispose(); receivers.dispose(); deckSurface.dispose(); scene.remove(group); for (const resource of owned) resource.dispose(); } };
+  return { group, dispose() { posters.dispose(); boundaries.dispose(); floor.dispose(); deckSurface.dispose(); scene.remove(group); for (const resource of owned) resource.dispose(); } };
 }

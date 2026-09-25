@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { loadRobotAssets, createRobot } from './robot.js';
 import { createEmissionGlow } from './emission-glow.js';
+import { GRAPHICS_PRESETS, graphicsPreset, graphicsPixelRatio, readGraphicsPreference, observeGraphicsPreference } from './graphics-quality.js';
 
 export function frameCustomizationPreview(camera,width,height) {
   const aspect=Math.max(1,width)/Math.max(1,height);
@@ -12,8 +13,9 @@ export function frameCustomizationPreview(camera,width,height) {
 
 // The workshop uses the arena's real rig/materials. It owns its WebGL resources
 // and renders only while visible, so opening two menus cannot leak animation loops.
-export function createCustomizationPreview(host, { value, reducedMotion, quality = 'high' }) {
-  let disposed=false,robot,renderer,glow,frame=0,last=0,elapsed=0,visible=true,intersecting=true,enabled=true,interactive=true,yaw=-.74,drag;
+export function createCustomizationPreview(host, { value, reducedMotion, quality = readGraphicsPreference() }) {
+  let graphicsMode=graphicsPreset(quality); quality=GRAPHICS_PRESETS[graphicsMode].effects;
+  let disposed=false,robot,renderer,glow,keyLight,frame=0,last=0,elapsed=0,visible=true,intersecting=true,enabled=true,interactive=true,yaw=-.74,drag;
   const media=globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
   const reduced=()=>typeof reducedMotion==='boolean'?reducedMotion:Boolean(media?.matches);
   const scene=new THREE.Scene();scene.background=new THREE.Color('#19272d');
@@ -25,7 +27,7 @@ export function createCustomizationPreview(host, { value, reducedMotion, quality
   const resize=()=>{
     if(!renderer||disposed)return;
     const width=Math.max(1,host.clientWidth),height=Math.max(1,host.clientHeight);
-    const ratio=Math.min(globalThis.devicePixelRatio||1,quality==='low'?1:1.5);
+    const ratio=graphicsPixelRatio({width,height,dpr:globalThis.devicePixelRatio,preset:graphicsMode,maxTextureSize:renderer.capabilities.maxTextureSize});
     renderer.setPixelRatio(ratio);renderer.setSize(width,height,false);glow.resize(width,height,ratio);
     frameCustomizationPreview(camera,width,height);
   };
@@ -40,6 +42,12 @@ export function createCustomizationPreview(host, { value, reducedMotion, quality
   };
   const wake=()=>{if(!disposed&&visible&&robot&&!frame){last=0;frame=requestAnimationFrame(render);}};
   const observer=new ResizeObserver(resize);observer.observe(host);
+  const stopWatchingGraphics=observeGraphicsPreference(mode=>{
+    graphicsMode=graphicsPreset(mode);quality=GRAPHICS_PRESETS[graphicsMode].effects;
+    if(renderer){renderer.shadowMap.enabled=quality!=='low';renderer.shadowMap.needsUpdate=true;}
+    if(keyLight)keyLight.castShadow=quality!=='low';
+    glow?.setQuality(quality);resize();
+  });
   const intersection=typeof IntersectionObserver==='function'?new IntersectionObserver(entries=>{
     intersecting=Boolean(entries[0]?.isIntersecting);visibility();
   }):null;intersection?.observe(host);
@@ -58,7 +66,7 @@ export function createCustomizationPreview(host, { value, reducedMotion, quality
       renderer.domElement.setAttribute('role','img');renderer.domElement.setAttribute('aria-label','Трёхмерная модель вашего робота');renderer.domElement.className='customization-preview-canvas';host.prepend(renderer.domElement);
       glow=createEmissionGlow(renderer);glow.setQuality(quality);
       scene.add(new THREE.HemisphereLight('#def6ff','#756650',2.2));
-      const key=new THREE.DirectionalLight('#ffe3b9',3.3);key.position.set(-3,6,5);key.castShadow=quality!=='low';key.shadow.mapSize.set(1024,1024);
+      const key=keyLight=new THREE.DirectionalLight('#ffe3b9',3.3);key.position.set(-3,6,5);key.castShadow=quality!=='low';key.shadow.mapSize.set(1024,1024);
       Object.assign(key.shadow.camera,{left:-3,right:3,top:4,bottom:-3,near:.5,far:18});key.shadow.bias=-.001;key.shadow.normalBias=.025;scene.add(key);
       const rim=new THREE.DirectionalLight('#83cde3',2.6);rim.position.set(3,4,-3);scene.add(rim);
       const fill=new THREE.DirectionalLight('#d4e9ff',1.0);fill.position.set(4,2,4);scene.add(fill);
@@ -77,7 +85,7 @@ export function createCustomizationPreview(host, { value, reducedMotion, quality
     setEnabled(value){interactive=Boolean(value);if(!interactive)drag=null;},
     setVisible(value){enabled=Boolean(value);visibility();},
     dispose(){
-      if(disposed)return;disposed=true;cancelAnimationFrame(frame);observer.disconnect();intersection?.disconnect();document.removeEventListener('visibilitychange',visibility);
+      if(disposed)return;disposed=true;cancelAnimationFrame(frame);observer.disconnect();stopWatchingGraphics();intersection?.disconnect();document.removeEventListener('visibilitychange',visibility);
       host.removeEventListener('pointerdown',pointerDown);host.removeEventListener('pointermove',pointerMove);host.removeEventListener('pointerup',pointerUp);host.removeEventListener('pointercancel',pointerUp);
       robot?.dispose();glow?.dispose();resources.forEach(item=>item.dispose());renderer?.dispose();renderer?.forceContextLoss();renderer?.domElement.remove();status.remove();
     },

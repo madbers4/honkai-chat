@@ -6,6 +6,7 @@ import './fontainka-brand.css';
 import './story.css';
 import './ultimate.css';
 import './combat-controls.css';
+import { mountGraphicsSettings } from './graphics-settings.js';
 import { fontainkaSignature } from './brand-mark.js';
 import { createStoryUI } from './story-ui.js';
 import { createClubJourney } from './club-journey.js';
@@ -19,6 +20,8 @@ import { createCombatUI } from './combat-ui.js';
 import { actionResource, finishContext } from './action-context.js';
 import { robotPresentation } from '../shared/robot-presentation.js';
 import { WINS_TO_MATCH, MAX_HP, ROUND_SECONDS } from '../shared/constants.js';
+import { installMenuViewport } from './menu-viewport.js';
+import './mobile-layout.css';
 
 const icons = {
   robot: '<path d="m5 7 7-4 7 4v10l-7 4-7-4Z"/><path d="M8 9h8v7H8zm2 3h.01M14 12h.01M12 3V1"/>',
@@ -101,9 +104,11 @@ document.getElementById('app').innerHTML = `
   <div id="toast" class="toast" role="status"></div>
 `;
 
+installMenuViewport();
 const savedName = localStorage.getItem('belobog-name');
 if (savedName) $('player-name').value = savedName;
 const storyUI = createStoryUI();
+mountGraphicsSettings($('guide-dialog'));
 const journey = createClubJourney($('app'), { send, leave, toast, muted: audio.muted,
   toggleSound: () => { audio.unlock(); audio.toggle(); journey.setMuted(audio.muted); $('sound-btn').innerHTML = icon(audio.muted ? 'mute' : 'sound'); },
   onName: (value, character) => { $('player-name').value = value; storyUI.setCharacter(character); },
@@ -220,7 +225,6 @@ async function enterRoom(training = false, code = null) {
   mode = training ? 'training' : 'pvp'; lastEvent = 0; lastPhase = null; state = null;
   combatUI.reset();
   $('create-btn').disabled = true; $('training-btn').disabled = true;
-  if (matchMedia('(pointer: coarse)').matches) requestFullscreen();
   connect(code ? {type:'join',room:code,name:name(),...storyUI.profile(),...journey.profile()} : {type:'create',name:name(),mode,storyMode:true,...storyUI.profile(),...journey.profile()});
 }
 function leave() {

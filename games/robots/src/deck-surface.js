@@ -1,165 +1,125 @@
 import * as THREE from 'three';
 
-// One authored patch covers the six real 2.3 m panels across the ring. It contains
-// no printed seams: the gaps, fasteners and bevels belong to environment geometry.
+// One metre of stone stays one metre throughout the room. The atlas wraps across
+// complete, staggered courses; it does not end at the combat lane or wall posts.
 export const DECK_SURFACE = Object.freeze({
-  width: 13.8, depth: 6.9, panelWidth: 2.3, panelDepth: 1.06,
-  firstCenterX: -5.76, rowCenters: Object.freeze([-1.59, -.53, .53, 1.59]),
-  maxWidth: 1024, minWidth: 512,
+  width: 16, depth: 8, maxWidth: 2048, minWidth: 1024,
 });
-
 const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
-const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a)); return t * t * (3 - 2 * t); };
 const mix = (a, b, t) => a + (b - a) * t;
-const fract = n => n - Math.floor(n);
-const noise = (x, z) => fract(Math.sin(x * 127.1 + z * 311.7) * 43758.5453);
-
-function random(seed) {
-  return () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
+const smooth = (a, b, v) => { const t = clamp((v - a) / (b - a)); return t * t * (3 - 2 * t); };
+const wrap = (v, n) => ((v % n) + n) % n;
+function random(seed) { return () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; }; }
+function hash(x, y) {
+  let v = Math.imul(x, 374761393) + Math.imul(y, 668265263);
+  v = Math.imul(v ^ (v >>> 13), 1274126177);
+  return ((v ^ (v >>> 16)) >>> 0) / 4294967295;
+}
+// Periodic mineral clouds, not independent pixel noise. Weathering survives the
+// phone mip chain while the fine aggregate disappears cleanly at a distance.
+function cloud(u, v, cellsX, cellsZ) {
+  const x = u * cellsX, z = v * cellsZ, ix = Math.floor(x), iz = Math.floor(z);
+  const fx = smooth(0, 1, x - ix), fz = smooth(0, 1, z - iz);
+  return mix(mix(hash(wrap(ix, cellsX), wrap(iz, cellsZ)), hash(wrap(ix + 1, cellsX), wrap(iz, cellsZ)), fx),
+    mix(hash(wrap(ix, cellsX), wrap(iz + 1, cellsZ)), hash(wrap(ix + 1, cellsX), wrap(iz + 1, cellsZ)), fx), fz);
 }
 
-function makeWear() {
-  const panels = [];
-  for (let row = 0; row < 4; row++) for (let column = 0; column < 6; column++) {
-    const rng = random(809 + row * 671 + column * 1013);
-    const strokes = [], patches = [];
-    // Contact paths follow the duel, with interruptions between passes. The back
-    // service row is quieter; neither painted racing stripes nor global dirt.
-    for (let i = 0, count = row === 0 ? 3 : 11; i < count; i++) {
-      const x = -.86 + rng() * 1.6, z = -.30 + rng() * .60;
-      const length = .09 + rng() * .78;
-      strokes.push({ x, z, length, angle: (rng() - .5) * .16, radius: .005 + rng() ** 2 * .036, strength: .16 + rng() * .48 });
-    }
-    if (row === 1 || row === 2) for (let i = 0, count = rng() > .5 ? 2 : 1; i < count; i++) {
-      patches.push({ x: -.62 + rng() * 1.1, z: -.22 + rng() * .44, length: .20 + rng() * .43,
-        width: .04 + rng() * .10, angle: (rng() - .5) * .20, strength: .15 + rng() * .24 });
-    }
-    // Oxide starts near selected plate edges. Broad, broken patches echo the
-    // supplied Fight Club reference; they do not become a repeating rust grid.
-    const rust = rng() < (row === 0 || row === 3 ? .85 : .38) ? {
-      x: (rng() > .5 ? 1 : -1) * (.45 + rng() * .30), z: (rng() > .5 ? 1 : -1) * (.24 + rng() * .16),
-      length: .32 + rng() * .38, depth: .18 + rng() * .19, strength: .70 + rng() * .24,
-    } : null;
-    panels.push({ tint: (rng() - .5) * 5, roughness: (rng() - .5) * .034, strokes, patches, rust, oil: Math.floor(rng() * 5), chip: rng() > .5 });
-  }
-  return panels;
+export function stoneCourses() {
+  const heights = [.92, 1.27, 1.08, .94, 1.33, 1.15, 1.31];
+  let z = 0;
+  return heights.map((height, row) => {
+    const rng = random(373 + row * 1031), count = [9, 8, 10, 7, 9, 8, 10][row];
+    const widths = Array.from({ length: count }, () => 1.2 + rng() * 1.2);
+    const scale = 16 / widths.reduce((a, b) => a + b, 0);
+    let x = 0;
+    const stones = widths.map((raw, column) => {
+      const width = raw * scale, tint = (rng() - .5) * 21;
+      const stone = { x, width, tint, warm: (rng() - .5) * 8, seed: rng() * 19,
+        crack: rng() < .38 ? { x: width * (.24 + rng() * .52), end: height * (.28 + rng() * .46), lean: (rng() - .5) * .5, fromTop: rng() < .5 } : null,
+        scuff: rng() < .54 ? { x: width * (.2 + rng() * .6), z: height * (.25 + rng() * .5), w: .25 + rng() * .44, d: .04 + rng() * .07 } : null,
+      };
+      x += width;
+      return stone;
+    });
+    const course = { z, height, offset: (row * .873) % 16, stones };
+    z += height; return course;
+  });
 }
 
-/** Deterministic raster generation also runs without DOM in the material tests. */
+/** Authored stone bond, chipped mortar and accumulated wear; deterministic in Node and WebGL. */
 export function rasterizeDeckSurface(requestedWidth = DECK_SURFACE.maxWidth) {
-  // Exactly two POT budgets; switching gameplay quality never redraws canvases.
   const width = requestedWidth <= DECK_SURFACE.minWidth ? DECK_SURFACE.minWidth : DECK_SURFACE.maxWidth;
-  const height = width / 2;
-  const albedo = new Uint8Array(width * height * 4);
-  const properties = new Uint8Array(width * height * 4);
-  const panels = makeWear();
-  for (let j = 0; j < height; j++) for (let i = 0; i < width; i++) {
-    const x = ((i + .5) / width - .5) * DECK_SURFACE.width;
-    const z = ((j + .5) / height - .5) * DECK_SURFACE.depth;
-    const column = Math.floor((x + 6.91) / DECK_SURFACE.panelWidth);
-    const row = Math.floor((z + 2.12) / DECK_SURFACE.panelDepth);
-    const onDeck = column >= 0 && column < 6 && row >= 0 && row < 4;
-    let wear = 0, oil = 0, rust = 0, tint = 0, roughVariation = 0;
-    // Low amplitude, submillimetre mill finish. The mip chain removes fine grain
-    // in the phone view rather than leaving the former bright pixel confetti.
-    const grain = (noise(i, j) - .5) * 1.35;
-    const broad = Math.sin(x * 1.8 + Math.sin(z * 2.3)) * 1.1;
-    if (onDeck) {
-      const panel = panels[row * 6 + column];
-      const px = x - (DECK_SURFACE.firstCenterX + column * DECK_SURFACE.panelWidth);
-      const pz = z - DECK_SURFACE.rowCenters[row];
-      tint = panel.tint;
-      roughVariation = panel.roughness + Math.sin(x * 2.2 + z * 3.1) * .012;
-      const edgeDistance = Math.min(1.1375 - Math.abs(px), .5175 - Math.abs(pz));
-      if (panel.rust && edgeDistance >= 0) {
-        const mark = panel.rust;
-        const distance = Math.hypot((px - mark.x) / mark.length, (pz - mark.z) / mark.depth);
-        const brokenEdge = Math.sin(px * 19 + pz * 11) * .09 + Math.sin(px * 38 - pz * 17) * .07 + Math.sin(px * 9 + pz * 25) * .10;
-        rust = (1 - smooth(.44, .98, distance + brokenEdge)) * mark.strength;
-        rust *= .76 + .24 * smooth(-.4, .6, Math.sin(px * 29 + pz * 7) * Math.cos(pz * 23));
+  const height = width / 2, albedo = new Uint8Array(width * height * 4), properties = new Uint8Array(albedo.length);
+  const courses = stoneCourses();
+  for (let j = 0; j < height; j++) {
+    const z = (j + .5) / height * 8, v = z / 8;
+    const course = courses.find(row => z < row.z + row.height) ?? courses.at(-1), pz = z - course.z;
+    for (let i = 0; i < width; i++) {
+      const x = (i + .5) / width * 16, u = x / 16;
+      const cx = wrap(x - course.offset, 16);
+      const stone = course.stones.find(s => cx < s.x + s.width) ?? course.stones.at(-1), px = cx - stone.x;
+      const n = cloud(u, v, 32, 16), grain = cloud(u, v, 128, 64), fine = hash(i, j) - .5;
+      const broad = cloud(u, v, 8, 4), flecks = cloud(u, v, 256, 128);
+      // The quarried edges have shallow chips and a rubbed bevel. Joint width is
+      // 14–30 mm, varied at a decimetre scale rather than a perfect black grid.
+      const edge = Math.min(px, stone.width - px, pz, course.height - pz);
+      const chip = Math.max(0, .53 - n) * .072 + Math.max(0, .46 - grain) * .040;
+      const mortar = 1 - smooth(.008 + chip, .019 + chip, edge);
+      const bevel = (1 - smooth(.022 + chip, .073 + chip, edge)) * (1 - mortar);
+      const dust = (1 - smooth(.03, .20, edge)) * (1 - mortar);
+      let fissure = 0, scuff = 0;
+      if (stone.crack) {
+        const c = stone.crack, dz = c.fromTop ? course.height - pz : pz;
+        const kink = Math.sin(dz * 18 + stone.seed) * .008 + Math.sin(dz * 39) * .003;
+        const distance = Math.abs(px - c.x - dz * c.lean - kink);
+        fissure = (1 - smooth(.004, .016, distance)) * (1 - smooth(c.end * .7, c.end, dz));
       }
-      // Worn paint sits on the actual 23 mm bevel; it never draws a second grid.
-      const edgeWear = (1 - smooth(.005, .033, edgeDistance)) * .42;
-      wear = edgeDistance >= 0 ? edgeWear * (.58 + .42 * noise(Math.floor(x * 38), Math.floor(z * 38))) : 0;
-      for (const mark of panel.patches) {
-        const ox = px - mark.x, oz = pz - mark.z - ox * mark.angle;
-        const distance = Math.hypot(ox / mark.length, oz / mark.width);
-        const patch = (1 - smooth(.22, 1, distance)) * mark.strength;
-        wear = Math.max(wear, patch * (.86 + .14 * Math.sin(oz * 95 + ox * 11)));
+      if (stone.scuff) {
+        const s = stone.scuff;
+        scuff = (1 - smooth(.3, 1, Math.hypot((px - s.x) / s.w, (pz - s.z) / s.d))) * (.28 + grain * .30);
       }
-      for (const mark of panel.strokes) {
-        const t = clamp((px - mark.x) / mark.length);
-        const closestX = mark.x + t * mark.length;
-        const closestZ = mark.z + (t - .5) * mark.angle;
-        const distance = Math.hypot(px - closestX, pz - closestZ);
-        const scratch = 1 - smooth(mark.radius * .25, mark.radius, distance);
-        wear = Math.max(wear, scratch * mark.strength * Math.sin(.12 + t * Math.PI * .90));
-      }
-      if (panel.oil < 4) {
-        const bx = panel.oil % 2 ? .98 : -.98, bz = panel.oil < 2 ? -.37 : .37;
-        const radial = Math.hypot((px - bx) * .88, (pz - bz) * 1.22);
-        // A restrained, dry halo around a selected real fastener, not a puddle.
-        oil = (1 - smooth(.032, .105, radial)) * .26;
-      }
-      if (panel.chip) {
-        const chip = 1 - smooth(.012, .025, Math.hypot((px + .54) * .4, pz - .503));
-        wear = Math.max(wear, chip * .72);
-      }
+      const soot = smooth(.54, .79, broad * .50 + n * .34 + grain * .16);
+      const mineral = (n - .5) * 10 + (grain - .5) * 7 + (flecks - .5) * 2.5 + fine * .8;
+      const tone = stone.tint * .72 + mineral - soot * 19 + bevel * 4 - dust * 3 + scuff * 11;
+      const base = [56 + tone + stone.warm, 44 + tone + stone.warm * .28, 34 + tone - stone.warm * .45];
+      const mortarTone = 23 + broad * 5 + grain * 4;
+      const offset = (j * width + i) * 4;
+      for (let channel = 0; channel < 3; channel++) albedo[offset + channel] = Math.round(mix(mix(base[channel], [41, 36, 30][channel], fissure * .87), mortarTone * [1.04, 1, .92][channel], mortar));
+      albedo[offset + 3] = 255;
+      // R is millimetre relief; G roughness; B metalness, always zero for stone.
+      properties[offset] = Math.round(clamp(178 + (n - .5) * 18 + (flecks - .5) * 5 - mortar * 144 - bevel * 28 - fissure * 35, 0, 255));
+      properties[offset + 1] = Math.round(clamp(.93 - scuff * .08 + dust * .025 + (grain - .5) * .04) * 255);
+      properties[offset + 2] = 0; properties[offset + 3] = 255;
     }
-    const base = [34 + tint + broad + grain, 36 + tint + broad + grain, 37 + tint + broad + grain];
-    const steel = [94, 100, 98], oxide = [67 + broad * 2, 40 + broad, 25 + broad];
-    const index = (j * width + i) * 4;
-    for (let channel = 0; channel < 3; channel++) {
-      const rubbed = mix(base[channel], steel[channel], wear * .66);
-      albedo[index + channel] = Math.round(mix(rubbed, oxide[channel], rust) * (1 - oil));
-    }
-    albedo[index + 3] = 255;
-    // R = microheight, G = roughness, B = metalness. Shared by all three slots.
-    properties[index] = Math.round(128 + grain * 7 - wear * 9 + rust * 8);
-    properties[index + 1] = Math.round(mix(mix(.79 + roughVariation, .52, wear), .96, rust) * 255);
-    properties[index + 2] = Math.round(mix(mix(.13, .78, wear), .03, rust) * 255);
-    properties[index + 3] = 255;
   }
   return { width, height, albedo, properties };
 }
 
-/** Apply after world transforms, before merging. A metre remains a metre on every panel. */
+/** Apply after world transforms; supports arbitrarily large contiguous room meshes. */
 export function applyDeckUV(geometry) {
-  const position = geometry.getAttribute('position');
-  const uv = new Float32Array(position.count * 2);
+  const position = geometry.getAttribute('position'), uv = new Float32Array(position.count * 2);
   for (let i = 0; i < position.count; i++) {
     uv[i * 2] = position.getX(i) / DECK_SURFACE.width + .5;
     uv[i * 2 + 1] = position.getZ(i) / DECK_SURFACE.depth + .5;
   }
-  geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
-  return geometry;
+  geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); return geometry;
 }
 
 export function createDeckSurface({ resolution = DECK_SURFACE.maxWidth } = {}) {
   const raster = rasterizeDeckSurface(resolution);
   function texture(data, name, colorSpace) {
     const result = new THREE.DataTexture(data, raster.width, raster.height, THREE.RGBAFormat);
-    result.name = name;
-    result.colorSpace = colorSpace;
-    result.wrapS = result.wrapT = THREE.RepeatWrapping;
-    result.magFilter = THREE.LinearFilter;
-    result.minFilter = THREE.LinearMipmapLinearFilter;
-    result.generateMipmaps = true;
-    result.anisotropy = 4;
-    result.needsUpdate = true;
+    Object.assign(result, { name, colorSpace, wrapS: THREE.RepeatWrapping, wrapT: THREE.RepeatWrapping,
+      magFilter: THREE.LinearFilter, minFilter: THREE.LinearMipmapLinearFilter, generateMipmaps: true, anisotropy: 8, needsUpdate: true });
     return result;
   }
-  const color = texture(raster.albedo, 'deck-paint-and-worn-steel', THREE.SRGBColorSpace);
-  const surface = texture(raster.properties, 'deck-height-roughness-metalness', THREE.NoColorSpace);
-  const material = new THREE.MeshStandardMaterial({
-    name: 'service-deck — painted steel with contact wear',
-    map: color, bumpMap: surface, bumpScale: .002,
-    roughnessMap: surface, roughness: 1, metalnessMap: surface, metalness: 1,
-  });
+  const color = texture(raster.albedo, 'club-quarried-stone-and-mortar', THREE.SRGBColorSpace);
+  const surface = texture(raster.properties, 'club-stone-relief-and-roughness', THREE.NoColorSpace);
+  const material = new THREE.MeshStandardMaterial({ name: 'Fight Club — worn limestone flags', map: color,
+    bumpMap: surface, bumpScale: .018, vertexColors: true, roughnessMap: surface, roughness: 1, metalnessMap: surface, metalness: 0 });
   let disposed = false;
   return { material, textures: [color, surface], dispose() {
-    if (disposed) return;
-    disposed = true;
+    if (disposed) return; disposed = true;
     material.dispose(); color.dispose(); surface.dispose();
   } };
 }

@@ -1,0 +1,222 @@
+/* Menus have their own scroll surfaces. Gameplay keeps its fixed thumb layout. */
+body:not([data-view=game]) #app {
+  position: fixed;
+  inset: var(--menu-viewport-top, 0px) 0 auto;
+  height: var(--menu-viewport-height, 100dvh);
+}
+
+/* A disconnected opponent must not trap the remaining player in the room. */
+.club-journey:has(.journey-paused:not([hidden])) .journey-header { position: relative; z-index: 11; }
+.club-journey:has(.journey-paused:not([hidden])) .journey-header nav { visibility: hidden; }
+
+dialog {
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  scroll-padding-block: 52px 16px;
+}
+
+/* A portrait phone may enter the club and prepare its fighter before rotating. */
+@media (orientation: portrait) and (max-width: 700px) {
+  body:not([data-view=game]) .rotate-screen { display: none; }
+  body:not([data-view=game]) #app > .screen,
+  body:not([data-view=game]) #app > .topbar { visibility: visible; }
+}
+
+@media (max-width: 1000px), (max-height: 620px) {
+  body:not([data-view=game]) .topbar {
+    padding: max(10px, env(safe-area-inset-top)) max(18px, var(--safe-right)) 10px max(18px, var(--safe-left));
+    gap: 12px;
+    min-height: 64px;
+    background: linear-gradient(#10191cf5 65%, #10191cbb);
+  }
+  .topbar .top-tools { gap: 6px; flex: none; }
+  .topbar .connection { display: none; }
+  .topbar .icon-btn, dialog .icon-btn { width: 44px; height: 44px; flex: none; }
+  .topbar .icon-btn svg { width: 18px; height: 18px; }
+  .topbar .brand { min-width: 0; }
+  .topbar .fontainka-signature__context,
+  .topbar .fontainka-signature__separator { display: none; }
+  .topbar .fontainka-signature__club { font-size: 8px; }
+  .topbar .fontainka-mark { width: 32px; height: 32px; }
+
+  .lobby, .waiting {
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    scroll-padding: 84px 20px 20px;
+    padding: max(82px, calc(env(safe-area-inset-top) + 74px)) max(24px, var(--safe-right)) max(14px, env(safe-area-inset-bottom)) max(24px, var(--safe-left));
+  }
+  .lobby-copy {
+    position: relative;
+    top: auto;
+    left: auto;
+    transform: none;
+    width: 100%;
+    max-width: none;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(285px, 1fr);
+    grid-template-rows: auto auto auto 1fr;
+    column-gap: clamp(28px, 5vw, 80px);
+    align-items: start;
+  }
+  .lobby-copy > .eyebrow { grid-column: 1; font-size: 9px; letter-spacing: 1.5px; }
+  .lobby-copy h1 { grid-column: 1; font-size: clamp(32px, 4.8vw, 54px); line-height: 1.1; margin: 10px 0 12px; }
+  .lobby-copy .tagline { grid-column: 1; font-size: 12px; line-height: 1.65; margin: 0 0 15px; max-width: 340px; }
+  .lobby-copy .mode-line { grid-column: 1; flex-wrap: wrap; font-size: 8px; line-height: 1.6; gap: 8px; margin-bottom: 0; }
+  .lobby-actions { grid-column: 2; grid-row: 1 / 5; width: 100%; max-width: 390px; justify-self: end; }
+  .lobby .name-field { height: 48px; margin: 0 0 8px; }
+  .lobby .name-field > span { font-size: 8px; padding: 0 10px; letter-spacing: .6px; }
+  .lobby .name-field input, dialog .name-field input { font-size: 16px; padding: 0 10px; }
+  .lobby .story-character-button { min-height: 44px; margin: 0 0 10px; padding: 7px 10px; }
+  .lobby .story-character-button > span { font-size: 8px; letter-spacing: .5px; }
+  .lobby .story-character-button > strong { font-size: 11px; }
+  .lobby .button, .waiting .button, dialog .button { min-height: 48px; font-size: 10px; padding: 10px 16px; }
+  .lobby .secondary-actions { gap: 12px; margin-top: 8px; }
+  .lobby .secondary-actions .secondary { flex: 1; min-height: 44px; font-size: 10px; padding: 8px 12px; }
+  .lobby .text-btn, .waiting .text-btn, dialog .text-btn { min-height: 44px; font-size: 9px; }
+  .lobby .load-progress { grid-column: 2; position: static; margin: 10px 0 0; font-size: 9px; width: 100%; }
+  .lobby .load-progress.complete { display: none; }
+  .lobby-footer {
+    position: relative;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    flex-wrap: wrap;
+    gap: 6px 22px;
+    width: 100%;
+    margin-top: 20px;
+    padding-top: 8px;
+    border-top: 1px solid #a6b3a52e;
+  }
+  .lobby-footer > span:first-child { display: none; }
+  .lobby-footer .text-btn { font-size: 9px; }
+  .lobby-footer .fan-label { font-size: 9px; }
+  .specimen-label { display: none; }
+  .waiting { display: block; }
+  .waiting-card { width: min(440px, 100%); margin: 0 auto; }
+  .waiting-note { position: static; width: min(440px, 100%); margin: 24px auto 0; }
+  .waiting .invite-link { min-height: 44px; font-size: 13px; }
+
+  dialog {
+    inset: var(--menu-viewport-top, 0px) 0 auto;
+    margin: 12px auto;
+    max-height: calc(var(--menu-viewport-height, 100dvh) - 24px);
+    width: min(700px, calc(100vw - 24px)); max-width: calc(100vw - 24px); padding: 22px;
+  }
+  dialog .dialog-close { margin: -8px -8px 0 10px; }
+  dialog .name-field { min-height: 48px; }
+  dialog h2 { font-size: 32px; }
+  dialog .story-lede, dialog .story-footnote { font-size: 12px; }
+  .story-traits button, .story-tabs button { min-height: 44px; font-size: 11px; }
+
+  .club-journey {
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    padding: max(6px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+  }
+  .journey-header { gap: 12px; min-height: 54px; }
+  .journey-header nav, .journey-tools { gap: 6px; }
+  .journey-header nav button, .journey-tools button { min-height: 44px; min-width: 44px; font-size: 10px; padding: 8px 10px; }
+  .journey-tools button:last-child { font-size: 24px; }
+  .journey-brand { font-size: 8px; letter-spacing: 1px; }
+  .journey-header strong { font-size: 10px; letter-spacing: .8px; }
+  .journey-header i { display: none; }
+  .journey-workshop { overflow-y: auto; overflow-x: hidden; padding: 16px 0; touch-action: pan-y; overscroll-behavior: contain; scroll-padding-block: 10px; }
+  .journey-passport { height: auto; align-items: start; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; }
+  .journey-introduction { display: none; }
+  .journey-profile { border: 0; padding: 0; }
+  .journey-kicker { font-size: 9px; letter-spacing: 1px; }
+  .journey-profile > label:not(.journey-tts) { font-size: 10px; margin: 16px 0; }
+  .journey-profile input:not([type=checkbox]) { font-size: 16px; min-height: 44px; padding: 10px 8px; margin-top: 6px; }
+  .journey-customize { min-height: 44px; font-size: 11px; padding: 10px; }
+  .journey-tts { min-height: 44px; font-size: 12px; margin: 12px 0 0; }
+  .journey-tts input { width: 20px; height: 20px; }
+  .journey-profile small { font-size: 10px; line-height: 1.5; min-height: 0; }
+  .journey-invite { padding: 14px; }
+  .journey-invite-tabs button { min-height: 44px; font-size: 9px; }
+  .journey-qr { gap: 12px; margin: 12px 0; }
+  .journey-qr span { font-size: 8px; }
+  .journey-qr strong { font-size: 30px; }
+  .journey-qr button { min-height: 44px; font-size: 10px; }
+  .journey-invite > input { min-height: 44px; font-size: 12px; }
+  .journey-invite > p, .journey-roster strong { font-size: 11px; }
+  .journey-roster span { font-size: 10px; }
+  .journey-footer { gap: 16px; padding: 9px 0; min-height: 64px; }
+  .journey-footer span { font-size: 8px; letter-spacing: .6px; line-height: 1.4; }
+  .journey-footer strong { font-size: 11px; line-height: 1.4; margin-top: 4px; }
+  .journey-footer .button { min-height: 44px; min-width: 195px; max-width: none; font-size: 10px; padding: 10px 14px; }
+  .journey-rules { width: 100%; padding: 16px 0; touch-action: pan-y; overscroll-behavior: contain; }
+  .journey-rule-copy > p, .journey-rule-copy blockquote { font-size: 13px; }
+
+  .journey-appearance { height: auto; min-height: 280px; }
+  .journey-appearance .customization-workshop { height: auto; min-height: 280px; }
+  .journey-appearance .customization-controls { overflow: visible; padding: 16px; }
+  .journey-appearance .customization-preview { min-height: 280px; }
+  .customization-turn button { width: 44px; height: 44px; }
+  .journey-appearance .customization-choices-body { grid-template-columns: repeat(4, minmax(44px, 1fr)); }
+  .journey-appearance .customization-choices-core { grid-template-columns: repeat(auto-fit, minmax(44px, 1fr)); padding-right: 0; }
+  .journey-appearance .customization-choice { min-height: 44px; display: flex; align-items: center; }
+  .journey-appearance .customization-choice-tile { min-height: 44px; width: 100%; }
+  .journey-appearance .customization-choices-core .customization-choice { justify-content: center; }
+  .journey-appearance .customization-choices-core .customization-choice-tile { min-height: 40px; max-height: 40px; width: 40px; }
+  .journey-appearance .customization-choices-accessory { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .journey-appearance .customization-choices-accessory .customization-choice-tile { min-height: 48px; font-size: 10px; }
+  .journey-appearance .customization-field { margin-bottom: 16px; }
+}
+
+@media (max-width: 620px) {
+  .topbar .fontainka-signature { gap: 6px; }
+  .topbar .fontainka-signature__club { display: none; }
+  .topbar .fontainka-signature__name { font-size: 12px; }
+  .lobby { padding-left: max(22px, var(--safe-left)); padding-right: max(22px, var(--safe-right)); background: linear-gradient(90deg,#091115ee,#091115ae); }
+  .lobby-copy { display: block; }
+  .lobby-copy h1 { font-size: clamp(38px, 10vw, 58px); margin: 16px 0; }
+  .lobby-copy .tagline { font-size: 13px; max-width: 340px; }
+  .lobby-copy .mode-line { margin-bottom: 20px; }
+  .lobby-actions { max-width: none; }
+  .lobby .load-progress { margin-top: 12px; }
+  .lobby-footer { gap: 4px 24px; margin-top: 22px; }
+  .lobby-footer .fan-label { display: block; margin-left: 0; flex-basis: 100%; order: 4; }
+  .guide-grid, .signal-guide, .combo-book, .move-book, .story-cards { grid-template-columns: 1fr; }
+  dialog .guide-grid p, dialog .signal-guide p, dialog .combo-book p, dialog .move-book p, dialog .decision-book p { font-size: 12px; }
+  dialog .name-field > span { font-size: 8px; padding: 0 10px; }
+  .club-journey { padding-left: max(14px, env(safe-area-inset-left)); padding-right: max(14px, env(safe-area-inset-right)); }
+  .journey-header { flex-wrap: wrap; gap: 4px 10px; padding: 4px 0 8px; }
+  .journey-header > div:first-child { flex: 1; }
+  .journey-header .journey-tools { margin-left: auto; }
+  .journey-header nav { order: 3; flex-basis: 100%; margin-left: 0; }
+  .journey-header nav button { flex: 1; }
+  .journey-header nav button span { display: inline; }
+  .journey-passport { grid-template-columns: 1fr; gap: 24px; }
+  .journey-footer { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .journey-footer .button { width: 100%; min-width: 0; max-width: none; }
+  .journey-footer strong { display: none; }
+  .journey-rules { grid-template-columns: 1fr; }
+  .journey-rule-stamp { display: none; }
+  .journey-appearance .customization-workshop { grid-template-columns: 1fr; }
+  .journey-appearance .customization-controls { padding: 14px; }
+
+  .club-journey[data-stage=faceoff] .journey-header { justify-content: flex-end; padding-top: 0; }
+  .club-journey[data-stage=faceoff] .journey-header > div:first-child { display: none; }
+  .club-journey[data-stage=faceoff] .faceoff-eyebrow { top: 72px; left: 14px; right: 14px; font-size: 7px; letter-spacing: 1px; }
+  .club-journey[data-stage=faceoff] .faceoff-heading { top: 90px; left: 14px; right: 14px; font-size: 12px; letter-spacing: 1px; }
+  .club-journey[data-stage=faceoff] .faceoff-names { top: 122px; left: 14px; right: 14px; display: grid; grid-template-columns: minmax(0, 1fr) 24px minmax(0, 1fr); gap: 6px; }
+  .club-journey[data-stage=faceoff] .faceoff-card { width: auto; min-width: 0; padding: 9px 8px; }
+  .club-journey[data-stage=faceoff] .faceoff-wrong-name { font-size: 21px; letter-spacing: 1px; }
+  .club-journey[data-stage=faceoff] .faceoff-real-name { font-size: 20px; }
+  .club-journey[data-stage=faceoff] .faceoff-role,
+  .club-journey[data-stage=faceoff] .faceoff-identity-state { font-size: 7px; letter-spacing: .7px; }
+  .club-journey[data-stage=faceoff] .faceoff-vs { font-size: 18px; }
+  .club-journey[data-stage=faceoff] .faceoff-caption { left: 14px; right: 14px; bottom: 104px; padding: 10px 12px; }
+  .club-journey[data-stage=faceoff] .faceoff-line { font-size: 17px; }
+  .club-journey[data-stage=faceoff] .faceoff-bottom { left: 14px; right: 14px; bottom: 79px; }
+  .club-journey[data-stage=roundIntro] .round-intro-bottom { left: 14px; right: 14px; bottom: 80px; }
+}
+
+/* With an open keyboard in landscape, fixed header/footer rows would leave no
+   room for the focused field. Let the whole form scroll in that visible area. */
+.menu-viewport-short body:not([data-view=game]) .topbar { display: none; }
+.menu-viewport-short .lobby, .menu-viewport-short .waiting { padding-top: 16px; }
+.menu-viewport-short .club-journey:is([data-stage=workshop], [data-stage=rules]) { display: block; overflow-y: auto; touch-action: pan-y; }
+.menu-viewport-short .journey-workshop, .menu-viewport-short .journey-rules { overflow: visible; max-height: none; }
+.menu-viewport-short .journey-header { margin-bottom: 10px; }

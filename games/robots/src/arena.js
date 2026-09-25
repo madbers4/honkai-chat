@@ -11,6 +11,7 @@ import { createCameraChoreography } from './camera-choreography.js';
 import { computeFaceoffCamera, blendFaceoffCamera } from './faceoff-camera.js';
 import { createEmissionGlow } from './emission-glow.js';
 import { arenaRootPosition } from './arena-root.js';
+import { GRAPHICS_PRESETS, graphicsPreset, graphicsPixelRatio, readGraphicsPreference, observeGraphicsPreference } from './graphics-quality.js';
 
 
 const clamp = THREE.MathUtils.clamp;
@@ -154,12 +155,14 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
   container.appendChild(renderer.domElement);
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2('#18222b', 0.015);
+  scene.fog = new THREE.FogExp2('#252320', 0.015);
   const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 70);
   camera.position.set(0, 4.2, 13.2);
   camera.lookAt(0, 1.45, 0);
 
-  const hemisphere = new THREE.HemisphereLight('#d7efff', '#76736a', 2.7);
+  // Quiet neutral/warm room light preserves stone and aged timber. Coloured
+  // pools now come from the actual club lamps and robot cores, not a cyan wash.
+  const hemisphere = new THREE.HemisphereLight('#e1ded0', '#66554b', 2.1);
   scene.add(hemisphere);
   const key = new THREE.DirectionalLight('#fff0d9', 3.4);
   key.position.set(-6, 14, 10);
@@ -171,9 +174,9 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
   key.shadow.bias = -0.0004; key.shadow.normalBias = 0.035;
   key.shadow.radius = 3;
   scene.add(key);
-  const fill = new THREE.DirectionalLight('#8ddbff', 1.35);
+  const fill = new THREE.DirectionalLight('#c2cfce', .85);
   fill.position.set(5, 3, 5); scene.add(fill);
-  const rim = new THREE.DirectionalLight('#7bcbeb', 2.5);
+  const rim = new THREE.DirectionalLight('#8fb5c5', 1.7);
   rim.position.set(3, 4, -4); scene.add(rim);
   const warmPool = new THREE.PointLight(AMBER, 10, 12, 2);
   warmPool.position.set(-5.8, 4.78, -2.39); scene.add(warmPool);
@@ -207,7 +210,8 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
   let snapshot = null;
   let snapshotReceived = performance.now();
   let localId = null;
-  let quality = 'high';
+  let graphicsMode = readGraphicsPreference();
+  let quality = GRAPHICS_PRESETS[graphicsMode].effects;
   let reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
   effects.setReducedMotion(reducedMotion);
   emissionGlow.setReducedMotion(reducedMotion);
@@ -275,7 +279,7 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
     if (disposed) return;
     const rect = container.getBoundingClientRect();
     width = Math.max(1, rect.width); height = Math.max(1, rect.height);
-    pixelRatio = Math.min(window.devicePixelRatio || 1, quality === 'low' ? 1 : 1.5);
+    pixelRatio = graphicsPixelRatio({ width, height, dpr: window.devicePixelRatio, preset: graphicsMode, maxTextureSize: renderer.capabilities.maxTextureSize });
     renderer.setPixelRatio(pixelRatio);
     renderer.setSize(width, height, false);
     emissionGlow.resize(width, height, pixelRatio);
@@ -284,7 +288,17 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
   }
   const resizeObserver = new ResizeObserver(resize);
   resizeObserver.observe(container);
-  resize();
+  function applyQuality(value) {
+    graphicsMode = graphicsPreset(value);
+    quality = GRAPHICS_PRESETS[graphicsMode].effects;
+    effectReviewKey = null;
+    effects.setQuality(quality); emissionGlow.setQuality(quality);
+    renderer.shadowMap.enabled = key.castShadow = quality !== 'low';
+    renderer.shadowMap.needsUpdate = true;
+    resize();
+  }
+  applyQuality(graphicsMode);
+  const stopWatchingGraphics = observeGraphicsPreference(applyQuality);
 
   function onVisibilityChange() {
     // Returning to a tab must not replay damage accumulated while it was hidden.
@@ -482,16 +496,7 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
     },
     resize,
     setSuspended(value) { renderingSuspended = Boolean(value); },
-    setQuality(value) {
-      quality = value === 'low' ? 'low' : 'high';
-      effectReviewKey = null;
-      effects.setQuality(quality);
-      emissionGlow.setQuality(quality);
-      renderer.shadowMap.enabled = quality !== 'low';
-      key.castShadow = quality !== 'low';
-      renderer.shadowMap.needsUpdate = true;
-      resize();
-    },
+    setQuality: applyQuality,
     setReducedMotion(value) { reducedMotion = Boolean(value); effects.setReducedMotion(reducedMotion); emissionGlow.setReducedMotion(reducedMotion); effectReviewKey = null; },
     getGlowStats() { return emissionGlow.getStats(); },
     setGlowEnabled(value) { if (allowEffectReview) emissionGlow.setEnabled(value); },
@@ -510,7 +515,7 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
     },
     dispose() {
       if (disposed) return;
-      disposed = true; cancelAnimationFrame(frame); resizeObserver.disconnect();
+      disposed = true; cancelAnimationFrame(frame); resizeObserver.disconnect(); stopWatchingGraphics();
       document.removeEventListener('visibilitychange', onVisibilityChange);
       for (const robot of robots.values()) {
         scene.remove(robot.model.group, robot.shadow, robot.marker);

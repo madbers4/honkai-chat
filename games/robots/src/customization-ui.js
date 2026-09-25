@@ -11,7 +11,7 @@ const icons={
 };
 let nextId=0;
 
-export function createCustomizationUI(container,{value,onChange=()=>{},reducedMotion,quality='high'}={}) {
+export function createCustomizationUI(container,{value,onChange=()=>{},reducedMotion,quality}={}) {
   let current=normalizeCustomization(value),disposed=false,enabled=true;
   const id=`robot-workshop-${++nextId}`,root=document.createElement('section');root.className='customization-workshop';root.setAttribute('aria-label','Мастерская робота');
   root.innerHTML=`<div class="customization-preview"><div class="customization-workshop-mark" aria-hidden="true"><span>МАСТЕРСКАЯ</span><b>№ 07</b></div><div class="customization-model"></div><div class="customization-turn"><button type="button" aria-label="Повернуть робота влево">↶</button><span>Поверни и рассмотри</span><button type="button" aria-label="Повернуть робота вправо">↷</button></div></div><div class="customization-controls"><header><span class="customization-eyebrow">СОБРАН В БЕЛОБОГЕ</span><h2>Твой характер. Твоя машина.</h2><p>Пусть тебя узнают ещё до первого удара.</p></header><div class="customization-groups"></div><p class="customization-flavor" aria-live="polite"></p></div>`;

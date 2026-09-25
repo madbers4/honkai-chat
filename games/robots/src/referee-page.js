@@ -86,7 +86,6 @@ export function mountRefereePage({ container = document.body, room = new URL(loc
         if (disposed) { result.dispose(); return; }
         arena = result;
         if (matchMedia('(prefers-reduced-motion: reduce)').matches) arena.setReducedMotion?.(true);
-        if (matchMedia('(max-width: 900px)').matches) arena.setQuality?.('low');
         if (state) arena.update({ ...state, events: [] }, null);
         $('loading').hidden = true;
       }).catch(() => { if (!disposed) { $('loading').textContent = 'Арена не загрузилась. Счёт и реплики работают; обновите страницу, чтобы вернуть изображение.'; $('loading').classList.add('ref-load-error'); } });

@@ -1,0 +1,64 @@
+/* Keep one decision visible at a time. This file is loaded after the phone
+   layout so the final readiness step shares its safe areas and scroll surface. */
+#guide-dialog.graphics-only > :not(.dialog-close):not(.graphics-settings) { display: none; }
+#guide-dialog.graphics-only .graphics-settings { margin-block: 16px 0; }
+.lobby-actions { padding-top: 8px; }
+.journey-header nav button:disabled { opacity: .42; cursor: default; }
+.journey-header nav button[aria-pressed=true] { opacity: 1; }
+.journey-profile label > small { display: inline; font-size: 9px; letter-spacing: 0; color: #9da9a9; }
+[data-profile-error] { color: #ffce8e; font-size: 12px; line-height: 1.5; margin: 0; }
+.journey-profile input[aria-invalid=true] { border-color: #ffce8e; }
+.journey-sound { height: 100%; min-height: 0; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr); align-items: center; gap: clamp(20px, 5vw, 70px); max-width: 1020px; margin-inline: auto; }
+.journey-sound-card { position: relative; border-left: 3px solid #ffd26e; padding: 14px 24px; background: linear-gradient(90deg, #eaba6620, transparent); }
+.journey-speaker { float: right; font: 76px/1 Georgia, serif; color: #ffe3a0; text-shadow: 0 0 28px #ffc34366; }
+.journey-sound h2 { font: 600 clamp(26px, 3vw, 44px)/1.12 'Oswald', sans-serif; margin: 14px 0; }
+.journey-sound h2 em { color: #ffe090; font-style: normal; }
+.journey-sound p { font-size: 13px; line-height: 1.7; color: #c7d0c5; max-width: 480px; }
+.journey-sound b { color: #ffde96; }
+.journey-sound-card .button { width: 100%; max-width: 370px; min-height: 48px; margin-top: 16px; color: #fff0c3; border: 1px solid #ffd26ea0; box-shadow: 0 0 18px #ffd26e18; }
+.journey-sound-card > small { display: block; color: #94a49d; font-size: 10px; line-height: 1.6; }
+.journey-sound-result { min-height: 42px; color: #e5c383!important; }
+.journey-load-card { padding: 22px; border: 1px solid #b5c4b526; border-radius: 12px; background: #0c171a88; }
+.journey-load-card h3 { font: 400 25px/1.25 'Oswald', sans-serif; margin-block: 14px; }
+[data-prepare-progress] { min-height: 44px; color: #ffe3a0!important; }
+.journey-load-pulse { height: 3px; background: #53624c44; border-radius: 2px; overflow: hidden; }
+.journey-load-pulse::after { content: ''; display: block; height: 100%; width: 30%; background: #edc47c; opacity: 0; }
+.journey-load-card[data-loading=true] .journey-load-pulse::after { opacity: 1; animation: preflight-loading 1.4s ease-in-out infinite alternate; }
+.club-journey[data-preflight=sound][data-stage=workshop] .journey-footer .primary:not(:disabled) { background: #ffe090; box-shadow: 0 0 24px #ffd26e2e; }
+@keyframes preflight-loading { to { transform: translateX(235%); } }
+@media (max-width:1000px), (max-height:620px) {
+  .journey-header { gap: 10px; }
+  .journey-header > div:first-child { min-width: 0; max-width: 225px; }
+  .journey-header strong { font-size: 9px; line-height: 1.4; }
+  .journey-header nav button { padding-inline: 8px; }
+  .journey-sound { height: auto; gap: 20px; align-items: start; }
+  .journey-sound-card { padding: 10px 16px; }
+  .journey-sound h2 { font-size: 28px; }
+  .journey-sound p { font-size: 12px; margin-block: 10px; line-height: 1.55; }
+  .journey-speaker { font-size: 52px; }
+  .journey-load-card { padding: 16px; }
+  .journey-load-card h3 { font-size: 22px; }
+  .journey-footer .button { min-width: 220px; max-width: 54%; line-height: 1.4; }
+  .journey-appearance .customization-workshop .customization-choice .customization-choice-tile { min-height: 44px; }
+  .journey-appearance .customization-workshop .customization-choices-core .customization-choice-tile { width: 40px; height: 40px; min-height: 40px; max-height: 40px; flex: none; }
+}
+@media (max-width:620px) {
+  .journey-header > div:first-child { max-width: 62%; }
+  .journey-header nav { width: 100%; }
+  .journey-header nav button { white-space: nowrap; }
+  .journey-sound { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .journey-load-card h3 br { display: none; }
+  .journey-footer .button { width: 100%; max-width: none; }
+}
+@media (min-width:621px) and (max-height:620px) and (orientation:landscape) {
+  .club-journey[data-preflight=appearance] .journey-workshop { overflow: hidden; }
+  .journey-appearance, .journey-appearance .customization-workshop { height: 100%; min-height: 0; }
+  .journey-appearance .customization-preview { min-height: 0; }
+  .journey-appearance .customization-controls { height: 100%; overflow-y: auto; touch-action: pan-y; padding: 12px 16px; }
+}
+@media (min-width:850px) and (max-height:620px) and (orientation:landscape) {
+  .journey-appearance .customization-choices-body { grid-template-columns: repeat(7, minmax(44px, 1fr)); }
+}
+@media (prefers-reduced-motion:reduce) {
+  .journey-load-card[data-loading=true] .journey-load-pulse::after { animation: none; width: 100%; opacity: .6; }
+}

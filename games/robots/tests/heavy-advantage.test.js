@@ -29,7 +29,7 @@ for (const facing of [-1, 1]) for (const late of [false, true]) {
       if (type === 'retreat') assert.ok(data.snapshots.some(state => state.players[1].action === 'dash' && state.players[1].vx * facing > 0), 'defensive dash moves away from attacker');
       if (type === 'jab') assert.ok(!data.events.some(event => event.type === 'attack' && event.player === 'p2'), 'denied inputs are not buffered until recovery');
       assert.ok(data.snapshots.every(state => state.players.every(player => Number.isFinite(player.y) && Math.abs(player.x) <= ARENA_EDGE)));
-      assert.ok(data.snapshots.every(state => Math.abs(state.players[0].y - state.players[1].y) > 1.15 || Math.abs(state.players[0].x - state.players[1].x) >= 1.999));
+      assert.ok(data.snapshots.every(state => Math.abs(state.players[0].y - state.players[1].y) > 1.15 || Math.abs(state.players[0].x - state.players[1].x) >= 1.999 - 1e-9));
       const first = data.snapshots[hits[0].frame].players[1];
       assert.equal(first.actionDuration, .18); assert.equal(first.defenseOnly, .62);
       assert.ok(data.snapshots.some(state => state.players[1].defenseOnly > .1 && state.players[1].action !== 'hit'), 'advantage is not one long full stun');
@@ -43,7 +43,7 @@ test('heavy hop is real bounded physics and stays a ground route, including held
   assert.deepEqual(attacks.map(event => event.variant), ['heavyDrive', 'heavyHook', 'heavyPress']);
   for (const variant of attacks.map(event => event.variant)) {
     const heights = data.snapshots.filter(state => state.players[0].variant === variant).map(state => state.players[0].y);
-    assert.ok(Math.max(...heights) > .06 && Math.max(...heights) < .17, `${variant}: shallow hop`);
+    assert.ok(Math.max(...heights) > .65 && Math.max(...heights) < .82, `${variant}: visible, bounded combat jump`);
     assert.ok(data.snapshots.filter(state => state.players[0].variant === variant).every(state => state.players[0].groundHeavy));
   }
   const { room, a, b } = setup(); send(room, a, 'heavy'); const seq = a.lastSeq;

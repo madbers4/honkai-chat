@@ -78,8 +78,8 @@ test('fresh post-catch light breaks the pair, recoils both and grants regrab imm
 test('a stale queued light or an expired tech press cannot automatically break a grab', () => {
   const stale = fight();
   input(stale, 'p1', { action: 'heavy', crouch: true });
-  advance(stale, 0.10);
-  input(stale, 'p2', { action: 'heavy' }); advance(stale, 0.15);
+  advance(stale, 0.18);
+  input(stale, 'p2', { action: 'heavy' }); advance(stale, 0.07);
   // Start the victim's windup later so the grab catches its planted phase,
   // before the heavy's real hop; the light is already queued before contact.
   input(stale, 'p2', { action: 'light' });

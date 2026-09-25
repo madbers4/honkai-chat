@@ -13,6 +13,6 @@ export function acceptsContinuation(player, action, crouch = false) {
   return Boolean(route && !(action === 'heavy' && crouch) && (route.heavy ? action === 'heavy' : ['light', 'heavy'].includes(action)));
 }
 export function ultimateArmored(player, kind, variant, metadata = {}) {
-  return Boolean(player?.hp > 0 && player.action === 'ultimate' && player.actionTime <= ULTIMATE_ARMOR.until
+  return Boolean(ULTIMATE_ARMOR.enabled && player?.hp > 0 && player.action === 'ultimate' && player.actionTime <= ULTIMATE_ARMOR.until
     && !metadata.throw && kind !== 'ultimate' && !ULTIMATE_ARMOR.breakers.includes(variant));
 }

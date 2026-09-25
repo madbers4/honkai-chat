@@ -1,0 +1,40 @@
+<!doctype html><html lang="ru"><meta charset="utf-8"><title>Проверка первого взрыва</title>
+<style>body{margin:0;background:#111;color:#eee;font:15px system-ui}#arena{position:fixed;inset:0}aside{position:fixed;left:16px;top:16px;width:400px;background:#101419e8;padding:16px}button{padding:12px;margin:6px;background:#eed3a0;color:#17191c;border:0}pre{white-space:pre-wrap}</style>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script>
+<div id="arena"></div><aside><b>Реальный рендер · первый финальный взрыв</b><p>Два независимых WebGL-контекста; сборка шейдеров измеряется до и после одного и того же события. Это локальный стенд, сетевого матча нет.</p><button id="cold">Без подготовки</button><button id="warm">С подготовкой</button><pre id="result">Выберите проверку.</pre></aside>
+<script type="module">
+import {createArena} from '/src/arena.js';
+import {buildV5Case} from '/scripts/combat-v5-cases.js';
+const result=document.querySelector('#result'),container=document.querySelector('#arena');
+let arena,busy=false;
+const nextFrame=()=>new Promise(resolve=>requestAnimationFrame(resolve));
+async function run(prepared){
+ if(busy)return;busy=true;document.querySelectorAll('button').forEach(b=>b.disabled=true);
+ try{
+  arena?.dispose();arena=await createArena(container);arena.setQuality('balanced');
+  const data=buildV5Case('overload'),blast=data.events.find(event=>event.type==='destruction');
+  if(!blast)throw Error('Missing real destruction fixture');
+  const first=data.snapshots[Math.max(0,blast.frame-8)];arena.update({...first,events:[]},'p1');
+  for(let i=0;i<10;i++)await nextFrame();
+  const start=performance.now();
+  if(prepared)await arena.prepareCombat(p=>{result.textContent=`Подготовка GPU ${p.loaded}/${p.total}`;});
+  const prepMs=performance.now()-start;
+  // Drain callbacks whose RAF timestamp was assigned before the preparation
+  // task. A stale callback timestamp is not a frame spent on the later blast.
+  for(let i=0;i<4;i++)await nextFrame();
+  const programsBefore=arena.getRenderStats().programs;
+  const gaps=[],samples=[];let frame=Math.max(0,blast.frame-7),last=await nextFrame();
+  for(let i=0;i<80;i++){
+   const state=data.snapshots[Math.min(frame++,data.snapshots.length-1)];
+   arena.update({...state,events:state.events.filter(e=>e.id===blast.id&&frame===blast.frame+1)},'p1');
+   const now=await nextFrame();gaps.push(now-last);samples.push({relativeFrame:frame-1-blast.frame,gapMs:Math.round(now-last),...arena.getRenderStats()});last=now;
+  }
+  const sorted=[...gaps].sort((a,b)=>a-b);
+  result.textContent=JSON.stringify({prepared,prepMs:Math.round(prepMs),programsBefore,programsAfter:arena.getRenderStats().programs,
+   maxFrameMs:Math.round(Math.max(...gaps)),p95FrameMs:Math.round(sorted[Math.floor(sorted.length*.95)]),
+   gapsOver50:gaps.filter(g=>g>50).length,destructions:arena.getEffectsStats().destructions,gpu:arena.getPreparationStats(),
+   slowest:samples.sort((a,b)=>b.gapMs-a.gapMs).slice(0,3)},null,2);
+ }catch(error){result.textContent=error.stack;}finally{busy=false;document.querySelectorAll('button').forEach(b=>b.disabled=false);}
+}
+document.querySelector('#cold').onclick=()=>run(false);document.querySelector('#warm').onclick=()=>run(true);
+</script></html>

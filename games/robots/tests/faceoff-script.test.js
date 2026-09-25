@@ -9,6 +9,7 @@ test('faceoff is a deterministic complete sequence with stable identities and wh
   const players = [{ id: 'p1', name: 'Медный Сом' }, { id: 'p2', name: 'Герой <script>чайника</script>' }];
   const beats = buildFaceoff(players, 'same-seed'); assert.deepEqual(beats, buildFaceoff(players, 'same-seed'));
   assert.equal(new Set(beats.map(b => b.id)).size, beats.length); assert.equal(beats[0].at, 0);
+  assert.equal(beats[0].clip, 'faceoff-greeting-open', 'original greeting starts with the first frame');
   assert.ok(beats.every(b => ['p1', 'p2', 'narrator'].includes(b.speaker) && FACE_OFF_POSES.includes(b.pose)));
   for (const [i, beat] of beats.entries()) {
     assert.ok(beat.duration > 0); assert.ok(Math.abs(beat.at + beat.duration - (beats[i + 1]?.at ?? FACE_OFF_DURATION)) < .0001);
@@ -18,7 +19,7 @@ test('faceoff is a deterministic complete sequence with stable identities and wh
   assert.equal(activeFaceoffBeat(beats, FACE_OFF_DURATION), null);
   assert.ok(beats.some(b => b.text.includes(players[0].name))); assert.ok(beats.some(b => b.text.includes(players[1].name)));
   assert.deepEqual(beats.filter(b => b.clip && b.chapter === 'dialogue').map(b => b.clip), FACE_OFF_DIALOGUE_CLIPS);
-  assert.deepEqual(beats.filter(b => b.clip && b.chapter === 'mode').map(b => b.clip), hasCompleteSpokenCatalog()?['faceoff-mode-p1','faceoff-mode-p2']:['jotaro-mode', 'dio-mode']);
+  assert.deepEqual(beats.filter(b => b.clip && b.chapter === 'mode').map(b => b.clip), hasCompleteSpokenCatalog()?['faceoff-greeting-package','faceoff-challenge-p1']:[]);
   const clips = beats.filter(b => b.clip);
   for (let i = 0; i < clips.length; i++) {
     assert.equal(clips[i].clipOffset, 0);

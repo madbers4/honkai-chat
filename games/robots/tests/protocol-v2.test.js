@@ -78,7 +78,7 @@ test('V2 wave, parry reward and three authoritative ultimate pulses reach both r
   game.startRound(); advance(app, 3.05);
   game.player('p1').x = -1.1; game.player('p2').x = 1.1;
   game.player('p1').energy = 80;
-  await input(a, 'p1', { action:'ultimate' }); advance(app, 1.7);
+  await input(a, 'p1', { action:'ultimate' }); advance(app, 2.5);
   const dischargePackets = [];
   for (const ws of [a,b]) {
     const packet = await take(ws, p => p.type === 'state' && p.state.events.filter(e => e.type === 'ultimatePulse').length === 3);

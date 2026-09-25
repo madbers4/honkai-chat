@@ -5,12 +5,12 @@ const beat = (t, start, peak, end) => t < peak ? smooth((t - start) / (peak - st
 /** Feet first, pressure second, discharge last. A spring recovery connects
  * all three beats instead of restarting the same one-shot pose. */
 export function choreographOverload(time, legs, reduced = false, releasedAt = null) {
-  const release = releasedAt ?? 1.55;
+  const release = releasedAt ?? ULTIMATE_PULSES[2].time;
   const brace = smooth(time / .42), returnToStand = smooth((time - release - .20) / .53);
-  const load = smooth((time - .20) / .64) * (1 - smooth((time - release - .01) / .38));
+  const load = smooth((time - .20) / (ATTACKS.ultimate.startup - .28)) * (1 - smooth((time - release - .01) / .38));
   const pulses = ULTIMATE_PULSES.map((p, i) => releasedAt != null && p.time > releasedAt + .025 ? 0 : beat(time, p.time, p.time + (i === 2 ? .055 : .035), p.time + (i === 2 ? .43 : .23)));
   const recoil = pulses[0] * .58 + pulses[1] * .76 + pulses[2];
-  const anticipation = beat(time, .62, .86, .95);
+  const anticipation = beat(time, ATTACKS.ultimate.startup - .40, ATTACKS.ultimate.startup - .09, ATTACKS.ultimate.startup);
   const support = brace * (1 - returnToStand);
   const pose = { bob: -.17 * support - .035 * recoil, thrust: -.06 * load - .19 * recoil,
     lean: -.055 * load - .14 * recoil, roll: .022 * (pulses[0] - pulses[1]), twist: 0,

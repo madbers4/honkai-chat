@@ -29,8 +29,9 @@ test('three separate presses produce three different heavy contacts and physical
     }
     const start = snapshots[0].players[0].x, end = snapshots.at(-1).players[0].x;
     assert.ok((end - start) * facing > .65, 'server moves the fighter, without post-start repositioning');
-    assert.ok((end - start) * facing < 1.4, 'the chain cannot teleport across the arena');
-    for (const state of snapshots) assert.ok(Math.abs(state.players[0].x - state.players[1].x) >= 1.999);
+    assert.ok((end - start) * facing < 2.0, 'three combat jumps advance less than one robot width');
+    for (let i = 1; i < snapshots.length; i++) assert.ok(Math.abs(snapshots[i].players[0].x - snapshots[i - 1].players[0].x) < .12, 'advance is continuous on every server tick');
+    for (const state of snapshots) assert.ok(Math.abs(state.players[0].x - state.players[1].x) >= 1.999 - 1e-9);
     assert.ok(snapshots.at(-1).players.every(p => p.action === 'idle' && p.cancelWindow === 0));
     assert.equal(JSON.parse(JSON.stringify(snapshots[hits[1].frame])).players[0].comboRoute, 'heavyDrive-heavyHook');
   }

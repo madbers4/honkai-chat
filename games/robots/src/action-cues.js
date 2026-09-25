@@ -1,9 +1,19 @@
 import { actionContext } from './action-context.js';
-import { COMBAT_WINDOWS, HEAVY_RULES, V5_ATTACKS, VARIANT_ATTACKS, V5_RULES } from '../shared/constants.js';
+import { ATTACKS, COMBAT_WINDOWS, HEAVY_RULES, V5_ATTACKS, VARIANT_ATTACKS, V5_RULES } from '../shared/constants.js';
 import { continuation } from '../shared/attack-commitment.js';
 
 const freeActions = new Set(['idle', 'walk', 'crouch', 'block', 'jump']);
 const cue = (key, target, text, priority, tone = 'attack') => ({ key, target, text, priority, tone });
+
+export function overloadThreat(state, playerId) {
+  if (state?.phase !== 'fight' || state.story?.paused) return null;
+  const player = state.players?.find(p => p.id === playerId), enemy = state.players?.find(p => p.id !== playerId);
+  if (!player || !enemy || player.hp <= 0 || player.connected === false || enemy.hp <= 0 || enemy.action !== 'ultimate') return null;
+  const remaining = ATTACKS.ultimate.startup - enemy.actionTime;
+  const distance = (player.x - enemy.x) * enemy.facing;
+  if (!(remaining > 0) || distance < -.10 || distance > ATTACKS.ultimate.range + .35 || player.y - enemy.y > ATTACKS.ultimate.hitHeight) return null;
+  return { remaining, jumpNow: remaining <= .60 && remaining >= .15 };
+}
 
 // A cue is a currently executable action, not a prediction or a tutorial recipe.
 // No local timers: pause, seek, lost HP and expired windows clear it immediately.
@@ -25,6 +35,9 @@ export function planActionCue(state, playerId, intent = {}) {
     return null;
   }
   const free = freeActions.has(player.action) && !(player.landingRecovery > 0);
+  const threat = overloadThreat(state, playerId);
+  if (threat?.jumpNow && free && player.y <= .01)
+    return cue('overload-jump', 'jump', 'ПРЫГАЙ · ВВЕРХ!', 88, 'danger');
   if (moves.defenseOnly) {
     if (!free) return null; // During the actual microstun only the paid burst can execute.
     if (player.y <= .08 && player.guard > 0) return cue('defend', 'block', 'ДЕРЖИ БЛОК!', 85, 'escape');

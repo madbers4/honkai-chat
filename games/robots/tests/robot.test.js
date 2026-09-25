@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { withRobotAssetFixture } from './robot-asset-fixture.js';
 import { robotPresentation } from '../shared/robot-presentation.js';
+import { ATTACKS } from '../shared/constants.js';
 
 // Numeric deformation tests need no browser/GPU or decoded texture pixels.
 globalThis.self = globalThis;
@@ -245,7 +246,8 @@ test('original upper, lower and reactor surfaces carry separate signals for both
     }
     assert.ok(centers.health > centers.status && centers.status > centers.reactor, 'health must be the original upper lens');
     for (const hp of [100, 61, 60, 26, 25, 1, 0]) for (const action of ['idle', 'ultimate', 'ko']) {
-      const player = { hp, action, actionTime: 2, actionDuration: 2, visualReducedMotion: true };
+      const duration = action === 'ultimate' ? ATTACKS.ultimate.duration : 2;
+      const player = { hp, action, actionTime: duration, actionDuration: duration, visualReducedMotion: true };
       robot.update(player, 1 / 60, 5);
       const expected = robotPresentation({ ...player, skin: i ? 'cyan' : 'amber' }, 5, { reducedMotion: true });
       for (const [channel, mesh] of Object.entries(channels)) {
@@ -396,11 +398,36 @@ test('V5 mounts real bounded lights and combat anchors on original moving mechan
   const spot = lights.find(light => light.isSpotLight);
   assert.ok(spot.getWorldPosition(new THREE.Vector3()).distanceTo(anchors.muzzle) < .00001);
   assert.equal(spot.color.getHex(), robotPresentation({ hp: 18 }).healthColor);
+  for (const facing of [-1, 1]) for (const action of ['jump', 'heavy', 'ultimate']) {
+    robot.group.position.set(3 * facing, action === 'jump' ? 1.2 : 0, .2);
+    robot.update({ action, variant: action === 'heavy' ? 'heavyHook' : '', actionTime: .30, y: robot.group.position.y, facing }, 1 / 60, 2);
+    const point = lights.find(light => light.isPointLight), position = spot.getWorldPosition(new THREE.Vector3());
+    assert.ok(position.distanceTo(anchors.muzzle) < .00001);
+    assert.ok(point.getWorldPosition(new THREE.Vector3()).distanceTo(anchors.core) < .00001);
+    const direction = spot.target.getWorldPosition(new THREE.Vector3()).sub(position).normalize();
+    const expected = new THREE.Vector3(0, -1.2, 4).transformDirection(robot.group.getObjectByName('turret').matrixWorld);
+    assert.ok(direction.distanceTo(expected) < .00001, 'root-mounted lamp retains the original rotating turret aim');
+  }
   robot.update({ hp: 100, visualQuality: 'low' }, 1 / 60, 1);
-  assert.equal(lights.filter(light => light.visible).length, 1);
+  assert.equal(lights.filter(light => light.visible).length, 2, 'quality keeps a stable shader light count');
+  assert.equal(lights.find(light => light.isPointLight).intensity, 0, 'low quality saves the reactor spill by zero power');
   robot.update({ action: 'destroyed' }, 1 / 60, 2);
   assert.equal(lights.reduce((sum, light) => sum + light.intensity, 0), 0);
+  const visibleAfterFracture = []; robot.group.traverseVisible(object => { if (object.isLight) visibleAfterFracture.push(object); });
+  assert.deepEqual(visibleAfterFracture, lights, 'hiding the fractured model cannot remove lamps from the render list');
   robot.dispose();
+});
+
+test('combat preparation builds the exact wreck once without playing destruction or moving the lamps', () => {
+  const robot = createRobot();
+  const inspect = () => { let geometries = 0; robot.group.traverse(o => { if (o.userData.originalRobotFragment) geometries++; }); return geometries; };
+  const anchors = robot.getCombatAnchors(), core = anchors.core.clone(), muzzle = anchors.muzzle.clone();
+  assert.equal(inspect(), 0); robot.prepareCombat(); const fragments = inspect();
+  assert.ok(fragments > 20); robot.prepareCombat(); assert.equal(inspect(), fragments, 'preparation reuses the same fragment geometry');
+  assert.equal(robot.group.getObjectByName('OriginalAutomaton_Wreck').visible, false);
+  assert.ok(robot.group.getObjectByName('OriginalReactor_Spill').getWorldPosition(new THREE.Vector3()).distanceTo(core) < .00001);
+  assert.ok(robot.group.getObjectByName('OriginalLens_Spill').getWorldPosition(new THREE.Vector3()).distanceTo(muzzle) < .00001);
+  robot.dispose(); robot.prepareCombat();
 });
 
 test('V5 combo contacts have different leading claws, swept silhouettes and grounded weight transfer', () => {

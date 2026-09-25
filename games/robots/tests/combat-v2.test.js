@@ -230,13 +230,13 @@ test('overload emits exactly three authoritative pulses for 220 unscaled damage 
   const room = roomAt(4);
   room.player('p1').energy = 100;
   room.player('p1').counterWindow = 1.2;
-  input(room, 'p1', { action: 'ultimate' }); advance(room, 0.93);
+  input(room, 'p1', { action: 'ultimate' }); advance(room, 1.83);
   assert.equal(room.player('p2').hp, MAX_HP);
   advance(room, 0.04);
   assert.equal(room.player('p2').hp, MAX_HP - 45);
-  advance(room, 0.28);
+  advance(room, 0.22);
   assert.equal(room.player('p2').hp, MAX_HP - 100);
-  advance(room, 0.32);
+  advance(room, 0.24);
   assert.equal(room.player('p2').hp, 0);
   const pulses = room.events.filter(event => event.type === 'ultimatePulse');
   assert.deepEqual(pulses.map(event => event.pulse), [0, 1, 2]);
@@ -253,7 +253,7 @@ test('overload emits exactly three authoritative pulses for 220 unscaled damage 
 test('an ultimate ignores parry and its telegraph allows an early retreat out of pulse range', () => {
   const blocked = roomAt(4);
   blocked.player('p1').energy = 100;
-  input(blocked, 'p1', { action: 'ultimate' }); advance(blocked, 0.87);
+  input(blocked, 'p1', { action: 'ultimate' }); advance(blocked, 1.77);
   input(blocked, 'p2', { block: true }); advance(blocked, 0.10, { p2: { block: true } });
   assert.equal(blocked.player('p2').hp, MAX_HP - 6);
   assert.equal(blocked.player('p2').guard, 80);
@@ -263,15 +263,15 @@ test('an ultimate ignores parry and its telegraph allows an early retreat out of
   input(retreat, 'p1', { action: 'ultimate' });
   advance(retreat, 0.18);
   input(retreat, 'p2', { action: 'dash', move: 1 });
-  advance(retreat, 1.8, { p2: { move: 1 } });
+  advance(retreat, 2.3, { p2: { move: 1 } });
   assert.equal(retreat.player('p2').hp, MAX_HP);
 });
 
 test('disconnect freezes reward windows and pulse progression; resume does not duplicate an already-fired pulse', () => {
   const room = roomAt(4);
   room.player('p1').energy = 100;
-  room.player('p1').counterWindow = 2;
-  input(room, 'p1', { action: 'ultimate' }); advance(room, 1.03);
+  room.player('p1').counterWindow = 3;
+  input(room, 'p1', { action: 'ultimate' }); advance(room, 1.93);
   assert.equal(room.player('p2').hp, MAX_HP - 45);
   const remaining = room.player('p1').counterWindow;
   assert.ok(remaining > 0, 'the reward window is genuinely still live before disconnect');

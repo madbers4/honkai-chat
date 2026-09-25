@@ -84,7 +84,9 @@ export function createAbilityEffects(scene, { colorFor, spark = () => {} }) {
     scene.add(mesh); groups.push(mesh); return { mesh, life: 0, age: 0 };
   });
   const lights = Array.from({ length: ABILITY_LIMITS.lights }, () => {
-    const light = new THREE.PointLight(0xffffff, 0, 4, 2); light.name = 'ability-local-light'; light.visible = false;
+    // A fixed light count avoids compiling a new shader for the first 1/2/3
+    // simultaneous ability lights. Idle lamps have zero radiance, not invisibility.
+    const light = new THREE.PointLight(0xffffff, 0, 4, 2); light.name = 'ability-local-light';
     scene.add(light); return light;
   });
   function paint(mesh, tint, age, energy) {
@@ -94,7 +96,7 @@ export function createAbilityEffects(scene, { colorFor, spark = () => {} }) {
   }
   function lightAt(index, position, tint, power) {
     const light = lights[index]; if (!light || low) return;
-    if (power > light.intensity) { light.position.copy(position); light.color.copy(tint); light.intensity = power * (reduced ? .35 : 1); light.visible = power > .02; }
+    if (power > light.intensity) { light.position.copy(position); light.color.copy(tint); light.intensity = power * (reduced ? .35 : 1); }
   }
   function radialSparks(x, y, tint, count, facing = 0) {
     const total = reduced ? Math.ceil(count * .25) : low ? Math.ceil(count * .5) : count;
@@ -109,7 +111,7 @@ export function createAbilityEffects(scene, { colorFor, spark = () => {} }) {
     for (const slot of mines) { slot.id = null; slot.group.visible = false; slot.snapshot = null; slot.fired = true; }
     for (const emitter of emitters) { emitter.id = null; emitter.mesh.visible = false; }
     for (const contact of contacts) { contact.life = 0; contact.mesh.visible = false; }
-    for (const light of lights) { light.intensity = 0; light.visible = false; }
+    for (const light of lights) { light.intensity = 0; light.visible = !low; }
     seen.clear(); clock = 0; token = undefined; round = undefined;
   }
   function sync(state) {
@@ -141,7 +143,7 @@ export function createAbilityEffects(scene, { colorFor, spark = () => {} }) {
     const paused = state?.phase === 'paused';
     const step = paused ? 0 : clamp(Number.isFinite(dt) ? dt : 0, 0, .05);
     clock += step;
-    for (const light of lights) { light.visible = false; light.intensity = 0; }
+    for (const light of lights) { light.visible = !low; light.intensity = 0; }
     for (const slot of mines) {
       slot.used = false;
       if (!(state?.projectiles ?? []).some(p => p.id === slot.id && p.variant === 'shockwave')) {
@@ -208,10 +210,10 @@ export function createAbilityEffects(scene, { colorFor, spark = () => {} }) {
   }
   return {
     emit, update, clear,
-    setQuality(value) { low = value === 'low'; for (const m of materials) m.uniforms.detail.value = low ? 0 : 1; },
+    setQuality(value) { low = value === 'low'; for (const light of lights) light.visible = !low; for (const m of materials) m.uniforms.detail.value = low ? 0 : 1; },
     setReducedMotion(value) { reduced = !!value; for (const m of materials) m.uniforms.calm.value = reduced ? 1 : 0; },
     getStats() { return { mines: mines.filter(s => s.group.visible).length, emitters: emitters.filter(s => s.mesh.visible).length,
-      contacts: contacts.filter(s => s.mesh.visible).length, lights: lights.filter(l => l.visible).length, bursts: burstCount }; },
+      contacts: contacts.filter(s => s.mesh.visible).length, lights: lights.filter(l => l.visible && l.intensity > .02).length, bursts: burstCount }; },
     dispose() { if (disposed) return; disposed = true; clear(); groups.forEach(g => scene.remove(g)); lights.forEach(l => { scene.remove(l); l.dispose(); }); materials.forEach(m => m.dispose()); geometry.dispose(); shellGeometry.dispose(); },
   };
 }

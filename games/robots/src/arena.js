@@ -13,6 +13,7 @@ import { createEmissionGlow } from './emission-glow.js';
 import { arenaRootPosition } from './arena-root.js';
 import { GRAPHICS_PRESETS, graphicsPreset, graphicsPixelRatio, readGraphicsPreference, observeGraphicsPreference } from './graphics-quality.js';
 import { ArenaLoadError, loadArenaAssets } from './asset-loading.js';
+import { warmArenaGraphics, shouldPresentCombatEvent } from './arena-warmup.js';
 
 
 const clamp = THREE.MathUtils.clamp;
@@ -224,6 +225,9 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
   let hitstop = 0;
   let disposed = false;
   let renderingSuspended = false;
+  let preparingGraphics = false, graphicsPreparation, preparedQuality, graphicsAbort;
+  let preparationStats = null;
+  let lastRenderMs = 0;
   let frame = 0;
   let previousTime = performance.now();
   let sceneTime = 0;
@@ -284,6 +288,7 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
 
   function resize() {
     if (disposed) return;
+    graphicsAbort?.abort();
     const rect = container.getBoundingClientRect();
     width = Math.max(1, rect.width); height = Math.max(1, rect.height);
     pixelRatio = graphicsPixelRatio({ width, height, dpr: window.devicePixelRatio, preset: graphicsMode, maxTextureSize: renderer.capabilities.maxTextureSize });
@@ -297,6 +302,7 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
   startupCleanup.push(() => resizeObserver.disconnect());
   resizeObserver.observe(container);
   function applyQuality(value) {
+    graphicsAbort?.abort(); preparedQuality = undefined;
     graphicsMode = graphicsPreset(value);
     quality = GRAPHICS_PRESETS[graphicsMode].effects;
     effectReviewKey = null;
@@ -316,14 +322,18 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
   }
   document.addEventListener('visibilitychange', onVisibilityChange);
   startupCleanup.push(() => document.removeEventListener('visibilitychange', onVisibilityChange));
+  const onContextLost = () => { preparedQuality = undefined; graphicsAbort?.abort(); };
+  renderer.domElement.addEventListener('webglcontextlost', onContextLost);
+  startupCleanup.push(() => renderer.domElement.removeEventListener('webglcontextlost', onContextLost));
 
   function animate(now) {
+    const renderStarted = performance.now();
     if (disposed) return;
     frame = requestAnimationFrame(animate);
     // RAF's presentation timestamp may precede performance.now() used during setup.
     const dt = clamp((now - previousTime) / 1000, 0, 0.055);
     previousTime = now;
-    if (document.hidden || renderingSuspended || width < 2 || height < 2) return;
+    if (document.hidden || renderingSuspended || preparingGraphics || width < 2 || height < 2) return;
     sceneTime += dt;
     hitstop = Math.max(0, hitstop - dt);
     const paused = snapshot?.phase === 'paused' || snapshot?.story?.paused;
@@ -474,6 +484,7 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
     camera.position.set(cameraFrame.x, cameraFrame.y, cameraFrame.z);
     camera.lookAt(cameraFrame.tx, cameraFrame.ty, cameraFrame.tz);
     emissionGlow.render(scene, camera);
+    lastRenderMs = performance.now() - renderStarted;
 
   }
   frame = requestAnimationFrame(animate);
@@ -482,6 +493,42 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
 
   startupCleanup.length = 0;
   return {
+    prepareCombat(onProgress) {
+      if (disposed) return Promise.reject(new Error('Арена закрыта.'));
+      if (graphicsPreparation) return graphicsPreparation;
+      if (renderer.getContext().isContextLost()) return Promise.reject(new Error('Графика восстанавливается. Повтори подготовку.'));
+      if (preparedQuality === graphicsMode) return Promise.resolve(preparationStats);
+      graphicsPreparation = (async () => {
+        const attempt = graphicsAbort = new AbortController();
+        const requestedQuality = graphicsMode;
+        preparingGraphics = true;
+        try {
+          const players = snapshot?.players?.length === 2 ? snapshot.players : [
+            {...lobby[0],id:'p1',x:-2}, {...lobby[1],id:'p2',x:2},
+          ];
+          for (const visual of robots.values()) visual.model.group.visible = false;
+          for (const player of players) {
+            const visual = robotFor(player);
+            visual.model.group.visible = true;
+            visual.model.prepareCombat?.();
+            visual.model.update({...player,visualQuality:quality},0,0);
+          }
+          effects.update(0,sceneTime,{room:'preparation',round:0,players,projectiles:[]},pixelRatio);
+          const excludedRoots = [...robots.values()].map(visual => visual.model.group).filter(group => !group.visible);
+          preparationStats = await warmArenaGraphics({renderer,scene,camera,glow:emissionGlow,onProgress,signal:attempt.signal,excludedRoots});
+          if (disposed || attempt.signal.aborted) throw new Error('Подготовка графики отменена.');
+          preparedQuality = requestedQuality;
+          return preparationStats;
+        } finally {
+          if (!disposed) effects.clear();
+          if (graphicsAbort === attempt) graphicsAbort = undefined;
+          preparingGraphics = false; previousTime = performance.now();
+        }
+      })().finally(() => { graphicsPreparation = null; });
+      return graphicsPreparation;
+    },
+    getPreparationStats() { return preparationStats; },
+    getRenderStats() { return { programs:renderer.info.programs.length,calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,lastRenderMs }; },
     update(state, playerId) {
       if (disposed) return;
       const reset = !state || (snapshot?.room && state.room !== snapshot.room);
@@ -500,7 +547,7 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
       for (const event of state?.events ?? []) {
         if (event.id == null || seenEvents.has(event.id)) continue;
         seenEvents.add(event.id);
-        if (!document.hidden && state.phase !== 'paused' && state.phase !== 'countdown' && state.phase !== 'waiting') eventQueue.push({ event, cameraHistorical });
+        if (shouldPresentCombatEvent({historical:cameraHistorical,hidden:document.hidden,phase:state.phase})) eventQueue.push({ event, cameraHistorical });
       }
       if (seenEvents.size > 512) {
         const keep = [...seenEvents].slice(-256); seenEvents.clear(); keep.forEach(id => seenEvents.add(id));
@@ -527,8 +574,10 @@ export async function createArena(container, { onLoadProgress, allowEffectReview
     },
     dispose() {
       if (disposed) return;
+      graphicsAbort?.abort();
       disposed = true; cancelAnimationFrame(frame); resizeObserver.disconnect(); stopWatchingGraphics();
       document.removeEventListener('visibilitychange', onVisibilityChange);
+      renderer.domElement.removeEventListener('webglcontextlost', onContextLost);
       for (const robot of robots.values()) {
         scene.remove(robot.model.group, robot.shadow, robot.marker);
         robot.model.dispose(); robot.shadow.material.dispose(); robot.marker.material.dispose();

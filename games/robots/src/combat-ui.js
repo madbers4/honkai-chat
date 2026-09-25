@@ -1,4 +1,4 @@
-import { planActionCue } from './action-cues.js';
+import { planActionCue, overloadThreat } from './action-cues.js';
 import { actionContext, actionResource } from './action-context.js';
 import { V3_RULES, V5_RULES, FINISH_RULES, ROUND_SECONDS } from '../shared/constants.js';
 
@@ -72,6 +72,7 @@ export function createCombatUI() {
     const fighting = state.phase === 'fight';
     const moves = actionContext(player, intent, state);
     const actionCue = planActionCue(state, playerId, intent);
+    const threat = overloadThreat(state, playerId);
     const { defenseOnly, airborne, launcher, crusher, counter, ram, wave, tech, holding, pummelReady, strikeCount, burst, feint, grab, dash, airDash, finish, combo: cue } = moves;
     setText(actionButtons.heavy.querySelector('span'), moves.heavy);
     setText(actionButtons.light.querySelector('span'), moves.light);
@@ -86,11 +87,12 @@ export function createCombatUI() {
     actionButtons.light.classList.toggle('unavailable', holding && !pummelReady);
     actionButtons.special.classList.toggle('wave-mode', wave);
     actionButtons.block.classList.toggle('parry-ready', !defenseOnly && !(player.parryCooldown > 0) && fighting);
-    recipe.classList.toggle('active', fighting && (defenseOnly || counter || launcher || airborne || grab || feint || holding || cue.open));
+    recipe.classList.toggle('active', fighting && (threat || defenseOnly || counter || launcher || airborne || grab || feint || holding || cue.open));
+    recipe.dataset.danger = threat ? 'overload' : '';
     recipe.dataset.stage = cue.open ? String(cue.stage) : '';
     recipe.hidden = !fighting || player.hp <= 0;
     const tip = actionCue?.key === 'pursue' ? 'СОПЕРНИК ПОДБРОШЕН · МОЖНО ДОГНАТЬ' : tech ? 'ТЕБЯ СХВАТИЛИ — НАЖМИ УДАР!' : holding ? `ДОЖИМ ${strikeCount}/${V5_RULES.grabStrikeLimit} · ТЯЖЁЛЫЙ — БРОСОК · НАЗАД — ЗА СПИНУ` : burst ? (dash.ready ? 'СБРОС РАЗОРВЁТ СЕРИЮ. ЦЕНА — 50 ⚡' : dash.cooldown > 0 ? 'СБРОС ПЕРЕЗАРЯЖАЕТСЯ' : 'ДЛЯ СБРОСА НУЖНО 50 ⚡') : cue.open ? cue.text : feint ? 'РЫВОК СЕЙЧАС — ОТМЕНА ЗАМАХА ЗА 12 ⚡' : grab ? 'ЗАХВАТ ОБХОДИТ БЛОК. ДЕРЖИСЬ БЛИЗКО.' : counter ? 'ОКНО КОНТРАТАКИ — НАНЕСИ УДАР!' : launcher ? 'ТЯЖЁЛЫЙ УДАР ПОДБРОСИТ СОПЕРНИКА' : airborne ? (player.airDashUsed ? 'ВОЗДУШНЫЙ РЫВОК ИСПОЛЬЗОВАН · ТЯЖЁЛЫЙ — ВНИЗ' : 'УДАР — СЕРИЯ · РЫВОК — ДОГНАТЬ · ТЯЖЁЛЫЙ — ВНИЗ') : recipes[Math.max(0, Math.floor((ROUND_SECONDS - state.time) / 8) + (state.round - 1)) % recipes.length];
-    setText(recipe, defenseOnly ? 'БЛОК / ПРЫЖОК / НАЗАД · АТАКА ВОССТАНАВЛИВАЕТСЯ' : tip);
+    setText(recipe, threat ? actionCue?.key === 'overload-jump' ? 'ПРЫГАЙ СЕЙЧАС! · ДЖОЙСТИК ВВЕРХ' : threat.remaining < .15 ? 'РАЗРЯД · ДЕРЖИ БЛОК' : 'ЗАРЯДКА СОПЕРНИКА · СБЕЙ УДАРОМ ИЛИ ОТОЙДИ' : defenseOnly ? 'БЛОК / ПРЫЖОК / НАЗАД · АТАКА ВОССТАНАВЛИВАЕТСЯ' : tip);
     escape.hidden = !fighting || !(tech || holding || burst && dash.ready);
     escape.dataset.kind = tech ? 'tech' : holding ? 'hold' : 'burst';
     setText(escapeTitle, tech ? 'ВЫРВИСЬ!' : holding ? `ДОЖИМ ${strikeCount} / ${V5_RULES.grabStrikeLimit}` : 'РАЗОРВИ СЕРИЮ');
@@ -148,7 +150,7 @@ export function createCombatUI() {
     else if (event.type === 'launch') callout('ПОДБРОС', mine ? 'ПРОДОЛЖИ СЕРИЮ В ВОЗДУХЕ' : 'СОПЕРНИК ПРОДОЛЖАЕТ СЕРИЮ', 'amber', 2, 900);
     else if (event.type === 'slam') callout('УДАР СВЕРХУ', '', 'amber', 2, 800);
     else if (event.type === 'special' && event.variant === 'shockwave') callout('ЭЛЕКТРОМАГНИТНАЯ МИНА', mine ? 'РАЗРЯД · ПОДБРОС · ОГЛУШЕНИЕ' : 'ПРЫГАЙ, ОТОЙДИ ИЛИ БЛОКИРУЙ', 'cyan', 1, 900);
-    else if (event.type === 'ultimate') callout('ПЕРЕГРУЗКА', mine ? 'ТРИ ЗАЛПА. ПОЛНЫЙ РАЗРЯД.' : 'ОТОЙДИ ИЛИ ДЕРЖИ БЛОК', mine ? 'amber' : 'danger', 5, 1400);
+    else if (event.type === 'ultimate') callout('ПЕРЕГРУЗКА', mine ? 'ЗАРЯЖАЕШЬСЯ · УДАР МОЖЕТ ПРЕРВАТЬ' : 'СБЕЙ ЗАРЯД УДАРОМ ИЛИ ОТОЙДИ', mine ? 'amber' : 'danger', 5, 1050);
   }
   function reset() {
     clearTimeout(calloutTimer); clearTimeout(comboTimer); context = ''; priority = 0; showCue(null);

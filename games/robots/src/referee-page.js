@@ -7,6 +7,7 @@ import { REFEREE_CATEGORIES } from '../shared/referee-lines.js';
 import { CLUB_STORY, RULE_CARDS, formatClubText, getClubRuleCard } from '../shared/club-story.js';
 import { MAX_HP, WINS_TO_MATCH } from '../shared/constants.js';
 import { buildRoundIntro, activeRoundIntroBeat } from '../shared/round-intro.js';
+import { REFEREE_REMINDERS, refereeCharter } from '../shared/referee-charter.js';
 
 const markup = `
   <header class="ref-header">
@@ -49,6 +50,14 @@ export function mountRefereePage({ container = document.body, room = new URL(loc
   const root = document.createElement('div'); root.className = 'referee-shell'; root.innerHTML = markup;
   container.replaceChildren(root); document.body.classList.add('referee-page'); document.title = 'Неподкупный рефери · Фонтейнка';
   const $ = key => root.querySelector(`[data-ref="${key}"]`);
+  const reference = document.createElement('details'); reference.className='ref-lore-reference';
+  const summary=document.createElement('summary'); summary.textContent='Устав и памятка рефери'; reference.append(summary);
+  const charter=document.createElement('p'); charter.className='ref-charter'; charter.textContent=refereeCharter(); reference.append(charter);
+  for(const reminder of REFEREE_REMINDERS){
+    const section=document.createElement('section'),title=document.createElement('h3'),copy=document.createElement('p');
+    title.textContent=reminder.title;copy.textContent=reminder.text;section.append(title,copy);reference.append(section);
+  }
+  $('dialog').insertBefore(reference,$('leave'));
   const audio = new GameAudio(); audio.muted = true;
   let client, arena, arenaPromise, state = null, director, reading = { current: null, next: null }, selectedRoom = cleanRoomCode(room);
   let connection = 'idle', favorite = 'neutral', pendingAdvance = null, pendingTimer, noticeTimer, questionIndex = 0, disposed = false;
@@ -145,6 +154,7 @@ export function mountRefereePage({ container = document.body, room = new URL(loc
   function updateProfiles() {
     const key = JSON.stringify((state?.players || []).map(p => [p.name, p.character, state.story?.ready?.[p.id]]));
     if (key === profileKey) return; profileKey = key; $('profiles').replaceChildren();
+    charter.textContent=refereeCharter(state?.players);
     for (const p of state?.players || []) {
       const card = document.createElement('div'), name = document.createElement('strong'), character = document.createElement('span');
       name.textContent = p.name; character.textContent = p.character || 'Характер ещё можно придумать вслух.';

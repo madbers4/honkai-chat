@@ -2,35 +2,27 @@ import { GENERATED_VOICE_CLIPS } from './generated-voice-clips.js';
 import { hasCompleteSpokenCatalog, spokenBeatDuration, SPOKEN_FACEOFF_TURNS } from './spoken-catalog.js';
 export { VOICE_CLIPS } from './voice-clips.js';
 
-const READY_DURATION = 3.482;
+const READY_DURATION = 1.35;
 const turnDuration = (turn,catalog) => Number.isFinite(catalog?.[turn.id]?.duration) && catalog[turn.id].duration>0
   ? spokenBeatDuration(catalog[turn.id],turn.minimum) : Math.max(3.4,turn.minimum);
 export function getFaceoffDuration(catalog = GENERATED_VOICE_CLIPS) {
-  return SPOKEN_FACEOFF_TURNS.reduce((sum,turn)=>sum+turnDuration(turn,catalog),6.4)+READY_DURATION;
+  return SPOKEN_FACEOFF_TURNS.reduce((sum,turn)=>sum+turnDuration(turn,catalog),0)+READY_DURATION;
 }
 export const FACE_OFF_DURATION = getFaceoffDuration();
 export const faceoffDuration = beats => Math.max(0, ...(beats || []).map(beat => Number.isFinite(beat?.at) && Number.isFinite(beat?.duration) ? beat.at + beat.duration : 0));
 export const FACE_OFF_REVEAL_AT = 0;
 export const FACE_OFF_POSES = Object.freeze(['stance', 'arrival', 'challenge', 'point', 'recoil', 'resolve', 'reactor', 'actuators', 'armed']);
 export const FACE_OFF_CHAPTERS = Object.freeze({ establish: 'ВЫХОД НА АРЕНУ', mode: 'БОЕВАЯ ГОТОВНОСТЬ', dialogue: 'ДЖОТАРО × ДИО', ready: 'ДО СТОЛКНОВЕНИЯ' });
-export const FACE_OFF_DIALOGUE_CLIPS = Object.freeze(SPOKEN_FACEOFF_TURNS.slice(2).map(turn=>turn.id));
+export const FACE_OFF_DIALOGUE_CLIPS = Object.freeze(SPOKEN_FACEOFF_TURNS.filter(turn=>turn.chapter==='dialogue').map(turn=>turn.id));
 const safeName = (value, fallback) => typeof value === 'string' && value.trim() ? value.trim().slice(0, 40) : fallback;
 const smooth = value => { const t = Math.max(0, Math.min(1, value)); return t*t*t*(10+t*(-15+6*t)); };
 function hashSeed(seed) { let result = 2166136261; for (const c of String(seed ?? 0)) result = Math.imul(result ^ c.charCodeAt(0), 16777619); return result >>> 0; }
-function entranceBeats(players,key) {
-  const first=players[0]||{},second=players[1]||{};
-  return [
-    {at:0,duration:2,chapter:'establish',shot:'wide',speaker:'narrator',text:'БЕЛОБОГ. ПОДПОЛЬЕ. ГАРАНТИЯ ЗАКОНЧИЛАСЬ НА ВХОДЕ.',pose:'arrival',both:true},
-    {at:2,duration:2.2,chapter:'establish',shot:'portrait',speaker:first.id||'p1',text:`${safeName(first.name,'Первый автоматон')}. Претензии принимаются после боя.`,pose:'resolve'},
-    {at:4.2,duration:2.2,chapter:'establish',shot:'portrait',speaker:second.id||'p2',text:`${safeName(second.name,'Второй автоматон')}. Запасных деталей не обещает.`,pose:'challenge'},
-  ].map((beat,index)=>Object.freeze({...beat,id:`faceoff-${key}-${index}`}));
-}
-
 /** One shared clock; missing or incomplete audio retains captions without
  * ever substituting archived actors or device speech. */
 export function buildFaceoff(players = [], seed = 0, { catalog = GENERATED_VOICE_CLIPS } = {}) {
-  const complete=hasCompleteSpokenCatalog(catalog),key=hashSeed(seed),beats=entranceBeats(players,key);
-  let at=6.4;
+  const complete=hasCompleteSpokenCatalog(catalog),key=hashSeed(seed),beats=[];
+  // Greeting starts on the first close-up; player names stay in actor cards.
+  let at=0;
   for(const turn of SPOKEN_FACEOFF_TURNS) {
     const recording=catalog?.[turn.id],duration=turnDuration(turn,catalog);
     const text=typeof recording?.text==='string'&&recording.text.trim()?recording.text:'Запись реплики недоступна. Сцена продолжается.';
@@ -41,7 +33,7 @@ export function buildFaceoff(players = [], seed = 0, { catalog = GENERATED_VOICE
     at+=duration;
   }
   beats.push(Object.freeze({id:'faceoff-'+key+'-'+beats.length,at,duration:READY_DURATION,chapter:'ready',shot:'wide',speaker:'narrator',
-    text:'ПОРА ПРОВЕРИТЬ БРОНЮ НА ПРОЧНОСТЬ.',pose:'armed',both:true}));
+    text:`${safeName(players[0]?.name,'Джотаро')} × ${safeName(players[1]?.name,'Дио')} · КАБАЧКОВОЕ ПРОТИВОСТОЯНИЕ`,pose:'armed',both:true}));
   return beats;
 }
 

@@ -128,3 +128,8 @@ body.referee-page { margin:0; color:#efe9db; background:#10191d; font-family:Man
   .ref-join { display:flex;flex-direction:column;gap:28px;padding:24px 10px 35px;align-items:stretch; }.ref-join-copy h1 { font-size:43px;margin:15px 0 20px; }.ref-join-copy>p { font-size:12px; }.ref-join-footnote { font-size:8px;margin-top:18px; }.ref-join-form { padding:27px;max-width:none; }
 }
 @media (prefers-reduced-motion:reduce) { .referee-shell * { scroll-behavior:auto!important;transition:none!important; } }
+.ref-lore-reference { margin:18px 0;border-block:1px solid #796951;padding:12px 0; }
+.ref-lore-reference summary { cursor:pointer;min-height:36px;font-weight:700;color:#ffe1ad; }
+.ref-lore-reference .ref-charter { white-space:pre-line;line-height:1.65; }
+.ref-lore-reference h3 { font-size:14px;color:#ffe1ad;margin:20px 0 6px; }
+.ref-lore-reference p { line-height:1.65; }

@@ -1,4 +1,5 @@
 import { healthPercent } from '../shared/health.js';
+import { ATTACKS } from '../shared/constants.js';
 import { assetUrl } from './app-paths.js';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -163,13 +164,12 @@ export function createRobot({ skin = 'amber' } = {}) {
   const combatAnchors = Object.fromEntries(['leftClaw', 'rightClaw', 'leftClawBase', 'rightClawBase', 'muzzle', 'core', 'head'].map(name => [name, new THREE.Vector3()]));
   const headLamp = new THREE.SpotLight(0x35d96d, 8, 6.5, .63, .65, 1.3);
   headLamp.name = 'OriginalLens_Spill'; headLamp.castShadow = false;
-  headLamp.position.copy(muzzleLocal);
-  headLamp.target.position.copy(muzzleLocal).add(new THREE.Vector3(0, -1.2, 4));
-  turret.add(headLamp, headLamp.target);
+  const lampAim = new THREE.Vector3(0, -1.2, 4);
   const reactorLamp = new THREE.PointLight(tint, 3, 3.8, 1.4);
   reactorLamp.name = 'OriginalReactor_Spill'; reactorLamp.castShadow = false;
-  reactorLamp.position.copy(coreLocal);
-  chassis.add(reactorLamp);
+  // Lights must survive model.visible=false at fracture. Three.js keys its
+  // shaders on the visible light count, even when a light emits zero power.
+  group.add(headLamp, headLamp.target, reactorLamp);
   const customization = createRobotCustomization({
     armorMaterials: ownMaterials.filter(material => !lensMaterials.includes(material)),
     turret, turretSurface: damageSources.head.points, statusMount: muzzleLocal,
@@ -182,6 +182,12 @@ export function createRobot({ skin = 'amber' } = {}) {
   extractedCore.name = 'OriginalReactor_Extraction'; extractedCore.visible = false; extractedCore.castShadow = true;
   chassis.add(extractedCore);
   coreSource.userData.fractureOffset = extractedCore.position;
+  function syncRobotLights() {
+    headLamp.position.copy(muzzleLocal).applyMatrix4(turret.matrixWorld);
+    headLamp.target.position.copy(muzzleLocal).add(lampAim).applyMatrix4(turret.matrixWorld);
+    reactorLamp.position.copy(coreLocal).add(extractedCore.position).applyMatrix4(chassis.matrixWorld);
+    group.worldToLocal(headLamp.position); group.worldToLocal(headLamp.target.position); group.worldToLocal(reactorLamp.position);
+  }
   const surfaceDirection = new THREE.Vector3(0, .20, 1).normalize();
   const surfacePoint = new THREE.Vector3();
   const legs = ['FL', 'FR', 'RL', 'RR'].map((side, i) => {
@@ -353,7 +359,9 @@ export function createRobot({ skin = 'amber' } = {}) {
   for (const leg of legs) {
     leg.shutdownEntry = leg.home.clone();
     leg.rebootEntry = leg.home.clone();
+    leg.heavyEntry = leg.home.clone();
   }
+  let heavyLinkEntry = false;
 
   function update(player = {}, dt = 1 / 60, time = 0) {
     if (disposed) return;
@@ -377,6 +385,7 @@ export function createRobot({ skin = 'amber' } = {}) {
           model.position.y = 0;
           updateGroundSupport();
           updateDamageAnchors();
+          syncRobotLights();
         }
       }
       return;
@@ -417,6 +426,11 @@ export function createRobot({ skin = 'amber' } = {}) {
     healthRecoil = Math.max(0, healthRecoil - dt * 3.6);
     const rewound = Number.isFinite(player.actionTime) && player.actionTime < previousElapsed - .04;
     const actionChanged = action !== lastAction || variant !== lastVariant || rewound;
+    if (actionChanged) {
+      heavyLinkEntry = action === 'heavy' && ['heavyHook', 'heavyPress'].includes(variant)
+        && lastAction === 'heavy' && ['heavyDrive', 'heavyHook'].includes(lastVariant) && variant !== lastVariant;
+      if (heavyLinkEntry) for (const leg of legs) model.worldToLocal(leg.tip.getWorldPosition(leg.heavyEntry));
+    }
     const releasingGrip = wasHoldingGrip && !player.grabTarget && Number.isFinite(player.grabReleaseTime);
     if (releasingGrip || actionChanged && action === 'hit' && ['grabBreak', 'thrown'].includes(variant)) {
       for (const leg of legs) {
@@ -571,6 +585,10 @@ export function createRobot({ skin = 'amber' } = {}) {
       }
     } else if ((action === 'light' && ['jab', 'cross', 'rake', 'airJab', 'airCross', 'airFinish'].includes(variant)) || action === 'heavy' && ['crusher', 'heavyDrive', 'heavyHook', 'heavyPress'].includes(variant)) {
       const acting = choreographStrike(variant, elapsed, duration, legs, { y: player.y || 0, vy: player.vy || 0 });
+      // Late links may begin halfway through a real hop, with either claw
+      // still supporting the previous pose. Capture that exact articulated
+      // hand-off instead of snapping the non-striking foot back to home.
+      if (heavyLinkEntry && elapsed < .12) for (const leg of legs) leg.desired.lerp(leg.heavyEntry, 1 - smooth(elapsed / .12));
       bob += acting.bob; lean += acting.lean; roll += acting.roll; twist += acting.twist;
       thrust += acting.thrust; headPitch += acting.headPitch; headYaw += acting.headYaw;
     } else if (action === 'light') {
@@ -712,7 +730,7 @@ export function createRobot({ skin = 'amber' } = {}) {
         }
       }
     } else if (action === 'ultimate' || action === 'victory' && variant === 'overloadRecovery' && elapsed < duration) {
-      const releasedAt = action === 'victory' ? 2.28 - duration : null;
+      const releasedAt = action === 'victory' ? ATTACKS.ultimate.duration - duration : null;
       const acting = choreographOverload(releasedAt == null ? elapsed : elapsed + releasedAt, legs, reducedMotion, releasedAt);
       bob = acting.bob; lean += acting.lean; roll += acting.roll; twist += acting.twist;
       thrust += acting.thrust; headPitch = acting.headPitch; headYaw = acting.headYaw; headRoll = acting.headRoll;
@@ -941,6 +959,7 @@ export function createRobot({ skin = 'amber' } = {}) {
     extractedCore.position.set(0, corePull * .34 + coreStrain * .20, reactorOpen + corePull * .40 + coreStrain * .17);
     updateGroundSupport();
     updateDamageAnchors();
+    syncRobotLights();
     // Keep the contact beat, but let authored enamel/metal remain visible.
     // Scaling the decay with the amplitude preserves the old brief lifetime.
     hitFlare = Math.max(0, hitFlare - dt * (ordinaryHit ? 1.96 : 7));
@@ -960,13 +979,12 @@ export function createRobot({ skin = 'amber' } = {}) {
       reactorLamp.intensity += charge * (reducedMotion ? 5 : 13);
       for (const material of signalMaterials.reactor) material.emissiveIntensity += charge * 1.1;
     }
-    reactorLamp.position.copy(coreLocal).add(extractedCore.position);
     if (action === 'defeated' && variant !== 'offer') {
       const pressure = smooth((elapsed - .65) / 1.5);
       reactorLamp.intensity += pressure * 22;
       for (const material of signalMaterials.reactor) material.emissiveIntensity += pressure * 2.6;
     }
-    reactorLamp.visible = player.visualQuality !== 'low';
+    if (player.visualQuality === 'low') reactorLamp.intensity = 0;
     const bespokeSpecial = action === 'special' && variant !== 'burst';
     glowMaterial.opacity = bespokeSpecial ? 0 : clamp(charge * .3, 0, .65);
     const groundWave = action === 'special' && variant === 'shockwave';
@@ -976,7 +994,9 @@ export function createRobot({ skin = 'amber' } = {}) {
     chargeGlow.position.set(0, reactorBurst ? -.50 : groundWave ? -.68 : .30, reactorBurst ? .07 : groundWave ? .56 : .23);
     chargeRing.position.set(0, reactorBurst ? -.50 : groundWave ? -.68 : .30, reactorBurst ? .07 : groundWave ? .61 : .28);
     chargeGlow.scale.setScalar(1 + charge * 1.2 + (reducedMotion ? 0 : Math.sin(time * 30) * charge * .08));
-    ringMaterial.opacity = bespokeSpecial ? 0 : clamp(charge * .45, 0, .85);
+    // The authoritative countdown lives in overload-effects; an expanding
+    // generic ability ring would contradict its shrinking warning circle.
+    ringMaterial.opacity = bespokeSpecial || action === 'ultimate' || variant === 'overloadRecovery' ? 0 : clamp(charge * .45, 0, .85);
     chargeRing.scale.setScalar(reactorBurst ? .85 + smooth(elapsed / .18) * 1.8 : .8 + charge * .6);
     chargeRing.rotation.x = reactorBurst ? -Math.PI / 2 : 0;
     chargeRing.rotation.z = reducedMotion ? 0 : time * 5;
@@ -1001,5 +1021,5 @@ export function createRobot({ skin = 'amber' } = {}) {
   }
   update({ action: 'idle', facing: 1 }, 1, 0);
   renderedFrames = 0;
-  return { group, update, dispose, getContactShadow: () => ({ ...contactShadow }), getDamageAnchors: () => damageAnchors, getCombatAnchors: () => combatAnchors };
+  return { group, update, dispose, prepareCombat() { if (!disposed) fragments.prepare(); }, getContactShadow: () => ({ ...contactShadow }), getDamageAnchors: () => damageAnchors, getCombatAnchors: () => combatAnchors };
 }

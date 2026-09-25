@@ -41,14 +41,14 @@ function decodedDuration(bytes) {
 }
 
 test('every scripted spoken line ships complete audio with an accurate server duration and exact subtitle', () => {
-  assert.equal(script.utterances.length, 57);
+  assert.equal(script.utterances.length, 55);
   const hashes = new Set();
   for (const line of script.utterances) {
     const clip = GENERATED_VOICE_CLIPS[line.id];
     assert.ok(clip, `missing recording: ${line.id}`);
     assert.equal(clip.text, line.text, line.id);
     assert.equal(clip.speaker, line.speaker, line.id);
-    assert.match(clip.url, /^\/assets\/voices\/spoken-v3\/[a-z0-9-]+\.mp3$/, 'new URLs cannot reuse cached legacy audio');
+    assert.match(clip.url, /^\/assets\/voices\/(?:spoken-v3|faceoff-v4)\/[a-z0-9-]+\.mp3$/, 'new URLs cannot reuse cached legacy audio');
     const bytes = bytesFor(clip), duration = decodedDuration(bytes);
     assert.ok(Math.abs(clip.duration - duration) < .0001, `${line.id}: catalog ${clip.duration}, decoded ${duration}`);
     assert.ok(duration > .15 && duration < 15, `${line.id}: plausible complete utterance`);
@@ -58,8 +58,8 @@ test('every scripted spoken line ships complete audio with an accurate server du
   }
 });
 
-test('every dialogue is newly recorded while reference originals stay intact', () => {
-  assert.equal(Object.keys(GENERATED_VOICE_CLIPS).length, 57, 'no legacy voices in the active pack');
+test('active dialogue never reuses rejected v2 takes and user originals stay intact', () => {
+  assert.equal(Object.keys(GENERATED_VOICE_CLIPS).length, 55, 'no legacy voices in the active pack');
   for (const line of script.utterances) {
     const old = readFileSync(new URL(`../public/assets/voices/spoken-v2/${line.id}.mp3`, import.meta.url));
     assert.notEqual(sha256(bytesFor(GENERATED_VOICE_CLIPS[line.id])), sha256(old), `${line.id}: old audio must not be reused`);

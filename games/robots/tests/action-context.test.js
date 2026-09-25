@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { actionContext, actionResource, comboCue, finishContext } from '../src/action-context.js';
+import { COMBAT_WINDOWS } from '../shared/constants.js';
+import { CombatRoom } from '../server/combat.js';
 
 test('defensive input uses burst resources even while the ordinary dash is cooling down', () => {
   const player = { hp: 80, action: 'hit', variant: 'launched', y: 1, energy: 60, cooldowns: { dash: 1, burst: 0 } };
@@ -11,6 +13,23 @@ test('defensive input uses burst resources even while the ordinary dash is cooli
   assert.equal(actionResource('dash', player).cooldown, 0);
   assert.equal(actionContext({ ...player, energy: 40 }).dash.ready, false);
   assert.equal(actionContext({ ...player, cooldowns: { dash: 0, burst: 8 } }).dash.ready, false);
+});
+
+test('resource feedback never rejects a valid late hit-buffer dash just because the paid burst is unavailable', () => {
+  for (const energy of [0, 100]) {
+    const room = new CombatRoom('LATE-DASH'), a = room.addPlayer('a'), b = room.addPlayer('b');
+    room.ready(a.id); room.ready(b.id); for (let i = 0; i < 181; i++) room.step(1 / 60);
+    a.energy = energy; a.cooldowns.burst = energy ? 3 : 0; a.cooldowns.dash = 0;
+    room.setAction(a, 'hit', .40); a.actionTime = .40 - COMBAT_WINDOWS.inputBuffer + .05;
+    const resource = actionResource('dash', room.snapshot().players[0]);
+    assert.equal(resource.cost, 0); assert.equal(resource.cooldown, 0);
+    room.input(a.id, { seq: 1, move: -1, block: false, crouch: false, action: 'dash' });
+    for (let i = 0; i < 16; i++) room.step(1 / 60);
+    assert.equal(a.action, 'dash', 'the packet passed by client feedback actually executes after hit recovery');
+    assert.notEqual(a.variant, 'burst');
+    a.actionTime = 0; a.action = 'hit'; a.actionDuration = .40;
+    assert.equal(actionResource('dash', a).cost, 50, 'early unavailable burst still explains its true cost');
+  }
 });
 
 test('grapple changes existing buttons without offering more than two pummels', () => {

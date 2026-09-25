@@ -4,14 +4,13 @@ import { PREMATCH_EXCHANGES } from './club-story.js';
 export const VOICE_START_GRACE = .38;
 export const VOICE_BREATHING_ROOM = .12;
 export const SPOKEN_FACEOFF_TURNS = Object.freeze([
-  { id:'faceoff-mode-p1', seat:0, chapter:'mode', shot:'core', pose:'reactor', minimum:3.5, system:'РЕАКТОР / БОЕВОЙ КОНТУР' },
-  { id:'faceoff-mode-p2', seat:1, chapter:'mode', shot:'claw', pose:'actuators', minimum:3.1, system:'ПРИВОДЫ / БЛОКИРОВКИ СНЯТЫ' },
-  { id:'faceoff-greeting-open', seat:1, chapter:'dialogue', shot:'portrait', pose:'challenge', minimum:2.2 },
-  { id:'faceoff-greeting-answer', seat:0, chapter:'dialogue', shot:'two-shot', pose:'point', minimum:1.6 },
-  { id:'faceoff-greeting-package', seat:1, chapter:'dialogue', shot:'portrait', pose:'challenge', minimum:2.2 },
-  { id:'faceoff-challenge-p1', seat:0, chapter:'dialogue', shot:'portrait', pose:'point', minimum:2.2 },
+  { id:'faceoff-greeting-open', seat:1, chapter:'establish', shot:'portrait', pose:'challenge', minimum:2.2 },
+  { id:'faceoff-greeting-answer', seat:0, chapter:'establish', shot:'portrait', pose:'point', minimum:1.6 },
+  { id:'faceoff-greeting-package', seat:1, chapter:'mode', shot:'claw', pose:'actuators', minimum:3.1, system:'ПРИВОДЫ / БЛОКИРОВКИ СНЯТЫ' },
+  { id:'faceoff-challenge-p1', seat:0, chapter:'mode', shot:'core', pose:'reactor', minimum:3.5, system:'РЕАКТОР / БОЕВОЙ КОНТУР' },
   { id:'faceoff-taunt-p2', seat:1, chapter:'dialogue', shot:'portrait', pose:'challenge', minimum:2.2 },
-  { id:'faceoff-resolve-p1', seat:0, chapter:'dialogue', shot:'portrait', pose:'resolve', minimum:2.2 },
+  // Stable ID: formerly a synthesized mode line, now the original exclamation.
+  { id:'faceoff-mode-p1', seat:0, chapter:'dialogue', shot:'portrait', pose:'resolve', minimum:2.2 },
   { id:'faceoff-fight-p2', seat:1, chapter:'dialogue', shot:'portrait', pose:'point', minimum:2.2 },
 ].map(Object.freeze));
 export const roundSpokenId = (exchange, turn, seat) => `round-${exchange}-${turn}-p${seat+1}`;

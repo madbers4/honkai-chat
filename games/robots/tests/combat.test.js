@@ -95,7 +95,7 @@ test('light attacks respect startup and range, hit once and chain into a stronge
   assert.equal(room.player('p2').hp, MAX_HP - 26);
 });
 
-test('block absorbs jab, heavy drains guard and a broken guard causes a long stagger', () => {
+test('block absorbs jab, heavy drains guard and a broken guard causes a bounded stagger', () => {
   const room = fight();
   closeRange(room);
   // Hold guard before the strike: a fresh guard press now deliberately parries a jab.
@@ -114,7 +114,7 @@ test('block absorbs jab, heavy drains guard and a broken guard causes a long sta
   assert.equal(room.player('p2').guard, 0);
   assert.equal(room.player('p2').hp, MAX_HP - 16);
   assert.equal(room.player('p2').action, 'hit');
-  assert.equal(room.player('p2').actionDuration, 0.95);
+  assert.equal(room.player('p2').actionDuration, 0.48);
   assert.ok(room.events.some(event => event.type === 'block' && event.guardBreak));
 });
 
@@ -183,7 +183,7 @@ test('ultimate requires 80 energy, has a visible windup and knocks out at long r
   assert.equal(room.player('p1').action, 'ultimate');
   assert.equal(room.player('p2').hp, MAX_HP);
   assert.ok(room.player('p1').energy < 2);
-  advance(room, 0.1);
+  advance(room, 1.0);
   assert.equal(room.player('p2').hp, MAX_HP - 45);
   advance(room, 0.6);
   assert.equal(room.player('p2').hp, 0);

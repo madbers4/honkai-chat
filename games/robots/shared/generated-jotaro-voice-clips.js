@@ -1,28 +1,22 @@
-// New JoJo dialogue; selected actor recipe and evidence: docs/JOJO-AUDIO-V3.md.
+// Original cinematic performances + retained v3 round voice recipe. See docs/ORIGINAL-FACEOFF-V4.md.
 export const GENERATED_JOTARO_VOICE_CLIPS = Object.freeze({
-  "faceoff-mode-p1": {
-    "url": "/assets/voices/spoken-v3/faceoff-mode-p1.mp3",
-    "text": "Дио. Сегодня гнётся не моя броня.",
-    "speaker": "p1",
-    "duration": 3.59
-  },
   "faceoff-greeting-answer": {
-    "url": "/assets/voices/spoken-v3/faceoff-greeting-answer.mp3",
-    "text": "Я иду туда, где надо ударить.",
+    "url": "/assets/voices/faceoff-v4/faceoff-greeting-answer.mp3",
+    "text": "Дио!",
     "speaker": "p1",
-    "duration": 4.17
+    "duration": 1.515
   },
   "faceoff-challenge-p1": {
-    "url": "/assets/voices/spoken-v3/faceoff-challenge-p1.mp3",
-    "text": "Это твой корпус. Мой уже рядом.",
+    "url": "/assets/voices/faceoff-v4/faceoff-challenge-p1.mp3",
+    "text": "Яре-яре… Похоже, ты и вправду непрост, однако.",
     "speaker": "p1",
-    "duration": 4.25
+    "duration": 4.117
   },
-  "faceoff-resolve-p1": {
-    "url": "/assets/voices/spoken-v3/faceoff-resolve-p1.mp3",
-    "text": "Сначала останови болтовню. Потом позируй.",
+  "faceoff-mode-p1": {
+    "url": "/assets/voices/faceoff-v4/faceoff-mode-p1.mp3",
+    "text": "Ублюдок! Дио!",
     "speaker": "p1",
-    "duration": 3.84
+    "duration": 3.925
   },
   "round-warranty-setup-p1": {
     "url": "/assets/voices/spoken-v3/round-warranty-setup-p1.mp3",

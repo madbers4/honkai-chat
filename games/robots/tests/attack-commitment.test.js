@@ -73,23 +73,23 @@ test('parry, interruption and disconnect discard the one pending follow-up', () 
   }
 });
 
-test('paid ultimate takes full jab, heavy and bolt damage without rewinding charge or losing root commitment', () => {
+test('a paid ultimate is interrupted by each direct jab, heavy and bolt without silently refunding its cost', () => {
   for (const [kind, variant, attack] of [['light', 'jab', V5_ATTACKS.jab], ['heavy', 'heavyDrive', V5_ATTACKS.heavyDrive], ['special', 'bolt', ATTACKS.special]]) {
     const r = fight(), a = r.player('p1'), b = r.player('p2'); a.energy = 80;
-    send(r, a.id, 'ultimate'); step(r, 20); const age = a.actionTime, x = a.x;
+    send(r, a.id, 'ultimate'); step(r, 20);
     r.damage(b, a, attack, kind, b.x, { variant, projectile: kind === 'special' });
-    assert.equal(a.hp, MAX_HP - attack.damage); assert.equal(a.action, 'ultimate'); assert.equal(a.actionTime, age);
-    assert.equal(a.defenseOnly, 0); assert.equal(a.vx, 0); assert.equal(a.x, x);
-    assert.equal(r.snapshot().players[0].ultimateArmor, true); assert.equal(r.log.at(-1).armored, true);
-    step(r, 80); assert.equal(r.log.filter(e => e.type === 'ultimatePulse').length, 3);
-    assert.equal(r.snapshot().players[0].ultimateArmor, false, 'post-discharge recovery is vulnerable');
+    assert.equal(a.hp, MAX_HP - attack.damage); assert.equal(a.action, 'hit');
+    assert.ok(a.energy < 10); assert.ok(a.cooldowns.ultimate > 7);
+    assert.equal(r.snapshot().players[0].ultimateArmor, false); assert.equal(r.log.at(-1).armored, false);
+    step(r, 200); assert.equal(r.log.filter(e => e.type === 'ultimatePulse').length, 0);
+    assert.notEqual(a.action, 'ultimate', 'no auto retry when the attack button is no longer held');
   }
 });
 
 test('launch, mine, slam, grab, lethal damage and a late recovery jab interrupt ultimate', () => {
   for (const variant of ['launcher', 'shockwave', 'slam', 'grab', 'lethal', 'recovery']) {
     const r = fight(2.15), a = r.player('p1'), b = r.player('p2'); a.energy = 80;
-    send(r, a.id, 'ultimate'); step(r, variant === 'recovery' ? 96 : 15);
+    send(r, a.id, 'ultimate'); step(r, variant === 'recovery' ? 145 : 15);
     const pulses = r.log.filter(e => e.type === 'ultimatePulse').length;
     if (variant === 'grab') assert.equal(r.tryGrab(b, a), true);
     else {

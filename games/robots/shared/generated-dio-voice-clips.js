@@ -1,34 +1,28 @@
-// New JoJo dialogue; selected actor recipe and evidence: docs/JOJO-AUDIO-V3.md.
+// Original cinematic performances + retained v3 round voice recipe. See docs/ORIGINAL-FACEOFF-V4.md.
 export const GENERATED_DIO_VOICE_CLIPS = Object.freeze({
-  "faceoff-mode-p2": {
-    "url": "/assets/voices/spoken-v3/faceoff-mode-p2.mp3",
-    "text": "Джотаро! Подвал маловат для моего величия!",
-    "speaker": "p2",
-    "duration": 4.26
-  },
   "faceoff-greeting-open": {
-    "url": "/assets/voices/spoken-v3/faceoff-greeting-open.mp3",
-    "text": "Ты приближаешься? Выход в другой стороне.",
+    "url": "/assets/voices/faceoff-v4/faceoff-greeting-open.mp3",
+    "text": "Вот мы и встретились, Джотаро!",
     "speaker": "p2",
-    "duration": 3.66
+    "duration": 4.17
   },
   "faceoff-greeting-package": {
-    "url": "/assets/voices/spoken-v3/faceoff-greeting-package.mp3",
-    "text": "Какая дерзость! Даже твои винты дрожат!",
+    "url": "/assets/voices/faceoff-v4/faceoff-greeting-package.mp3",
+    "text": "Да, я! И что? Что ты мне сделаешь, а, Джотаро?",
     "speaker": "p2",
-    "duration": 3.23
+    "duration": 5.752
   },
   "faceoff-taunt-p2": {
-    "url": "/assets/voices/spoken-v3/faceoff-taunt-p2.mp3",
-    "text": "Я бы остановил время ради этой позы!",
+    "url": "/assets/voices/faceoff-v4/faceoff-taunt-p2.mp3",
+    "text": "Ха! Похоже, ты зол, Джотаро. Что случилось?",
     "speaker": "p2",
-    "duration": 2.72
+    "duration": 5.749
   },
   "faceoff-fight-p2": {
-    "url": "/assets/voices/spoken-v3/faceoff-fight-p2.mp3",
-    "text": "Подходи, железный нахал! Муда!",
+    "url": "/assets/voices/faceoff-v4/faceoff-fight-p2.mp3",
+    "text": "Ха! Ну вперёд, герой!",
     "speaker": "p2",
-    "duration": 3.53
+    "duration": 3.685
   },
   "round-warranty-setup-p2": {
     "url": "/assets/voices/spoken-v3/round-warranty-setup-p2.mp3",

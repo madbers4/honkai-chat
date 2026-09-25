@@ -16,7 +16,7 @@ test('real names stay present through establishment, mode, quoted recordings and
   const update=(elapsed,patch={})=>ui.update({active:true,sequenceId:'same',elapsed,players:players.map((p,i)=>({...p,x:faceoffActorX(i,elapsed)})),beats,...patch});
   update(.5);assert.equal(ui.element.hidden,false);assert.equal(ui.element.dataset.chapter,'establish');
   assert.equal(find(ui.element,'faceoff-real-name').textContent,players[0].name);assert.equal(find(ui.element,'faceoff-line').textContent,beats[0].text);
-  update(8.3);assert.equal(ui.element.dataset.chapter,'mode');assert.equal(find(ui.element,'faceoff-heading').textContent,'БОЕВАЯ ГОТОВНОСТЬ');assert.equal(ui.element.dataset.shot,'core');
+  update(beats.find(beat=>beat.shot==='core').at+1);assert.equal(ui.element.dataset.chapter,'mode');assert.equal(find(ui.element,'faceoff-heading').textContent,'БОЕВАЯ ГОТОВНОСТЬ');assert.equal(ui.element.dataset.shot,'core');
   assert.equal(find(ui.element,'faceoff-mechanism').hidden,false);assert.equal(find(ui.element,'faceoff-speaker').textContent,players[0].name);
   update(beats.find(beat=>beat.chapter==='dialogue').at+1);assert.equal(ui.element.dataset.chapter,'dialogue');assert.equal(find(ui.element,'faceoff-real-name').textContent,players[0].name);
   assert.match(find(ui.element,'faceoff-identity-state').textContent,/РОЛЬ В ДУЭЛИ/);assert.equal(find(ui.element,'faceoff-mechanism').hidden,true);

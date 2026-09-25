@@ -70,6 +70,9 @@
 .stick-wrap:has(.action-cued) .stick-label { visibility: hidden; }
 .controls .joystick.action-cued { outline: none; box-shadow: none !important; border-top: 4px solid #fff2a9; }
 .controls .joystick.action-cued::before { content: '↑'; position: absolute; top: 1px; left: 50%; transform: translateX(-50%); color: #fff2a9; font-size: 24px; text-shadow: 0 0 15px #ffd568; pointer-events: none; }
+.controls .joystick.action-cued[data-cue-tone="danger"] { --cue-color: #fff3b4; border-top: 5px solid var(--cue-color); background-image: radial-gradient(ellipse at 50% 0%, #ffac4577 0%, transparent 65%); }
+.controls .joystick.action-cued[data-cue-tone="danger"]::before { font-size: 31px; color: #fff8df; text-shadow: 0 0 12px #ff983c; }
+.move-recipe[data-danger="overload"] { color: #fff0c2; opacity: 1; text-shadow: 0 1px 4px #000, 0 0 10px #ad5424; font-weight: 800; }
 @media (max-height: 550px) and (orientation: landscape) {
   .controls { --stick-size: 104px; --block-size: 68px; --attack-size: 57px; --dash-size: 68px; --control-gap: 14px;
     left: max(20px, env(safe-area-inset-left)); right: max(20px, env(safe-area-inset-right)); gap: 14px;

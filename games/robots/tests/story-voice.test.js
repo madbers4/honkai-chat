@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createStoryVoice } from '../src/story-voice.js';
 import { SPOKEN_CLIP_IDS } from '../shared/spoken-catalog.js';
-const first='faceoff-mode-p1',second='faceoff-mode-p2';
+const first='faceoff-mode-p1',second='faceoff-taunt-p2';
 const catalog=Object.fromEntries(SPOKEN_CLIP_IDS.map(id=>[id,{url:`/assets/voices/spoken-v3/${id}.mp3`,speaker:id===second||id.endsWith('-p2')?'p2':'p1',duration:8,text:'Записанная реплика.'}]));
 const clip={id:'greet',at:1,duration:8.5,clip:first,clipOffset:.2,clipDuration:8};
 const frame=(elapsed,patch={})=>({sequenceId:'scene-1',elapsed,beats:[clip],enabled:true,...patch});
@@ -19,6 +19,63 @@ function harness(t,options={}){
     fetcher:async url=>{urls.push(url);return{ok:true,arrayBuffer:async()=>new ArrayBuffer(4)};},...options});
   t.after(()=>voice.dispose());return{voice,sources,spoken,statuses,urls,handlers,visibility,ctx};
 }
+
+test('mandatory preparation decodes every active actor clip before ready without playing it',async t=>{
+  const h=harness(t);let decoding=0,peak=0,decoded=0;
+  h.ctx.decodeAudioData=async()=>{peak=Math.max(peak,++decoding);await flush();decoding--;decoded++;return{duration:12};};
+  const a=h.voice.prepareAll(),b=h.voice.prepareAll();assert.equal(a,b);
+  const result=await a;assert.equal(result.loaded,SPOKEN_CLIP_IDS.length);
+  assert.equal(decoded,SPOKEN_CLIP_IDS.length);assert.ok(peak<=3);
+  assert.equal(h.sources.length,0);assert.equal(h.urls.length,SPOKEN_CLIP_IDS.length);
+  await h.voice.prepareAll();assert.equal(decoded,SPOKEN_CLIP_IDS.length,'retains decoded buffers');
+});
+
+test('mandatory preparation refuses missing audio and explicit retry can complete it',async t=>{
+  let offline=true;
+  const h=harness(t,{fetcher:async()=>({ok:!offline,arrayBuffer:async()=>new ArrayBuffer(4)})});
+  await assert.rejects(h.voice.prepareAll(),/реплики/);
+  offline=false;assert.equal((await h.voice.prepareAll()).loaded,SPOKEN_CLIP_IDS.length);
+  assert.equal(h.sources.length,0);
+});
+
+test('a hung native decoder fails readiness and its late result cannot replace a retried recording',async t=>{
+  const h=harness(t,{loadTimeoutMs:5});let oldResolve,attempt=0;
+  h.ctx.decodeAudioData=()=>++attempt===1?new Promise(resolve=>{oldResolve=resolve;}):Promise.resolve({duration:12,id:'fresh'});
+  await assert.rejects(h.voice.prepareAll(),/реплики/);
+  assert.equal(h.sources.length,0);
+  assert.equal((await h.voice.prepareAll()).loaded,SPOKEN_CLIP_IDS.length);
+  oldResolve({duration:99,id:'obsolete'});await flush();
+  h.voice.update(frame(1,{beats:[{...clip,clip:SPOKEN_CLIP_IDS[0]}]}));
+  assert.equal(h.sources[0].buffer.id,'fresh');
+});
+
+test('a pending AudioContext resume is bounded and can be retried by a new sound gesture',async t=>{
+  const h=harness(t,{loadTimeoutMs:5});h.ctx.resume=()=>new Promise(()=>{});
+  await assert.rejects(h.voice.prepareAll(),/Проверить звук/);
+  assert.equal(h.urls.length,0);
+  h.ctx.resume=async()=>{h.ctx.state='running';};
+  assert.equal((await h.voice.prepareAll()).loaded,SPOKEN_CLIP_IDS.length);
+});
+
+test('disposal releases decode jobs and cancels readiness even when native decoders never settle',async t=>{
+  const h=harness(t);h.ctx.decodeAudioData=()=>new Promise(()=>{});
+  const pending=h.voice.prepareAll();await flush();h.voice.dispose();
+  await assert.rejects(pending,/реплики|отменена/);assert.equal(h.sources.length,0);
+});
+
+test('unlocking a byte-warmed scene shares the global decoder limit with mandatory preparation',async t=>{
+  const h=harness(t,{concurrency:2});let active=0,peak=0;
+  await h.voice.preload(SPOKEN_CLIP_IDS.slice(0,9).map(clip=>({clip})));
+  h.ctx.decodeAudioData=async()=>{peak=Math.max(peak,++active);await flush();active--;return{duration:12};};
+  const prepared=h.voice.prepareAll();await h.voice.unlock();
+  assert.equal((await prepared).loaded,SPOKEN_CLIP_IDS.length);assert.ok(peak<=2,`peak decoders: ${peak}`);
+});
+
+test('suspending audio during preparation never reports readiness',async t=>{
+  const h=harness(t);
+  h.ctx.decodeAudioData=async()=>{h.ctx.state='suspended';return{duration:12};};
+  await assert.rejects(h.voice.prepareAll(),/Проверить звук/);
+});
 test('current actor recordings preload under /robots and repeated packets never duplicate a line',async t=>{
   const h=harness(t);await h.voice.unlock();await h.voice.preload([clip,clip]);
   assert.deepEqual(h.urls,[`/robots${catalog[first].url}`]);

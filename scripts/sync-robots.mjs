@@ -12,7 +12,8 @@ const files = execFileSync('git', ['ls-files', '-z', '--', 'src', 'public', 'sha
   'docs/DIO-SPOKEN-PACK.md', 'docs/JOTARO-SPOKEN-PACK.md',
   'docs/SPOKEN-RUNTIME.md', 'docs/SPOKEN-VOICE-SCRIPT.md', 'docs/JOJO-AUDIO-V3.md',
   'docs/COMBAT-VOICE-V3.md', 'docs/combat-voice-v3-analysis.json', 'docs/BATTLE-MUSIC.md',
-  'docs/COSYVOICE-P1-CLI.md', 'docs/VOICE-METHOD-PILOT-NOTES.md'], { cwd: source, encoding: 'utf8' }).split('\0').filter(Boolean);
+  'docs/COSYVOICE-P1-CLI.md', 'docs/VOICE-METHOD-PILOT-NOTES.md',
+  'docs/ORIGINAL-FACEOFF-V4.md', 'docs/COMBAT-READABILITY.md', 'docs/CLUB-POLISH-V4.md'], { cwd: source, encoding: 'utf8' }).split('\0').filter(Boolean);
 const destination = path.join(root, 'games/robots');
 for (const file of files) {
   const target = path.join(destination, file);

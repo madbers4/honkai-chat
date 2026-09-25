@@ -119,7 +119,7 @@ function choreographHeavy(variant, time, legs, { y = 0, vy = 0 } = {}) {
   const follow = pulse(t, hit, recoilAt, attack.duration - .07);
   const displacement = clamp(t - attack.stepStart, 0, attack.stepEnd - attack.stepStart) * attack.stepSpeed;
   const airborne = smooth(y / .055);
-  const gather = airborne * (1 - smooth((t - hit + .065) / .065));
+  const gather = airborne * smooth(vy / 3) * (1 - smooth((t - hit + .065) / .065));
   const compression = pulse(t, hit - .015, hit + .055, hit + .26);
   const body = {
     bob: -.052 * load - (press ? .065 : .048) * compression,
@@ -171,6 +171,9 @@ function choreographHeavy(variant, time, legs, { y = 0, vy = 0 } = {}) {
       leg.desired.z = hz - displacement * (1 - smooth((t - recoilAt) / (settleAt - recoilAt)));
       leg.desired.y = hy + .14 * gather + returnArc * .055;
     }
+    // The root really leaves the deck. Aim down from that height toward the
+    // rival's mechanism; otherwise the stronger hook sails over its head.
+    if (press || leg.side === (hook ? 'FL' : 'FR')) leg.desired.y -= Math.min(.60, y * .70) * force;
   }
   return body;
 }

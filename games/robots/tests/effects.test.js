@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { createCombatEffects } from '../src/effects.js';
 import { CombatRoom } from '../server/combat.js';
-import { canAttemptBurst } from '../shared/constants.js';
+import { ATTACKS, ULTIMATE_PULSES, canAttemptBurst } from '../shared/constants.js';
 
 function setup(t) {
   const originalDocument = globalThis.document;
@@ -100,14 +100,14 @@ test('an ultimate snapshot cannot invent a shot and each authoritative pulse ren
   state.players[0].action = 'ultimate';
   state.players[0].variant = 'overload';
   const shots = () => scene.children.filter(object => object.visible && object.name.startsWith('ultimate-pulse-'));
-  for (const actionTime of [0, 0.95, 1.23, 1.55, 2.28, 2.6]) {
+  for (const actionTime of [0, ...ULTIMATE_PULSES.map(p => p.time), ATTACKS.ultimate.duration]) {
     state.players[0].actionTime = actionTime;
     effects.update(1 / 60, actionTime, state);
     assert.equal(shots().length, 0, 'elapsed animation time only renders a telegraph');
   }
   const observed = [];
   for (let pulse = 0; pulse < 3; pulse++) {
-    state.players[0].actionTime = [.95, 1.23, 1.55][pulse];
+    state.players[0].actionTime = ULTIMATE_PULSES[pulse].time;
     const event = { id: 101 + pulse, type: 'ultimatePulse', player: 'p1', x: -2, y: 1.35, facing: 1, range: 5.2, pulse };
     effects.emit(event, state);
     effects.emit(event, state);

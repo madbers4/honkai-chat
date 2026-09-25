@@ -24,6 +24,7 @@ import { installMenuViewport } from './menu-viewport.js';
 import './mobile-layout.css';
 import { retryableLoad, arenaFailureMessage } from './asset-loading.js';
 import './load-recovery.css';
+import './preflight.css';
 
 const icons = {
   robot: '<path d="m5 7 7-4 7 4v10l-7 4-7-4Z"/><path d="M8 9h8v7H8zm2 3h.01M14 12h.01M12 3V1"/>',
@@ -54,17 +55,15 @@ document.getElementById('app').innerHTML = `
   <header class="topbar" id="topbar">
     <a href="${appPaths.base}" class="brand" aria-label="Фонтейнка — Новый Бойцовский клуб">${fontainkaSignature()}</a>
     <div class="top-tools"><span class="connection"><i id="connection-dot"></i><span id="connection-label">АРЕНА ЗАГРУЖАЕТСЯ</span></span>
-    <button class="icon-btn" id="help-btn" aria-label="Как играть">${icon('help')}</button>
+    <button class="icon-btn" id="help-btn" aria-label="Настройки графики">${icon('robot')}</button>
     <button class="icon-btn" id="sound-btn" aria-label="Включить или выключить звук">${icon(audio.muted ? 'mute' : 'sound')}</button>
     <button class="icon-btn" id="fullscreen-btn" aria-label="На весь экран">${icon('full')}</button></div>
   </header>
   <main id="lobby" class="lobby screen">
     <div class="lobby-copy"><div class="eyebrow"><span></span>БЕЛОБОГ / НОВЫЙ</div>
       <h1>БОЙЦОВСКИЙ<span>КЛУБ<span class="title-dot">.</span></span></h1>
-      <p class="tagline">Дай машине имя. Покажи характер.<br> Зрители уже ждут твою историю.</p>
-      <div class="mode-line"><span>01 — 1 НА 1</span><i></i><span>ДВА ТЕЛЕФОНА</span><i></i><span>ДО ${WINS_TO_MATCH} ПОБЕД</span></div>
+      <p class="tagline">Кабачковое противостояние.<br>Собери бойца — и выходи на ринг.</p>
       <div class="lobby-actions">
-        <label class="name-field"><span>ИМЯ РОБОТА</span><input id="player-name" maxlength="20" placeholder="Как зовут твоего бойца?" autocomplete="nickname" aria-label="Имя робота" /></label>
         <button id="create-btn" class="button primary" disabled><span>${joinedRoom ? 'ПРИНЯТЬ ВЫЗОВ' : 'ВЫЗВАТЬ ДРУГА'}</span>${icon('arrow')}</button>
         <div class="secondary-actions"><button id="training-btn" class="button secondary" disabled>${icon('bolt')}ТРЕНИРОВКА</button><button id="join-btn" class="text-btn">ВВЕСТИ КОД ${icon('arrow')}</button></div>
         <button id="load-retry-btn" class="button secondary load-retry" hidden>ПОВТОРИТЬ ЗАГРУЗКУ ${icon('arrow')}</button>
@@ -72,7 +71,7 @@ document.getElementById('app').innerHTML = `
       <div id="load-progress" class="load-progress" role="status" aria-live="polite"><span id="load-text">Подготавливаем автоматонов…</span><div><i id="load-bar"></i></div></div>
     </div>
     <div class="specimen-label"><span class="specimen-line"></span><p>АВТОМАТОН «ЖУК»<small>БОЕВАЯ ЕДИНИЦА / ГОТОВ К АКТИВАЦИИ</small></p><span class="specimen-number">№ 07</span></div>
-    <footer class="lobby-footer"><span><i></i>КОРОТКИЕ ИСТОРИИ БЕЛОБОГА</span><button class="text-btn" id="guide-btn">КАК ИГРАТЬ ${icon('arrow')}</button><span class="fan-label">Honkai: Star Rail · фан-проект</span></footer>
+    <footer class="lobby-footer"><span><i></i>КАБАЧКОВОЕ ПРОТИВОСТОЯНИЕ</span><span class="fan-label">Honkai: Star Rail · фан-проект</span></footer>
   </main>
   <section id="waiting" class="waiting screen" hidden>
     <div class="waiting-card"><div class="eyebrow">ПРИВАТНАЯ АРЕНА / <span id="room-mode">ДУЭЛЬ</span></div>
@@ -108,13 +107,23 @@ document.getElementById('app').innerHTML = `
 `;
 
 installMenuViewport();
-const savedName = localStorage.getItem('belobog-name');
-if (savedName) $('player-name').value = savedName;
+let playerName = localStorage.getItem('belobog-name') || '';
 const storyUI = createStoryUI();
 mountGraphicsSettings($('guide-dialog'));
 const journey = createClubJourney($('app'), { send, leave, toast, muted: audio.muted,
+  ensureReady: progress => ensureReady(progress),
+  checkSound: async () => {
+    audio.unlock();
+    if (audio.muted) audio.toggle();
+    journey.setMuted(false); $('sound-btn').innerHTML = icon('sound');
+    if (!audio.ctx) throw new Error('Audio is unavailable');
+    await audio.ctx.resume();
+    if (audio.ctx.state !== 'running') throw new Error('Audio is suspended');
+    audio.play('countdown');
+  },
+  onGesture: () => { if (matchMedia('(pointer: coarse)').matches) void requestFullscreen(); },
   toggleSound: () => { audio.unlock(); audio.toggle(); journey.setMuted(audio.muted); $('sound-btn').innerHTML = icon(audio.muted ? 'mute' : 'sound'); },
-  onName: (value, character) => { $('player-name').value = value; storyUI.setCharacter(character); },
+  onName: (value, character) => { playerName = value; storyUI.setCharacter(character); },
 });
 const signalDot = (color, label) => `<span class="signal-chip"><i style="--signal:#${color.toString(16).padStart(6, '0')}"></i>${label}</span>`;
 const healthSignals = [[100,'БОЛЬШЕ 60%'],[55,'26–60%'],[18,'1–25%']].map(([hp,label]) => signalDot(robotPresentation({hp}).healthColor,label)).join('');
@@ -142,7 +151,7 @@ document.querySelector('.keyboard-guide').insertAdjacentHTML('beforebegin', `
     <div><span>ИМПУЛЬС</span><p>28 урона и короткий электрический стан за 25 энергии. Пригнись под выстрелом, заблокируй его или уклонись.</p></div>
     <div><span>ВНИЗ <b>+</b> ИМПУЛЬС</span><p>Электромагнитная мина за 35 энергии: 42 урона, подброс и короткий стан. Перепрыгни детонацию, отойди или держи блок.</p></div>
     <div><span>ТОЧНЫЙ БЛОК <b>→</b> ОТВЕТ</span><p>Нажми блок прямо перед попаданием: парирование откроет короткое окно для усиленной контратаки.</p></div>
-    <div class="overload-recipe"><span>80 ЭНЕРГИИ <b>→</b> НАЖМИ ПЕРЕГРУЗКУ</span><p>Один тап или U запускает зарядку на 0,95 секунды. Приём защищён от обычных ударов и выстрелов, но получает урон. Сильный подброс, захват и разряд могут прервать зарядку. Отойди за отмеченную зону или держи полный блок до конца трёх разрядов.</p></div>
+    <div class="overload-recipe"><span>80 ЭНЕРГИИ <b>→</b> НАЖМИ ПЕРЕГРУЗКУ</span><p>Один тап или U запускает зарядку на 1,85 секунды. Кольцо сжимается к ядру — затем следуют три низких разряда. Ударом можно сбить зарядку. По сигналу «ПРЫГАЙ» веди джойстик вверх, отойди за отмеченную зону или держи полный блок до конца трёх разрядов.</p></div>
   </div>`);
 document.getElementById('escape-prompt').insertAdjacentHTML('afterend', `
   <div id="finisher-prompt" class="finisher-prompt" hidden aria-live="polite">
@@ -177,7 +186,7 @@ const controls = createControls({ send, ultimateState: () => ultimateAvailabilit
   }
   return true;
 } });
-function name() { const value = $('player-name').value.trim() || 'Автоматон'; localStorage.setItem('belobog-name', value); return value; }
+function name() { return playerName.trim() || 'Автоматон'; }
 function setConnection(label, good) { setText('connection-label', label); $('connection-dot').classList.toggle('live', good); }
 function connect(request) {
   quitting = false; pendingRequest = request; clearTimeout(reconnectTimer);
@@ -393,8 +402,9 @@ $('join-confirm-btn').addEventListener('click', () => {
 $('join-code').addEventListener('keydown', e => { if (e.key === 'Enter') $('join-confirm-btn').click(); });
 for (const id of ['leave-btn','game-leave-btn','result-leave-btn']) $(id).addEventListener('click', leave);
 $('rematch-btn').addEventListener('click', () => { send({type:'rematch'}); combatUI.reset(); $('rematch-btn').disabled = true; $('rematch-btn').textContent = 'ЖДЁМ СОПЕРНИКА…'; });
-for (const id of ['help-btn','guide-btn','game-guide-btn']) $(id).addEventListener('click', () => {
+for (const id of ['help-btn','game-guide-btn']) $(id).addEventListener('click', () => {
   audio.unlock(); audio.play('ui'); controls.neutral(); $('guide-dialog').showModal();
+  $('guide-dialog').classList.toggle('graphics-only', id === 'help-btn');
   if (currentView === 'game') { document.querySelector('.signal-guide').scrollIntoView({ block: 'start' }); toast('Бой продолжается, пока открыты приёмы.'); }
   else $('guide-dialog').scrollTop = 0;
 });
@@ -412,6 +422,11 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) audio
 setInterval(() => { if (connected) send({type:'ping',t:Date.now()}); }, 2500);
 showView('lobby');
 fetch(appPaths.path('api/info')).then(r => r.ok ? r.json() : null).then(info => { serverInfo = info; if (room) updateInvite(); }).catch(() => {});
+
+async function ensureReady(onProgress) {
+  await boot();
+  await Promise.all([arena.prepareCombat(onProgress),audio.prepareCombat(onProgress)]);
+}
 
 const boot = retryableLoad(async () => {
   $('load-retry-btn').disabled = true;

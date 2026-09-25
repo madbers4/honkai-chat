@@ -1,6 +1,7 @@
 import { assetUrl as defaultAssetUrl } from './app-paths.js';
 import { GENERATED_VOICE_CLIPS } from '../shared/generated-voice-clips.js';
 import { VOICE_START_GRACE, SPOKEN_CLIP_IDS } from '../shared/spoken-catalog.js';
+import { preparationDeadline } from './preparation-deadline.js';
 const allowedIds = new Set(SPOKEN_CLIP_IDS);
 
 /** Only the two recorded actors. Device speech and legacy dialogue are never
@@ -10,7 +11,8 @@ export function createStoryVoice({ assetUrl = defaultAssetUrl, onStatus = () => 
   fetcher = globalThis.fetch?.bind(globalThis), visibility = globalThis.document,
   loadTimeoutMs = 10000, clipCatalog = GENERATED_VOICE_CLIPS, concurrency = 3, retryAfterMs = 5000, now = Date.now } = {}) {
   let ctx=null, master=null, unlocked=false, muted=false, disposed=false, active=null, pausedRecord=null, sequence=null;
-  let statusKey='', fault='', inFlight=0, warmIds=[], unavailable=false;
+  let statusKey='', fault='', inFlight=0, decodingCount=0, warmIds=[], unavailable=false;
+  const lifetime = new AbortController(), decodeQueue = [];
   const cache=new Map(), seen=new Set(), queue=[], limit=Math.max(1,Math.min(4,Math.floor(Number(concurrency)||3)));
   const permitted=id=>allowedIds.has(id)&&['p1','p2'].includes(clipCatalog[id]?.speaker)
     && /^\/assets\/voices\/[^?#]+\.mp3$/.test(clipCatalog[id]?.url||'')&&!clipCatalog[id].url.includes('..');
@@ -61,12 +63,33 @@ export function createStoryVoice({ assetUrl = defaultAssetUrl, onStatus = () => 
     await entry.pending;
     if(disposed||entry.failed||!ctx)return null;
     if(!entry.buffer&&entry.bytes){
-      entry.decoding??=Promise.resolve().then(()=>ctx.decodeAudioData(entry.bytes.slice(0))).then(buffer=>{if(!disposed){entry.buffer=buffer;entry.bytes=null;}return buffer;})
-        .catch(()=>{entry.bytes=null;entry.failed=true;entry.failedAt=now();entry.error='Запись не прочиталась. Пока — субтитры; можно повторить загрузку.';report();return null;})
-        .finally(()=>{entry.decoding=null;});
+      if (!entry.decoding) {
+        entry.decoding = new Promise(resolve => decodeQueue.push({entry,resolve}));
+        pumpDecoders();
+      }
       await entry.decoding;
     }
     return disposed?null:entry.buffer;
+  }
+  function pumpDecoders() {
+    while (!disposed && decodingCount < limit && decodeQueue.length) {
+      const {entry,resolve} = decodeQueue.shift(); decodingCount++;
+      // Assign buffers only after the deadline race. A timed-out native decoder
+      // may finish later, but must never overwrite a successful explicit retry.
+      void preparationDeadline(() => ctx.decodeAudioData(entry.bytes.slice(0)), {
+        timeoutMs:loadTimeoutMs, signal:lifetime.signal,
+      }).then(buffer => {
+        if (!disposed) {
+          if (!Number.isFinite(buffer?.duration) || buffer.duration <= .03) throw Error('Empty recording');
+          entry.buffer = buffer; entry.bytes = null; entry.failed = false; entry.error = '';
+        }
+      }).catch(() => {
+        entry.bytes=null;entry.failed=true;entry.failedAt=now();
+        entry.error='Запись не прочиталась. Пока — субтитры; можно повторить загрузку.';
+      }).finally(() => {
+        decodingCount--; entry.decoding=null; resolve(); pumpDecoders(); report();
+      });
+    }
   }
   function preload(beats=[],{retryFailed=false}={}){
     unavailable=beats.some(beat=>beat.audioUnavailable);
@@ -79,9 +102,38 @@ export function createStoryVoice({ assetUrl = defaultAssetUrl, onStatus = () => 
     try{
       ctx??=makeContext();if(!ctx){fault='Этот браузер не воспроизводит записи. Субтитры остаются.';report();return false;}
       if(!master){master=ctx.createGain();master.gain.value=muted?0:.62;master.connect(ctx.destination);}
-      await ctx.resume();unlocked=ctx.state==='running';if(unlocked){fault='';void Promise.all(warmIds.map(id=>load(id)));}
+      await preparationDeadline(() => ctx.resume(), {timeoutMs:loadTimeoutMs,signal:lifetime.signal});
+      if (disposed) return false;
+      unlocked=ctx.state==='running';if(unlocked){fault='';void Promise.all(warmIds.map(id=>load(id)));}
       report();return unlocked;
     }catch{fault='Браузер ждёт нажатия для звука. Нажми «Включить звук».';report();return false;}
+  }
+  let preparation;
+  function prepareAll({onProgress = () => {}} = {}) {
+    if (preparation) return preparation;
+    preparation = (async () => {
+      if (!await unlock()) throw new Error('Нажми «Проверить звук», чтобы включить озвучку.');
+      const ids = [...allowedIds].filter(permitted);
+      if (ids.length !== allowedIds.size) throw new Error('Набор реплик неполный. Обнови страницу.');
+      let cursor = 0, completed = 0;
+      onProgress({kind:'voices', loaded:0, total:ids.length});
+      // Limit decoding as well as network requests. A catalogue-sized burst of
+      // decodeAudioData jobs can itself cause the first-fight hitch on phones.
+      const jobs = await Promise.allSettled(Array.from({length:limit}, async () => {
+        while (cursor < ids.length && !disposed) {
+          const id = ids[cursor++];
+          const buffer = await load(id, true);
+          if (!buffer) throw new Error('Не все реплики загрузились. Нажми «Повторить подготовку».');
+          onProgress({kind:'voices', loaded:++completed, total:ids.length});
+        }
+      }));
+      const failure = jobs.find(job => job.status === 'rejected');
+      if (failure) throw failure.reason;
+      if (disposed || completed !== ids.length) throw new Error('Подготовка озвучки отменена.');
+      if (ctx.state !== 'running') throw new Error('Нажми «Проверить звук», чтобы продолжить.');
+      return {loaded:completed,total:ids.length};
+    })().finally(() => { preparation = null; });
+    return preparation;
   }
   function playClip(beat,elapsed,resumedAt=null){
     if(!permitted(beat.clip))return true;
@@ -112,12 +164,13 @@ export function createStoryVoice({ assetUrl = defaultAssetUrl, onStatus = () => 
     }
   }
   const onHidden=()=>{if(visibility?.hidden)cancel();};visibility?.addEventListener?.('visibilitychange',onHidden);
-  return {unlock,preload,update,cancel,getCapabilities:capabilities,
+  return {unlock,preload,prepareAll,update,cancel,getCapabilities:capabilities,
     retry(){return preload(warmIds.map(clip=>({clip})),{retryFailed:true});},
     setMuted(value){muted=Boolean(value);if(master)master.gain.value=muted?0:.62;if(muted)cancel();report();},
     dispose(){
-      if(disposed)return;cancel();disposed=true;visibility?.removeEventListener?.('visibilitychange',onHidden);
+      if(disposed)return;cancel();disposed=true;lifetime.abort();visibility?.removeEventListener?.('visibilitychange',onHidden);
       for(const entry of cache.values())entry.abort?.();for(const job of queue.splice(0)){job.entry.pending=null;job.resolve();}
+      for(const job of decodeQueue.splice(0)){job.entry.decoding=null;job.resolve();}
       cache.clear();seen.clear();try{master?.disconnect();void ctx?.close();}catch{}
     },
   };

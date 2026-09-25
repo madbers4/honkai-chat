@@ -35,7 +35,7 @@ export function createRoundIntroUI(container) {
     const foundSeat = roster.findIndex(player => player?.id === beat?.speaker);
     const speakingSeat = foundSeat >= 0 ? foundSeat : beat?.speaker === 'p1' ? 0 : beat?.speaker === 'p2' ? 1 : -1;
     root.dataset.paused = String(paused); root.dataset.speaker = String(speakingSeat);
-    setText(number, `РАУНД ${intro?.round || 1}`); setText(title, intro?.title || 'Короткая история перед боем');
+    setText(number, `РАУНД ${intro?.round || 1}`); setText(title, intro?.title || 'Кабачковое противостояние');
     cards.forEach((card, index) => {
       const speaking = speakingSeat === index;
       setText(card.name, playerName(roster[index], index));

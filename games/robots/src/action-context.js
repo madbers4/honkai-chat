@@ -1,4 +1,4 @@
-import { ATTACKS, VARIANT_ATTACKS, V3_RULES, V5_RULES, canAttemptAirDash, canAttemptBurst, canAttemptFeint } from '../shared/constants.js';
+import { ATTACKS, VARIANT_ATTACKS, V3_RULES, V5_RULES, COMBAT_WINDOWS, canAttemptAirDash, canAttemptBurst, canAttemptFeint } from '../shared/constants.js';
 import { continuation } from '../shared/attack-commitment.js';
 
 // One description drives the button, its resource feedback and the help prompt.
@@ -38,7 +38,14 @@ export function actionContext(player = {}, intent = {}, state = null) {
 
 export function actionResource(action, player = {}, intent = {}, state = null) {
   if (finishContext(state, player.id).canTrigger && ['heavy', 'ultimate'].includes(action)) return { cost: 0, cooldown: 0 };
-  if (action === 'dash') return actionContext(player, intent).dash;
+  if (action === 'dash') {
+    const dash = actionContext(player, intent).dash;
+    // A failed paid burst can still be a valid ordinary dash queued for the
+    // end of a short hit reaction. Do not swallow that packet on the client.
+    if (dash.kind === 'burst' && !dash.ready && player.actionDuration - player.actionTime <= COMBAT_WINDOWS.inputBuffer)
+      return { cost: 0, cooldown: Math.max(0, player.cooldowns?.dash || 0) };
+    return dash;
+  }
   const attack = action === 'special' && intent.crouch && !(player.y > .08) ? VARIANT_ATTACKS.shockwave : ATTACKS[action];
   return { cost: attack?.energy || 0, cooldown: Math.max(0, player.cooldowns?.[action] || 0) };
 }

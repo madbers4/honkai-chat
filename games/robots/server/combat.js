@@ -587,7 +587,7 @@ export class CombatRoom {
       target.vx = direction * attack.knockback * 0.4;
       target.energy = clamp(target.energy + 4, 0, 100);
       attacker.energy = clamp(attacker.energy + 3, 0, 100);
-      if (broken) this.setAction(target, 'hit', 0.95);
+      if (broken) this.setAction(target, 'hit', COMBAT_WINDOWS.guardBreakStun);
       else this.setAction(target, 'block', 0.16);
       this.event('block', attacker, { x: target.x, y: target.y + 1.1, target: target.id, damage: broken ? Math.ceil(attack.damage * 0.65) : chip, guardBreak: broken, action: kind, variant });
       return true;
@@ -598,6 +598,10 @@ export class CombatRoom {
     // A confirmed reactor discharge is its own sequence, not a scaled juggle.
     const damageScale = kind !== 'ultimate' && airborneBefore ? Math.max(0.45, 1 - target.airHits * 0.18) : 1;
     const dealt = Math.max(1, Math.round((attack.damage + (counter ? COMBAT_WINDOWS.counterDamage : 0) + (punish ? V3_RULES.punishDamage : 0)) * damageScale));
+    // A recent defensive tap belongs to the player even if another strike
+    // connects before recovery. Keep its original short expiry; never extend
+    // it through a combo or carry an offensive macro out of hitstun.
+    const bufferedDefense = isDefensiveAction(target.queued?.action) && target.queued.expires >= this.combatTime ? target.queued : null;
     if (counter) attacker.counterWindow = 0;
     if (punish) target.punishConsumed = true;
     target.hp = Math.max(0, target.hp - dealt);
@@ -639,7 +643,7 @@ export class CombatRoom {
       target.launchWindow = 0;
       target.jumpCancelWindow = 0;
       target.dashFollowWindow = 0;
-      target.queued = null;
+      target.queued = bufferedDefense;
     }
     const stun = kind === 'ultimate' ? attack.stun : airborneBefore && target.airHits > V5_RULES.airHitLimit ? 0.05 : airborneBefore && !launch ? Math.min(attack.stun, 0.24) : attack.stun;
     if (!armored) this.setAction(target, 'hit', stun, kind === 'ultimate' ? 'overloadHit' : metadata.throw ? 'thrown' : empLaunch ? 'empLift' : variant === 'bolt' ? 'electrified' : launch ? 'launched' : slamBounce ? 'slamBounce' : isGroundHeavy(variant) ? 'heavyStagger' : '');
@@ -736,7 +740,7 @@ export class CombatRoom {
     }
     if (!LOCKED_ACTIONS.has(player.action)) {
       player.facing = this.opponent(player).x >= player.x ? 1 : -1;
-      const next = player.y > 0.02 ? 'jump' : player.input.block ? 'block' : player.input.crouch ? 'crouch' : Math.abs(player.input.move) > 0.05 ? 'walk' : 'idle';
+      const next = player.y > 0.02 || player.vy > 0 ? 'jump' : player.input.block ? 'block' : player.input.crouch ? 'crouch' : Math.abs(player.input.move) > 0.05 ? 'walk' : 'idle';
       if (player.action !== next) this.setAction(player, next);
       const speed = player.input.block ? 0.26 : player.input.crouch ? 0.3 : 1;
       const travelSpeed = player.traversalJump && (player.y > .02 || player.vy > 0) ? AIR_MOVE_SPEED : WALK_SPEED;
@@ -818,7 +822,7 @@ export class CombatRoom {
         player.ultimatePulses.add(pulse);
         this.event('ultimatePulse', player, { y: player.y + 1.35, pulse, facing: player.facing, range: attack.range, variant: 'overload', damage: properties.damage });
         const horizontal = (target.x - player.x) * player.facing;
-        if (horizontal > -0.3 && horizontal < attack.range && Math.abs(target.y - player.y) < 3.5) {
+        if (horizontal > -0.3 && horizontal < attack.range && Math.abs(target.y - player.y) < attack.hitHeight) {
           this.damage(player, target, { ...attack, ...properties }, 'ultimate', player.x, { variant: 'overload' });
         }
       }

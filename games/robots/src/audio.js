@@ -1,6 +1,7 @@
 import { healthPercent } from '../shared/health.js';
 import { createCombatVoice } from './combat-voice.js';
 import { createBattleMusic } from './battle-music.js';
+import { preparationDeadline } from './preparation-deadline.js';
 
 export class GameAudio {
   constructor() { this.muted = localStorage.getItem('belobog-muted') === 'true'; this.voices = new Set(); }
@@ -33,6 +34,15 @@ export class GameAudio {
     if (this.master) this.master.gain.setTargetAtTime(this.muted ? 0 : 0.28, this.ctx.currentTime, .03);
     this.music?.update({ muted: this.muted });
     return this.muted;
+  }
+  async prepareCombat(onProgress) {
+    this.unlock();
+    if (!this.ctx || !this.combatVoice) throw new Error('Браузер не включил звук. Нажми «Проверить звук».');
+    await preparationDeadline(() => this.ctx.resume());
+    if (this.ctx.state !== 'running') throw new Error('Нажми «Проверить звук», чтобы продолжить.');
+    const result = await this.combatVoice.prepare({onProgress});
+    if (this.ctx.state !== 'running') throw new Error('Нажми «Проверить звук», чтобы продолжить.');
+    return result;
   }
   updateMusic(state, { connected = false } = {}) {
     this.musicState = state; this.musicConnected = connected;

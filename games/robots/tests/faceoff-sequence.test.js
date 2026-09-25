@@ -14,13 +14,13 @@ test('production opening stays server-authoritative through the complete scene, 
   const step = seconds => { for (let i = 0; i < Math.round(seconds * 60); i++) scene.step(1 / 60); };
   assert.equal(scene.snapshot().duration, FACE_OFF_DURATION);
   const positions = [room.player('p1').x, room.player('p2').x];
-  step(8);
+  const coreAt=scene.beats.find(beat=>beat.shot==='core').at+1; step(coreAt);
   let presented = scene.decorate(room.snapshot());
   assert.equal(presented.players[0].variant, 'reactor');
   assert.equal(presented.players[1].variant, 'stance');
-  assert.equal(presented.players[0].x, faceoffActorX(0, 8));
+  assert.equal(presented.players[0].x, faceoffActorX(0, scene.elapsed));
   assert.deepEqual([room.player('p1').x, room.player('p2').x], positions, 'staging cannot move combat state');
-  step(16);
+  step(24-scene.elapsed);
   assert.equal(scene.stage, 'faceoff', 'legacy 24-second duration cannot cut the new scene');
   assert.equal(room.phase, 'waiting');
   room.setConnected('p2', false);

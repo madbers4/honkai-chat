@@ -122,7 +122,7 @@ test('air attacks cannot hover, repeated missed lights obey budget, and landing 
   const attacks = room.log.filter(event => event.type === 'attack').length;
   input(room, 'p1', { action: 'heavy' }); advance(room, 0.10);
   assert.equal(room.log.filter(event => event.type === 'attack').length, attacks);
-  advance(room, 0.3); assert.equal(player.y, 0);
+  advance(room, 0.3); assert.equal(player.variant, 'heavyDrive'); assert.ok(player.y > .2, 'the buffered new heavy has its own real jump after landing recovery');
 });
 
 test('two deliberate pummels use distinct impact timestamps followed by a requested throw', () => {

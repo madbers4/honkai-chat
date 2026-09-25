@@ -44,7 +44,7 @@ test('ordinary damage begins at contact and all targets settle within canonical 
 });
 
 for (const facing of [-1, 1]) test(`real GLB catches all recorded hits on supports without local teleports, facing ${facing}`, t => {
-  let worstFeet = 0, worstStep = 0, lowestBelly = Infinity, interruptionCount = 0;
+  let worstFeet = 0, worstStep = 0, lowestBelly = Infinity, interruptionCount = 0, recoveredContacts = 0;
   for (const type of Object.keys(RECOIL_CASES)) {
     const data = buildRecoilCase(type, facing), robot = createRobot({ skin: 'cyan' });
     assert.equal(data.contacts.length, ['jab', 'drive'].includes(type) ? 1 : type === 'cross' ? 2 : 3);
@@ -67,13 +67,14 @@ for (const facing of [-1, 1]) test(`real GLB catches all recorded hits on suppor
         }
       }
       if (data.contacts.some(event => event.frame === frame) && previousAction === 'hit') interruptionCount++;
+      if (data.contacts.slice(1).some(event => event.frame === frame) && previousAction !== 'hit') recoveredContacts++;
       previousAction = player.action;
     }
     robot.dispose();
   }
   assert.ok(worstStep < .17, `two-frame local bounds change ${worstStep}`);
-  assert.ok(interruptionCount > 0, 'the real sequence must include another hit during an unfinished reaction');
-  t.diagnostic(`Maximum support height ${worstFeet.toFixed(4)} m, belly clearance ${lowestBelly.toFixed(4)} m, two-frame local silhouette step ${worstStep.toFixed(4)} m; ${interruptionCount} interrupted reactions.`);
+  assert.ok(recoveredContacts >= 4, 'shorter stun must expose actual recovery between the recorded follow-up contacts');
+  t.diagnostic(`Maximum support height ${worstFeet.toFixed(4)} m, belly clearance ${lowestBelly.toFixed(4)} m, two-frame local silhouette step ${worstStep.toFixed(4)} m; ${interruptionCount} interrupted / ${recoveredContacts} recovered reactions.`);
 });
 
 test('accumulated springs return by control recovery, while turret follows chassis later', t => {

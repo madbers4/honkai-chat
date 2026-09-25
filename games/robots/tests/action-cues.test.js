@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { planActionCue } from '../src/action-cues.js';
+import { planActionCue, overloadThreat } from '../src/action-cues.js';
 import { CombatRoom } from '../server/combat.js';
-import { V5_ATTACKS } from '../shared/constants.js';
+import { ATTACKS, V5_ATTACKS } from '../shared/constants.js';
 import { continuation } from '../shared/attack-commitment.js';
 
 function match() {
@@ -28,6 +28,32 @@ test('actual heavy contact: no early chain, legal continuation, microstun and th
   b.energy = 100; b.action = 'hit'; b.variant = 'heavyStagger';
   assert.equal(current(room, b)?.key, 'burst', 'paid, available escape takes precedence');
   b.cooldowns.burst = 1; assert.equal(current(room, b), null, 'cooldown never lights the escape button');
+});
+
+for (const facing of [-1, 1]) test(`ultimate jump cue corresponds to a real escape across the complete visible window, facing ${facing}`, () => {
+  // Exercise both boundaries and intermediate inputs against real gravity and
+  // all three pulses. A beautiful cue is useless if the promised jump dies.
+  for (const remaining of [.59, .45, .30, .16]) {
+    const { room, a, b } = match(); a.x = -2 * facing; b.x = 2 * facing; a.facing = facing; b.facing = -facing; a.energy = 80;
+    assert.ok(room.beginAction(a, 'ultimate'));
+    while (a.actionTime < ATTACKS.ultimate.startup - remaining) room.step(1 / 60);
+    const cue = current(room, b); assert.equal(cue?.key, 'overload-jump'); assert.equal(cue.target, 'jump');
+    const hp = b.hp; assert.ok(room.beginAction(b, cue.target));
+    for (let i = 0; i < 105; i++) room.step(1 / 60);
+    assert.equal(b.hp, hp, `jump at ${remaining}s must clear every pulse`);
+  }
+});
+
+test('ultimate prompts expire with the charge and never tell a stunned, airborne or out-of-lane player to jump', () => {
+  const { room, a, b } = match(); a.action = 'ultimate'; a.actionTime = ATTACKS.ultimate.startup - .40;
+  const snapshot = () => room.snapshot();
+  assert.equal(current(room, b)?.key, 'overload-jump');
+  for (const remaining of [.80, .10, 0]) { a.actionTime = ATTACKS.ultimate.startup - remaining; assert.notEqual(current(room, b)?.key, 'overload-jump'); }
+  a.actionTime = ATTACKS.ultimate.startup - .40;
+  for (const patch of [{ y: .5 }, { action: 'hit' }, { landingRecovery: .1 }, { grabbedBy: a.id }, { x: a.x - 2 }, { x: a.x + 6 }]) {
+    const state = snapshot(); Object.assign(state.players[1], patch); assert.notEqual(planActionCue(state, b.id)?.key, 'overload-jump');
+  }
+  a.action = 'hit'; assert.equal(overloadThreat(snapshot(), b.id), null);
 });
 
 test('actual jab contact yields one actionable continuation; expiration and cooldown do not linger', () => {

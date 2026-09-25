@@ -17,7 +17,7 @@ export function createUltimateUI() {
     button.style.setProperty('--charge', String(charging ? Math.min(1, player.actionTime / ATTACKS.ultimate.startup) : committed ? 1 : 0));
     fill.style.transform = `scaleX(${Math.min(1, energy / ATTACKS.ultimate.energy)})`;
     title.textContent = available.immediate ? 'ДОБИВАНИЕ' : charging ? 'ЗАРЯДКА' : committed ? 'РАЗРЯД' : available.ready ? 'НАЖМИ' : charged ? 'ГОТОВА' : 'ПЕРЕГРУЗКА';
-    hint.textContent = available.immediate ? 'НАЖМИ · СОРВИ ЯДРО' : charging ? 'РЕАКТОР ЗАРЯЖАЕТСЯ · БРОНЯ ПРИЁМА' : committed ? 'РЕАКТОР РАСКРЫТ · ПОЛНЫЙ РАЗРЯД' : cooldown > 0 ? `ОХЛАЖДЕНИЕ ${Math.ceil(cooldown)} С` : charged ? available.ready ? 'ГОТОВА · ОДНО НАЖАТИЕ · 80 ⚡' : 'ГОТОВА · ВЕРНИСЬ В СТОЙКУ' : `80 ⚡ · НУЖНО ЕЩЁ ${Math.ceil(ATTACKS.ultimate.energy - energy)}`;
+    hint.textContent = available.immediate ? 'НАЖМИ · СОРВИ ЯДРО' : charging ? 'ЗАРЯДКА · ВРАЖЕСКИЙ УДАР ПРЕРВЁТ ЕЁ' : committed ? 'РЕАКТОР РАСКРЫТ · ПОЛНЫЙ РАЗРЯД' : cooldown > 0 ? `ОХЛАЖДЕНИЕ ${Math.ceil(cooldown)} С` : charged ? available.ready ? 'ГОТОВА · ОДНО НАЖАТИЕ · 80 ⚡' : 'ГОТОВА · ВЕРНИСЬ В СТОЙКУ' : `80 ⚡ · НУЖНО ЕЩЁ ${Math.ceil(ATTACKS.ultimate.energy - energy)}`;
     button.setAttribute('aria-label', available.immediate ? 'Добивание: нажми, чтобы сорвать ядро' : charging ? 'Перегрузка запущена: реактор заряжается' : committed ? 'Перегрузка: полный разряд' : `Перегрузка, ${available.ready ? 'готова: нажми один раз' : charged ? 'готова: вернись в стойку' : 'нужно 80 энергии'}`);
   }
   return { update(next, playerId) { state = next; id = playerId; paint(); }, hold() { paint(); } };

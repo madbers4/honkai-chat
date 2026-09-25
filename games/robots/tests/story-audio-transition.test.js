@@ -25,6 +25,7 @@ function domFixture() {
     classList: { add(){}, remove(){}, toggle(){} },
     setAttribute(key, value) { this[key] = value; }, insertAdjacentHTML(){},
     appendChild(child) { this.children.push(child); }, append(...children) { this.children.push(...children); },
+    insertBefore(child, reference) { const index=this.children.indexOf(reference); this.children.splice(index<0?this.children.length:index,0,child); },
     replaceChildren(...children) { this.children = children; },
     addEventListener(type, listener) { (this.listeners[type] ||= []).push(listener); }, removeEventListener(){},
     querySelector(selector) {

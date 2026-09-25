@@ -43,6 +43,25 @@ function fixture() {
   return { context, sources, requests, gains, destination: gain(), fetcher, advance };
 }
 
+test('required combat warmup rejects failed explosion then recovers without delayed playback',async()=>{
+  const h=fixture();let offline=true;
+  const voice=createCombatVoice({...h,fetcher:async(...args)=>offline?{ok:false}:h.fetcher(...args)});
+  try{
+    await assert.rejects(voice.prepare(),/звуки боя/);
+    offline=false;const result=await voice.prepare();assert.equal(result.loaded,Object.keys(clips).length);
+    assert.equal(h.sources.length,0);
+    assert.equal(voice.play({type:'destruction',id:900}),true);
+    assert.equal(h.sources[0].buffer.id,'explosion');
+  }finally{voice.dispose();}
+});
+
+test('invalid decoded battle audio cannot satisfy mandatory readiness',async()=>{
+  const h=fixture();h.context.decodeAudioData=async()=>({duration:0});
+  const voice=createCombatVoice(h);
+  try{await assert.rejects(voice.prepare(),/звуки боя/);assert.equal(voice.stats().loaded,0);assert.equal(h.sources.length,0);}
+  finally{voice.dispose();}
+});
+
 test('prepared assets are bounded, measured, versioned cuts of the unchanged user sources', async () => {
   const report = JSON.parse(await readFile(new URL('../docs/combat-voice-v3-analysis.json', import.meta.url)));
   assert.equal(Object.keys(clips).length, 10);

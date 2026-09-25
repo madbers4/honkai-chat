@@ -54,11 +54,37 @@ export function createCombatVoice({ context, destination, fetcher = globalThis.f
       return context.decodeAudioData(bytes);
     })();
     entry.pending = Promise.race([request, deadline]).then(buffer => {
-      if (buffer && !disposed && !controller.signal.aborted) entry.buffer = buffer;
+      if (Number.isFinite(buffer?.duration) && buffer.duration > .03 && !disposed && !controller.signal.aborted) entry.buffer = buffer;
     }).catch(() => {}).finally(() => {
       clearTimeout(timer); entry.pending = null; entry.cancel = null;
     });
     return entry.pending;
+  }
+
+  let preparation;
+  function prepare({onProgress = () => {}} = {}) {
+    if (preparation) return preparation;
+    preparation = (async () => {
+      const ids = Object.keys(COMBAT_VOICE_CLIPS);
+      // An explicit retry gets a new bounded attempt; old failure limits must
+      // not leave the mandatory preparation screen permanently blocked.
+      for (const entry of cache.values()) if (!entry.buffer && !entry.pending) entry.attempts = 0;
+      let cursor = 0, completed = 0;
+      const jobs = await Promise.allSettled(Array.from({length:3}, async () => {
+        while (cursor < ids.length && !disposed) {
+          const id = ids[cursor++];
+          await load(id);
+          if (!cache.get(id)?.buffer) await load(id);
+          if (!cache.get(id)?.buffer) throw new Error('Не загрузились звуки боя. Повтори подготовку.');
+          onProgress({kind:'combat',loaded:++completed,total:ids.length});
+        }
+      }));
+      const failure = jobs.find(job => job.status === 'rejected');
+      if (failure) throw failure.reason;
+      if (disposed || completed !== ids.length) throw new Error('Подготовка звука отменена.');
+      return {loaded:completed,total:ids.length};
+    })().finally(() => { preparation = null; });
+    return preparation;
   }
 
   function finish(record) {
@@ -138,7 +164,7 @@ export function createCombatVoice({ context, destination, fetcher = globalThis.f
     }
   }
 
-  return { play, preload: () => Promise.all(Object.keys(COMBAT_VOICE_CLIPS).map(load)),
+  return { play, prepare, preload: () => prepare().catch(() => {}),
     stop: () => stop(),
     stats: () => ({ active: active.size, fading: fades.size,
       loaded: [...cache.values()].filter(entry => entry.buffer).length, seen: seen.size }),

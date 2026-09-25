@@ -3,6 +3,8 @@ import { ATTACKS, ULTIMATE_PULSES } from '../shared/constants.js';
 
 const amber = new THREE.Color('#ffc166'), cyan = new THREE.Color('#6feaff');
 const clamp = THREE.MathUtils.clamp;
+// A readable countdown, independent of quality, frame rate or cosmetic motion.
+export const overloadChargeRadius = time => 1.65 - 1.47 * clamp(time / ATTACKS.ultimate.startup, 0, 1);
 const vertexShader = 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}';
 const beamShader = `uniform vec3 tint;uniform float age,power,reduced;varying vec2 vUv;
   void main(){float x=vUv.x,y=vUv.y-.5;float clock=age*(1.0-reduced);
@@ -54,7 +56,7 @@ export function createOverloadEffects(scene) {
     const ground = ring(); ground.name = 'overload-charge-ring'; ground.rotation.x = -Math.PI / 2; ground.visible = false; scene.add(ground);
     const cage = arcMesh(); cage.name = 'overload-victim-current'; cage.visible = false; scene.add(cage);
     const light = new THREE.PointLight(amber, 0, 3.2, 2); light.name = `OverloadSpill_${i}`; scene.add(light);
-    return { group, rings, arcs, lane, ground, cage, light, owner: null, life: 0, duration: .36, power: 0, contactTint: amber.clone() };
+    return { group, rings, arcs, lane, ground, cage, light, owner: null, life: 0, duration: .36, power: 0, contactTint: amber.clone(), fallbackAnchor: new THREE.Vector3() };
   });
   const pulses = Array.from({ length: 6 }, () => {
     const group = new THREE.Group(), beam = new THREE.Mesh(planeGeometry, material(beamShader)); group.add(beam);
@@ -65,7 +67,7 @@ export function createOverloadEffects(scene) {
   function rig(player) { const index = player?.id === 'p2' ? 1 : 0; const value = rigs[index]; value.owner = player?.id; return value; }
   function anchor(player, key) {
     const p = player?.combatAnchors?.[key];
-    return p && Number.isFinite(p.x + p.y + p.z) ? p : { x: (player?.x || 0) + (key === 'muzzle' ? (player?.facing || 1) * .65 : 0), y: (player?.y || 0) + 1.25, z: .35 };
+    return p && Number.isFinite(p.x + p.y + p.z) ? p : rig(player).fallbackAnchor.set((player?.x || 0) + (key === 'muzzle' ? (player?.facing || 1) * .65 : 0), (player?.y || 0) + 1.25, .35);
   }
   function clear() {
     for (const s of rigs) { s.group.visible = s.lane.visible = s.ground.visible = s.cage.visible = false; s.life = 0; s.light.intensity = 0; }
@@ -89,7 +91,7 @@ export function createOverloadEffects(scene) {
     if (event.type === 'ultimate') return 0;
     if (event.type === 'ultimatePulse') {
       const pulse = clamp(event.pulse || 0, 0, 2), age = source?.action === 'ultimate' ? (source.actionTime || 0) - ULTIMATE_PULSES[pulse].time : source?.actionTime || 0;
-      if (age > .28 || !source) return 0;
+      if (!source || age > .28 || age < -.08 || !(source.action === 'ultimate' || source.action === 'victory' && source.variant === 'overloadRecovery')) return 0;
       const s = pulses[pulseCursor++ % pulses.length], p = anchor(source, 'muzzle');
       s.final = pulse === 2; s.duration = s.final ? .43 : .23; s.life = s.duration;
       s.facing = event.facing === -1 ? -1 : 1; s.length = clamp((event.range || ATTACKS.ultimate.range) - Math.abs(p.x - source.x), 1, 6);
@@ -111,7 +113,7 @@ export function createOverloadEffects(scene) {
     const positions = mesh.geometry.attributes.position;
     let index = 0;
     const count = low || reduced ? 2 : 4;
-    for (let lane = 0; lane < count; lane++) for (let j = 0; j < 18; j++) for (const step of [j, j + 1]) {
+    for (let lane = 0; lane < count; lane++) for (let j = 0; j < 18; j++) for (let step = j; step <= j + 1; step++) {
       const u = step / 18, a = lane * Math.PI / 2 + u * 4.8 + time * (reduced ? 0 : 1.2);
       const radius = victim ? .43 + Math.sin(u * Math.PI) * .36 : .22 + .58 * (1 - u);
       const kink = Math.sin(step * 8.37 + lane * 13.8 + Math.floor(time * (reduced ? 0 : 18)) * 2.1) * .055 * Math.sin(u * Math.PI);
@@ -125,25 +127,29 @@ export function createOverloadEffects(scene) {
     useContext(state);
     const paused = state?.phase === 'paused';
     const step = paused ? 0 : clamp(Number.isFinite(dt) ? dt : 0, 0, .05); clock += step;
-    for (const s of rigs) { s.group.visible = s.lane.visible = s.ground.visible = false; s.light.intensity = 0; s.light.visible = !low; }
+    for (const s of rigs) { s.group.visible = s.lane.visible = s.ground.visible = false; s.light.intensity = 0; }
     for (const player of state?.players ?? []) {
       const s = rig(player), color = tint(player), p = anchor(player, 'core');
       const active = player.action === 'ultimate' && ['fight', 'paused'].includes(state?.phase);
       if (active) {
-        const t = Math.max(0, player.actionTime || 0), load = clamp(t / ATTACKS.ultimate.startup, 0, 1), fade = 1 - clamp((t - 1.6) / .42, 0, 1);
+        const t = Math.max(0, player.actionTime || 0), load = clamp(t / ATTACKS.ultimate.startup, 0, 1);
+        const charging = t < ATTACKS.ultimate.startup;
+        const fade = 1 - clamp((t - ULTIMATE_PULSES[2].time) / .35, 0, 1);
         s.group.visible = fade > 0; s.group.position.copy(p);
-        const coilRadius = .53 - .21 * load;
+        const chargeRadius = overloadChargeRadius(t), ringLift = Math.max(0, chargeRadius + .075 - p.y);
         s.rings.forEach((r, i) => {
-          r.visible = !low || i === 0; r.position.set(0, .04 + i * .08, .08 + i * .07);
-          r.rotation.set(.20 * (i - 1), (reduced ? 0 : Math.sin(t * 2 + i) * .22), i * 2.1 + (reduced ? 0 : t * (i % 2 ? -2 : 2)));
-          r.scale.setScalar(coilRadius + i * .12); r.material.color.copy(color).multiplyScalar(1.6 + load);
-          r.material.opacity = (.18 + load * .6) * fade * (reduced ? .6 : 1);
+          r.visible = charging && (!low || i === 0); r.position.set(0, ringLift, .11 + i * .045);
+          // The outer face-on ring never wobbles or grows. Two faint internal
+          // conductors add depth without hiding that one reliable deadline.
+          r.rotation.set(i ? .24 * (i - 1) : 0, i ? .26 : 0, i * 2.1);
+          r.scale.setScalar(chargeRadius * (1 - i * .17)); r.material.color.copy(color).multiplyScalar(1.45 + load * .5);
+          r.material.opacity = (i ? .13 + load * .14 : .42 + load * .32) * (reduced ? .8 : 1);
         });
         s.arcs.material.color.copy(color).multiplyScalar(2.2); arcs(s.arcs, t, (.22 + load * .75) * fade);
-        s.lane.visible = t < 1.55; s.lane.position.set(player.x + (player.facing || 1) * ATTACKS.ultimate.range / 2, .052, 0);
+        s.lane.visible = fade > 0; s.lane.position.set(player.x + (player.facing || 1) * ATTACKS.ultimate.range / 2, .052, 0);
         s.lane.scale.set(ATTACKS.ultimate.range * (player.facing || 1), 1.30, 1); s.lane.material.uniforms.tint.value.copy(color);
-        s.lane.material.uniforms.power.value = .45 + load * .4;
-        s.ground.visible = fade > 0; s.ground.position.set(player.x, .057, 0); s.ground.scale.setScalar(1.1 + load * .10);
+        s.lane.material.uniforms.power.value = (.45 + load * .4) * fade;
+        s.ground.visible = charging; s.ground.position.set(player.x, .057, 0); s.ground.scale.setScalar(1.20 - load * .86);
         s.ground.material.color.copy(color).multiplyScalar(1.6); s.ground.material.opacity = (.2 + load * .35) * fade;
         s.light.position.copy(p); s.light.position.z += .15; s.light.color.copy(color); s.light.intensity = low ? 0 : (3 + load * 14) * fade * (reduced ? .5 : 1);
       }

@@ -5,12 +5,12 @@ import { readFile, realpath, readdir, mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-const HELP = `Страница прослушивания: 57 разговорных записей v3 + 10 боевых.
+const HELP = `Страница прослушивания: 7 оригинальных реплик + 48 разговорных записей v3 + 10 боевых.
 
 node scripts/build-voice-review.mjs --source <game-worktree> --output <artifactdir>
 
---source  Рабочая копия игры с финальными каталогами spoken-v3, combat-v3,
-          spoken-script.json и jojo-v3-final-analysis.json.
+--source  Рабочая копия игры с финальными каталогами spoken-v3 + faceoff-v4, combat-v3,
+          spoken-script.json и spoken-current-analysis.json.
 --output  Внешняя отсутствующая или пустая папка. Исходная игра не изменяется.
 --help    Показать эту справку.
 
@@ -78,27 +78,27 @@ async function loadSource(source) {
   for (const [speaker, clips] of Object.entries({ p1, p2 })) {
     for (const [id, clip] of Object.entries(clips)) {
       assert(ID.test(id), `Небезопасный id записи: ${id}.`);
-      assert(clip.url === `/assets/voices/spoken-v3/${id}.mp3`, `${id}: требуется spoken-v3; найден ${clip.url}. Старые и смешанные пакеты не принимаются.`);
+      assert(clip.url === `/assets/voices/${id.startsWith('faceoff-')?'faceoff-v4':'spoken-v3'}/${id}.mp3`, `${id}: требуется актуальный каталог v3/v4; найден ${clip.url}. Старые и смешанные пакеты не принимаются.`);
       assert(clip.speaker === speaker, `${id}: голос не соответствует каталогу ${speaker}.`);
     }
   }
-  const report = await json('scripts/voice-production/jojo-v3-final-analysis.json');
+  const report = await json('scripts/voice-production/spoken-current-analysis.json');
   const combat = await catalog('shared/combat-voice-clips.js', 'COMBAT_VOICE_CLIPS');
   const combatReport = await json('docs/combat-voice-v3-analysis.json');
-  assert(Array.isArray(script.utterances) && script.utterances.length === 57, 'Сценарий должен содержать ровно 57 разговорных записей.');
+  assert(Array.isArray(script.utterances) && script.utterances.length === 55, 'Сценарий должен содержать ровно 55 разговорных записей.');
   const utterances = new Map(script.utterances.map((u) => [u.id, u]));
-  assert(utterances.size === 57, 'В сценарии повторяются id.');
-  for (const [speaker, clips, count] of [['p1', p1, 28], ['p2', p2, 29]]) {
+  assert(utterances.size === 55, 'В сценарии повторяются id.');
+  for (const [speaker, clips, count] of [['p1', p1, 27], ['p2', p2, 28]]) {
     const expected = script.utterances.filter((u) => u.speaker === speaker).map((u) => u.id);
     assert(expected.length === count && sameKeys(expected, Object.keys(clips)), `${speaker}: каталог не совпадает с полным набором сценария (${count}).`);
     const actor = report.actors?.[speaker];
     assert(actor && typeof actor.recipe === 'string' && actor.recipe && typeof actor.allRecordingsListeningApproved === 'boolean', `${speaker}: неполные сведения о рецепте / слуховой приёмке.`);
     assert(actor.selectedPilot?.id && SHA.test(actor.selectedPilot.sha256) && typeof actor.selectedPilot.userSelected === 'boolean', `${speaker}: отсутствует точная история выбора пробы.`);
   }
-  assert(Array.isArray(report.clips) && report.clips.length === 57, 'Финальный отчёт должен содержать ровно 57 записей.');
+  assert(Array.isArray(report.clips) && report.clips.length === 55, 'Финальный отчёт должен содержать ровно 55 записей.');
   const reportClips = new Map(report.clips.map((clip) => [clip.id, clip]));
-  assert(reportClips.size === 57 && sameKeys(reportClips.keys(), utterances.keys()), 'Набор id финального отчёта не совпадает со сценарием.');
-  assert(Array.isArray(script.faceoffOrder) && script.faceoffOrder.length === 9, 'Нужны 9 реплик катсцены.');
+  assert(reportClips.size === 55 && sameKeys(reportClips.keys(), utterances.keys()), 'Набор id финального отчёта не совпадает со сценарием.');
+  assert(Array.isArray(script.faceoffOrder) && script.faceoffOrder.length === 7, 'Нужны 7 реплик катсцены.');
   assert(Array.isArray(script.roundExchanges) && script.roundExchanges.length === 12, 'Нужны 12 предраундовых пар.');
   const grouped = [...script.faceoffOrder];
   const groupById = new Map(script.faceoffOrder.map((id, i) => [id, { group: 'faceoff', order: i + 1 }]));
@@ -122,7 +122,7 @@ async function loadSource(source) {
       assert(Array.isArray(order) && order.length === 2 && order[0] === exchange.utterances.setup[first] && order[1] === exchange.utterances.reply[second], `${exchange.id}: нарушен порядок завязка → ответ (${parity}).`);
     }
   }
-  assert(grouped.length === 57 && new Set(grouped).size === 57 && sameKeys(grouped, utterances.keys()), 'Катсцена и пары должны покрывать все 57 реплик ровно один раз.');
+  assert(grouped.length === 55 && new Set(grouped).size === 55 && sameKeys(grouped, utterances.keys()), 'Катсцена и пары должны покрывать все 55 реплик ровно один раз.');
   assert(sameKeys(Object.keys(combat), Object.keys(COMBAT_LABELS)), 'Боевой каталог должен содержать ровно 10 ожидаемых нарезок.');
   assert(typeof combatReport.listeningApproved === 'boolean', 'В боевом отчёте нет отдельного статуса слуховой приёмки.');
   const files = [];
@@ -151,7 +151,7 @@ async function loadSource(source) {
     assert(clip.url === `/assets/voices/combat-v3/${id}.mp3`, `${id}: требуется отдельная нарезка combat-v3.`);
     await asset(id, clip, clip, { group: 'combat', actor: clip.actor, role: clip.role, label }, 'combat');
   }
-  return { script, report, combatReport, inputs, clips, files };
+  return { script, report, combat, combatReport, inputs, clips, files };
 }
 
 function makePage(data) {
@@ -175,15 +175,15 @@ function makePage(data) {
   const combat = Object.keys(COMBAT_LABELS).map((id) => card(id)).join('');
   const total = data.clips.reduce((sum, clip) => sum + clip.bytes, 0);
   return `<!doctype html>
-<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="dark"><title>Голоса бойцовского клуба · v3</title>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="dark"><title>Голоса бойцовского клуба · v4</title>
 <style>
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#10141c;color:#f3eee6;font:16px/1.55 system-ui,sans-serif}main{max-width:1120px;margin:auto;padding:24px clamp(14px,4vw,36px) 70px}h1{font-size:clamp(26px,5vw,42px);line-height:1.15}h2{margin:48px 0 14px;font-size:27px}h3{font-size:21px;margin:0 0 18px}h4{margin:0;font-size:16px}p{margin:10px 0}.eyebrow{color:#efbc72;text-transform:uppercase;letter-spacing:.1em;font-size:12px}.muted,.meta{color:#aeb8c6}.notice{padding:18px 22px;background:#202b3b;border-left:3px solid #eab975;border-radius:5px;margin:24px 0}.notice ul{padding-left:20px;margin:12px 0}.notice li+li{margin-top:10px}nav{display:flex;flex-wrap:wrap;gap:10px;margin:22px 0}a{color:#f4c584;text-underline-offset:3px}nav a,button{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:9px 15px;border:1px solid #45536a;border-radius:8px;color:#f3eee6;background:#202a38;text-decoration:none;font:inherit}button{cursor:pointer}.toolbar{display:flex;gap:14px;align-items:center;flex-wrap:wrap}.toolbar p{flex:1 1 180px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:15px}.pair{grid-template-columns:repeat(2,minmax(0,1fr))}.clip{min-width:0;padding:18px;border:1px solid #354359;border-radius:12px;background:#19222f}.line{font-size:18px;min-height:2.9em}.clip audio{display:block;width:100%;height:54px;margin:16px 0 10px}.meta{font-size:13px}.meta a{display:inline-flex;align-items:center;min-height:44px;margin-left:8px}.exchange{margin:20px 0 32px;padding:22px;background:#141b25;border:1px solid #303b4d;border-radius:14px}.turn{margin:16px 0 10px;color:#e8bd84;font-size:13px;letter-spacing:.05em;text-transform:uppercase}details{font-size:12px;color:#acb8cb}summary{cursor:pointer;min-height:44px;display:flex;align-items:center}code,.hash{display:block;overflow-wrap:anywhere;margin:6px 0}section{scroll-margin-top:18px}footer{margin-top:38px;border-top:1px solid #354359;padding-top:18px;font-size:14px}a:focus-visible,button:focus-visible,summary:focus-visible,audio:focus-visible{outline:3px solid #ffcd82;outline-offset:3px}@media(max-width:620px){.pair{grid-template-columns:1fr}.exchange{padding:14px}.line{min-height:0}.notice{padding:14px 16px}}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 </style></head><body><main>
-<p class="eyebrow">Бойцовский клуб · офлайн-прослушивание</p><h1>Голоса и боевые выкрики</h1><p class="muted">57 разговорных записей + 10 боевых звуков · ${size(total)}. Загрузка звука начинается после нажатия ▶.</p>
-<aside class="notice"><strong>Выбор пробы ≠ одобрение всего пакета</strong><ul>${actorNotes}</ul><p>Выбранная проба определяет рецепт подачи; новые записи имеют собственные хеши. Техническая проверка и ASR не заменяют прослушивание.</p><p>Боевые нарезки: ${data.combatReport.listeningApproved ? 'слуховое одобрение отмечено в отчёте.' : 'слуховая приёмка ещё не отмечена.'}</p></aside>
-<nav aria-label="Разделы"><a href="#faceoff">Катсцена · 9</a><a href="#rounds">Перед раундом · 48</a><a href="#combat">Бой · 10</a><a href="manifest.json" download>Манифест с SHA</a></nav>
+<p class="eyebrow">Бойцовский клуб · офлайн-прослушивание</p><h1>Голоса и боевые выкрики</h1><p class="muted">55 разговорных записей + 10 боевых звуков · ${size(total)}. Загрузка звука начинается после нажатия ▶.</p>
+<aside class="notice"><strong>Оригинальное вступление и выбранные голоса перед раундами</strong><ul>${actorNotes}</ul><p>Катсцена использует исходные записи. Выбранные пробы определяют TTS-подачу только 48 сохранённых реплик перед раундами. Техническая проверка и ASR не заменяют прослушивание.</p><p>Боевые нарезки: ${data.combatReport.listeningApproved ? 'слуховое одобрение отмечено в отчёте.' : 'слуховая приёмка ещё не отмечена.'}</p></aside>
+<nav aria-label="Разделы"><a href="#faceoff">Катсцена · 7</a><a href="#rounds">Перед раундом · 48</a><a href="#combat">Бой · 10</a><a href="manifest.json" download>Манифест с SHA</a></nav>
 <div class="toolbar"><button id="stop" type="button">Остановить звук</button><p id="status" class="muted" role="status" aria-live="polite">Выберите запись. Одновременно играет только один файл.</p></div>
-<section id="faceoff"><h2>Катсцена</h2><p class="muted">Все девять реплик в порядке появления.</p><div class="grid">${faceoff}</div></section>
+<section id="faceoff"><h2>Катсцена</h2><p class="muted">Семь оригинальных реплик в порядке появления. Первые три взяты из «Приветствие.mp3». Без TTS.</p><div class="grid">${faceoff}</div></section>
 <section id="rounds"><h2>Перед раундом</h2><p class="muted">Двенадцать пар: сначала завязка, затем ответ. Оба варианта голоса показаны рядом. В нечётном раунде начинает игрок 1, в чётном — игрок 2; смысловой порядок сохраняется.</p>${rounds}</section>
 <section id="combat"><h2>Боевые звуки</h2><p class="muted">Готовые короткие нарезки оригинальных выкриков и отдельный взрыв.</p><div class="grid">${combat}</div></section>
 <footer>Страница автономна: локальные MP3, без API и автозапуска. В <a href="manifest.json" download>манифесте</a> сохранены тексты, длительности, точные размеры, хеши и отдельные статусы выбора проб / слуховой приёмки.</footer>
@@ -222,8 +222,10 @@ async function main() {
   catch (error) { if (error.code !== 'ENOENT') throw error; }
   const data = await loadSource(source);
   const manifest = {
-    schemaVersion: 1, id: 'club-voice-review-v3', generatedAt: new Date().toISOString(),
-    counts: { faceoff: 9, roundExchanges: 12, round: 48, combat: 10, total: 67 },
+    schemaVersion: 1, id: 'club-voice-review-v4', generatedAt: new Date().toISOString(),
+    counts: { faceoff: data.script.faceoffOrder.length, roundExchanges: data.script.roundExchanges.length,
+      round: data.script.utterances.filter(line=>line.id.startsWith('round-')).length,
+      combat: Object.keys(data.combat).length, total: data.clips.length },
     sourceName: path.basename(source), sourceFileSha256: data.inputs,
     approvalScope: 'selectedPilot selects a recipe; it does not approve every generated recording. ASR is not listening approval.',
     actors: data.report.actors, combatListeningApproved: data.combatReport.listeningApproved,
@@ -238,7 +240,7 @@ async function main() {
   for (const file of data.files) await writeFile(path.join(output, file.localUrl), file.bytes, { flag: 'wx' });
   await writeFile(path.join(output, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`, { flag: 'wx' });
   await writeFile(path.join(output, 'index.html'), html, { flag: 'wx' });
-  process.stdout.write(`Готово: ${path.join(output, 'index.html')}\n67 записей; ${size(manifest.totalBytes)}.\n`);
+  process.stdout.write(`Готово: ${path.join(output, 'index.html')}\n${manifest.counts.total} записей; ${size(manifest.totalBytes)}.\n`);
 }
 
 main().catch((error) => { process.stderr.write(`Ошибка сборки прослушивания: ${error.message}\n`); process.exitCode = 1; });

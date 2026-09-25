@@ -1,31 +1,30 @@
 {
   "schemaVersion": 1,
-  "id": "club-spoken-jojo-v3",
+  "id": "club-spoken-original-faceoff-v4",
   "language": "ru-RU",
   "sourceRevision": "ce1b233",
-  "status": "complete-v3-recordings-technically-verified",
-  "purpose": "Новая цельная JoJo-адаптация дуэли роботов: приближение вместо побега, стальные позы, словесная бравада о времени и ора/муда. Все33 смысловые строки переписаны; все57 аудиозаписей должны быть произведены заново.",
+  "status": "original-faceoff-and-retained-v3-rounds",
+  "purpose": "Семь цельных реплик из пользовательских JoJo-исходников с первого кадра; 48 выбранных TTS-реплик перед раундами сохранены.",
   "counts": {
-    "faceoffUtterances": 9,
+    "faceoffUtterances": 7,
     "roundExchanges": 12,
     "roundSemanticLines": 24,
     "roundRecordings": 48,
-    "totalRecordings": 57,
-    "p1Recordings": 28,
-    "p2Recordings": 29,
+    "totalRecordings": 55,
+    "p1Recordings": 27,
+    "p2Recordings": 28,
     "narratorRecordings": 0
   },
   "scope": {
     "include": [
-      "Все9 новых речевых ходов противостояния p1/p2",
-      "Все24 новые смысловые строки12 предраундовых пар, каждая обоими голосами:48 записей"
+      "Семь цельных оригинальных реплик кат-сцены",
+      "48 сохранённых v3 записей перед раундами"
     ],
     "exclude": [
       "210 реплик живого рефери",
       "Авторский устав и карточки правил",
       "Боевые ORA/MUDA, атаки, суператака, взрыв",
-      "Имена игроков и другие пользовательские данные",
-      "Немые вводные/именные/финальные титры"
+      "Имена игроков и другие пользовательские данные"
     ],
     "preservedAssetIds": [
       "explosion",
@@ -43,21 +42,21 @@
     "playerNamesInAudio": false,
     "playerNameDisplay": "Имя остаётся в существующей карточке говорящего. Текст субтитра равен text выбранной записи; нет обещания озвучить выбранное имя.",
     "aliases": "Джотаро/Дио — роли в JoJo-пародии. Выбранные имена роботов остаются только в карточках говорящего; динамическая озвучка этих имён не заявляется.",
-    "faceoffClock": "Сохранены9 структурных faceoff IDs. Аудио v2 непригодно: все9 текстов новые. После генерации рассчитать окна по фактической длительности каждой записи, не укорачивать речь под старые таймкоды.",
+    "faceoffClock": "Начало в 0 с. Семь полных исходных реплик; длительность каждого окна равна реальной записи плюс допуск запуска и пауза. Три первые реплики — всё Приветствие.mp3 по порядку, без потери слов.",
     "roundClock": {
       "durationPolicy": "derive-from-measured-new-recordings",
       "startupGrace": 0.38,
       "minimumRemainder": 0.12,
       "maxDurationIsPlanningOnly": true
     },
-    "referenceJudgement": "Для p1 выбран новый CosyVoice3 вариант А по исходному референсу; для p2 сохранён выбранный выразительный full-ICL Dio. Все v3 тексты новые. Первая p1 запись совпадает с выбранной пробой А; выбор рецептов не объявляет все57 файлов прослушанными.",
+    "referenceJudgement": "Для вступления используется сам исходный звук. CosyVoice3 вариант А и выразительный Dio Qwen сохранены только для 48 предраундовых записей. Старый первый пилот с фразой о броне больше не играет.",
     "takes": "Для пилота и выбранного финального дубля сохранять неизменённый WAV, seed/model/settings, фактическую длительность. Не запихивать длинную реплику в лимит обрезкой начала/конца.",
     "roundSelection": "Сначала выбрать пару существующим детерминированным deck, затем setup/reply и голос. Нечётный: setup.p1 → reply.p2; чётный: setup.p2 → reply.p1. Нельзя выбирать только clips.a/b.",
     "referee": "При подключённом рефери предраундовая автоозвучка отключена. Суфлёр читает те же setupText/replyText выбранной пары, не старый и не переставленный текст.",
     "approval": "После пилота проверить целые слова и смысл на слух, характер подачи относительно референса, затем измерить громкость и длительность. Ни embedding, ни ASR не подтверждают художественное сходство.",
     "maxDurationMeaning": "Historical direction targets; actual runtime uses measured MP3 duration. Never trim or accelerate emotional delivery to this target.",
     "fictionalTimeStop": "Упоминания остановки времени строго условные («я бы»), не команда игроку и не описание существующей механики.",
-    "synthesisText": "Точный ввод TTS отдельно от canonical text; различаются только пунктуация/регистр. Мужские голоса обоих роботов, без автоматической замены женским device TTS. Speaker identity фиксирована по p1/p2."
+    "synthesisText": "Для оригиналов synthesisText равен подписи и не отправляется в TTS. Для сохранённых раундовых записей это исторический ввод TTS."
   },
   "voices": {
     "p1": {
@@ -157,20 +156,18 @@
       "refText": "Что ты мне сделаешь, а, Джотаро?",
       "purpose": "Один мужской голос Дио из одобренного full-ICL рецепта; полный двухголосный greeting не использовать.",
       "listeningApproved": true,
-      "approvalScope": "Only the earlier voice/style pilot. All v3 dialogue must be synthesized anew."
+      "approvalScope": "Historical voice/style pilot for retained v3 round dialogue only."
     }
   },
   "inventory": {
-    "status": "v3-rewrite-inventory",
+    "status": "v4-original-faceoff",
     "faceoffIds": [
-      "faceoff-mode-p1",
-      "faceoff-mode-p2",
       "faceoff-greeting-open",
       "faceoff-greeting-answer",
       "faceoff-greeting-package",
       "faceoff-challenge-p1",
       "faceoff-taunt-p2",
-      "faceoff-resolve-p1",
+      "faceoff-mode-p1",
       "faceoff-fight-p2"
     ],
     "roundExchangeIds": [
@@ -187,9 +184,9 @@
       "champion",
       "bolts"
     ],
-    "semanticLineCount": 33,
-    "recordingCount": 57,
-    "carryForwardSpokenAudio": false,
+    "semanticLineCount": 31,
+    "recordingCount": 55,
+    "carryForwardSpokenAudio": true,
     "unchanged": [
       "Авторский устав CLUB_CHARTER",
       "RULE_CARDS и обучение",
@@ -199,14 +196,12 @@
     ]
   },
   "faceoffOrder": [
-    "faceoff-mode-p1",
-    "faceoff-mode-p2",
     "faceoff-greeting-open",
     "faceoff-greeting-answer",
     "faceoff-greeting-package",
     "faceoff-challenge-p1",
     "faceoff-taunt-p2",
-    "faceoff-resolve-p1",
+    "faceoff-mode-p1",
     "faceoff-fight-p2"
   ],
   "roundExchanges": [
@@ -525,354 +520,123 @@
   ],
   "utterances": [
     {
-      "id": "faceoff-mode-p1",
-      "speaker": "p1",
-      "text": "Дио. Сегодня гнётся не моя броня.",
-      "synthesisText": "Дио. Сегодня гнётся не МОЯ броня!",
-      "emotionalDirection": {
-        "pace": "Обратись к Дио тихо и прямо; после имени короткая пауза. Последние три слова — ровная угроза, без распева.",
-        "pauses": [
-          {
-            "after": "дио",
-            "milliseconds": 120
-          }
-        ],
-        "emphasis": [
-          "МОЯ"
-        ],
-        "arc": "Наметить исход боя как личное обещание, не как уже случившийся результат."
-      },
-      "reference": {
-        "id": "p1-exclamation",
-        "clip": "jotaro-dio",
-        "preferredFragment": {
-          "start": 0,
-          "end": 4.284979166666667,
-          "status": "user-selected-original-full-source"
-        }
-      },
-      "semanticGroup": "mode",
-      "sequence": {
-        "kind": "faceoff",
-        "order": 1
-      },
-      "maxDuration": 4.0,
-      "outputFile": "faceoff-mode-p1.mp3",
-      "replaces": {
-        "clip": "jotaro-mode",
-        "part": null
-      },
-      "status": "script-ready-not-produced"
-    },
-    {
-      "id": "faceoff-mode-p2",
-      "speaker": "p2",
-      "text": "Джотаро! Подвал маловат для моего величия!",
-      "emotionalDirection": {
-        "pace": "Выкрикни имя, затем с удовольствием расправь фразу; нажим на собственном величии, финал резкий.",
-        "pauses": [
-          {
-            "after": "джотаро",
-            "milliseconds": 120
-          }
-        ],
-        "emphasis": [
-          "МОЕГО"
-        ],
-        "arc": "Дио воображает монументальную сцену, хотя стоит в подвале."
-      },
-      "reference": {
-        "id": "p2-approved-icl",
-        "clip": "greeting",
-        "preferredFragment": {
-          "start": 7.7,
-          "end": 11.32,
-          "status": "approved-dio-voice-recipe-not-v3-dialogue"
-        }
-      },
-      "semanticGroup": "mode",
-      "sequence": {
-        "kind": "faceoff",
-        "order": 2
-      },
-      "maxDuration": 4.0,
-      "outputFile": "faceoff-mode-p2.mp3",
-      "replaces": {
-        "clip": "dio-mode",
-        "part": null
-      },
-      "status": "script-ready-not-produced",
-      "synthesisText": "Джотаро! Подвал маловат для МОЕГО величия!"
-    },
-    {
       "id": "faceoff-greeting-open",
       "speaker": "p2",
-      "text": "Ты приближаешься? Выход в другой стороне.",
-      "emotionalDirection": {
-        "pace": "Первый вопрос с насмешливым удивлением; после него полудоля тишины, затем снисходительно укажи на выход.",
-        "pauses": [
-          {
-            "after": "приближаешься",
-            "milliseconds": 120
-          }
-        ],
-        "emphasis": [
-          "ПРИБЛИЖАЕШЬСЯ"
-        ],
-        "arc": "Предлагает побег как милость, но хочет, чтобы соперник остался."
-      },
-      "reference": {
-        "id": "p2-approved-icl",
-        "clip": "greeting",
-        "preferredFragment": {
-          "start": 7.7,
-          "end": 11.32,
-          "status": "approved-dio-voice-recipe-not-v3-dialogue"
-        }
-      },
-      "semanticGroup": "legacy-package",
-      "sequence": {
-        "kind": "faceoff",
-        "order": 3
-      },
-      "maxDuration": 4.0,
+      "text": "Вот мы и встретились, Джотаро!",
+      "synthesisText": "Вот мы и встретились, Джотаро!",
+      "sourceEngine": "original-user-recording",
+      "sourceClip": "greeting",
+      "sourceTrim": [
+        0,
+        4.17
+      ],
       "outputFile": "faceoff-greeting-open.mp3",
-      "replaces": {
-        "clip": "greeting",
-        "part": "greeting-open"
-      },
-      "status": "script-ready-not-produced",
-      "synthesisText": "Ты ПРИБЛИЖАЕШЬСЯ? Выход в другой стороне!"
+      "outputDirectory": "public/assets/voices/faceoff-v4",
+      "kind": "faceoff",
+      "productionMode": "extract-original-no-tts",
+      "status": "original-recording"
     },
     {
       "id": "faceoff-greeting-answer",
       "speaker": "p1",
-      "text": "Я иду туда, где надо ударить.",
-      "synthesisText": "Я иду туда, где надо УДАРИТЬ.",
-      "emotionalDirection": {
-        "pace": "Ответ без разгона и без улыбки; слегка выделить последнее слово, закончить вниз.",
-        "pauses": [],
-        "emphasis": [
-          "УДАРИТЬ"
-        ],
-        "arc": "Само приближение — угроза; ни одного объяснения сверх необходимого."
-      },
-      "reference": {
-        "id": "p1-exclamation",
-        "clip": "jotaro-dio",
-        "preferredFragment": {
-          "start": 0,
-          "end": 4.284979166666667,
-          "status": "user-selected-original-full-source"
-        }
-      },
-      "semanticGroup": "legacy-package",
-      "sequence": {
-        "kind": "faceoff",
-        "order": 4
-      },
-      "maxDuration": 4.0,
+      "text": "Дио!",
+      "synthesisText": "Дио!",
+      "sourceEngine": "original-user-recording",
+      "sourceClip": "greeting",
+      "sourceTrim": [
+        4.17,
+        5.685
+      ],
       "outputFile": "faceoff-greeting-answer.mp3",
-      "replaces": {
-        "clip": "greeting",
-        "part": "greeting-answer"
-      },
-      "status": "script-ready-not-produced"
+      "outputDirectory": "public/assets/voices/faceoff-v4",
+      "kind": "faceoff",
+      "productionMode": "extract-original-no-tts",
+      "status": "original-recording"
     },
     {
       "id": "faceoff-greeting-package",
       "speaker": "p2",
-      "text": "Какая дерзость! Даже твои винты дрожат!",
-      "emotionalDirection": {
-        "pace": "Коротко возмутись, затем будто великодушно укажи на чужую дрожь. Не вставлять отдельный смех.",
-        "pauses": [
-          {
-            "after": "дерзость",
-            "milliseconds": 120
-          }
-        ],
-        "emphasis": [
-          "ДЕРЗОСТЬ"
-        ],
-        "arc": "Принимает спокойствие соперника за оскорбление и пытается вернуть себе сцену."
-      },
-      "reference": {
-        "id": "p2-approved-icl",
-        "clip": "greeting",
-        "preferredFragment": {
-          "start": 7.7,
-          "end": 11.32,
-          "status": "approved-dio-voice-recipe-not-v3-dialogue"
-        }
-      },
-      "semanticGroup": "legacy-package",
-      "sequence": {
-        "kind": "faceoff",
-        "order": 5
-      },
-      "maxDuration": 4.0,
+      "text": "Да, я! И что? Что ты мне сделаешь, а, Джотаро?",
+      "synthesisText": "Да, я! И что? Что ты мне сделаешь, а, Джотаро?",
+      "sourceEngine": "original-user-recording",
+      "sourceClip": "greeting",
+      "sourceTrim": [
+        5.685,
+        11.436979166666667
+      ],
       "outputFile": "faceoff-greeting-package.mp3",
-      "replaces": {
-        "clip": "greeting",
-        "part": "greeting-package"
-      },
-      "status": "script-ready-not-produced",
-      "synthesisText": "Какая ДЕРЗОСТЬ! Даже твои винты дрожат!"
+      "outputDirectory": "public/assets/voices/faceoff-v4",
+      "kind": "faceoff",
+      "productionMode": "extract-original-no-tts",
+      "status": "original-recording"
     },
     {
       "id": "faceoff-challenge-p1",
       "speaker": "p1",
-      "text": "Это твой корпус. Мой уже рядом.",
-      "synthesisText": "Это ТВОЙ корпус. Мой уже рядом!",
-      "emotionalDirection": {
-        "pace": "Первую фразу бросить сухо, после точки небольшая пауза; вторую сказать ближе и ниже.",
-        "pauses": [
-          {
-            "after": "корпус",
-            "milliseconds": 120
-          }
-        ],
-        "emphasis": [
-          "ТВОЙ"
-        ],
-        "arc": "Спокойно возвращает насмешку о дрожащем железе её автору."
-      },
-      "reference": {
-        "id": "p1-exclamation",
-        "clip": "jotaro-dio",
-        "preferredFragment": {
-          "start": 0,
-          "end": 4.284979166666667,
-          "status": "user-selected-original-full-source"
-        }
-      },
-      "semanticGroup": "personal-challenge",
-      "sequence": {
-        "kind": "faceoff",
-        "order": 6
-      },
-      "maxDuration": 4.0,
+      "text": "Яре-яре… Похоже, ты и вправду непрост, однако.",
+      "synthesisText": "Яре-яре… Похоже, ты и вправду непрост, однако.",
+      "sourceEngine": "original-user-recording",
+      "sourceClip": "jotaro-not-simple",
+      "sourceTrim": [
+        0,
+        4.116979166666667
+      ],
       "outputFile": "faceoff-challenge-p1.mp3",
-      "replaces": {
-        "clip": "jotaro-dio",
-        "part": null
-      },
-      "status": "script-ready-not-produced"
+      "outputDirectory": "public/assets/voices/faceoff-v4",
+      "kind": "faceoff",
+      "productionMode": "extract-original-no-tts",
+      "status": "original-recording"
     },
     {
       "id": "faceoff-taunt-p2",
       "speaker": "p2",
-      "text": "Я бы остановил время ради этой позы!",
-      "emotionalDirection": {
-        "pace": "Начать торжественно, будто объявляешь чудо; в конце самодовольно упереться в нелепую причину.",
-        "pauses": [],
-        "emphasis": [
-          "ПОЗЫ"
-        ],
-        "arc": "Условная бравада о времени, а не объявление способности или фактической остановки."
-      },
-      "reference": {
-        "id": "p2-approved-icl",
-        "clip": "greeting",
-        "preferredFragment": {
-          "start": 7.7,
-          "end": 11.32,
-          "status": "approved-dio-voice-recipe-not-v3-dialogue"
-        }
-      },
-      "semanticGroup": "personal-challenge",
-      "sequence": {
-        "kind": "faceoff",
-        "order": 7
-      },
-      "maxDuration": 4.5,
+      "text": "Ха! Похоже, ты зол, Джотаро. Что случилось?",
+      "synthesisText": "Ха! Похоже, ты зол, Джотаро. Что случилось?",
+      "sourceEngine": "original-user-recording",
+      "sourceClip": "dio-angry",
+      "sourceTrim": [
+        0.24,
+        5.988979166666667
+      ],
       "outputFile": "faceoff-taunt-p2.mp3",
-      "replaces": {
-        "clip": "dio-angry",
-        "part": null
-      },
-      "status": "script-ready-not-produced",
-      "synthesisText": "Я бы остановил время ради этой ПОЗЫ!"
+      "outputDirectory": "public/assets/voices/faceoff-v4",
+      "kind": "faceoff",
+      "productionMode": "extract-original-no-tts",
+      "status": "original-recording"
     },
     {
-      "id": "faceoff-resolve-p1",
+      "id": "faceoff-mode-p1",
       "speaker": "p1",
-      "text": "Сначала останови болтовню. Потом позируй.",
-      "synthesisText": "Сначала останови БОЛТОВНЮ. Потом позируй.",
-      "emotionalDirection": {
-        "pace": "Первую фразу — как короткий приказ, вторую ещё суше; без улыбки до конца записи.",
-        "pauses": [
-          {
-            "after": "болтовню",
-            "milliseconds": 120
-          }
-        ],
-        "emphasis": [
-          "БОЛТОВНЮ"
-        ],
-        "arc": "Сбивает сверхъестественный пафос бытовым раздражением."
-      },
-      "reference": {
-        "id": "p1-exclamation",
-        "clip": "jotaro-dio",
-        "preferredFragment": {
-          "start": 0,
-          "end": 4.284979166666667,
-          "status": "user-selected-original-full-source"
-        }
-      },
-      "semanticGroup": "personal-challenge",
-      "sequence": {
-        "kind": "faceoff",
-        "order": 8
-      },
-      "maxDuration": 3.5,
-      "outputFile": "faceoff-resolve-p1.mp3",
-      "replaces": {
-        "clip": "jotaro-not-simple",
-        "part": null
-      },
-      "status": "script-ready-not-produced"
+      "text": "Ублюдок! Дио!",
+      "synthesisText": "Ублюдок! Дио!",
+      "sourceEngine": "original-user-recording",
+      "sourceClip": "jotaro-dio",
+      "sourceTrim": [
+        0.36,
+        4.284979166666667
+      ],
+      "outputFile": "faceoff-mode-p1.mp3",
+      "outputDirectory": "public/assets/voices/faceoff-v4",
+      "kind": "faceoff",
+      "productionMode": "extract-original-no-tts",
+      "status": "original-recording"
     },
     {
       "id": "faceoff-fight-p2",
       "speaker": "p2",
-      "text": "Подходи, железный нахал! Муда!",
-      "emotionalDirection": {
-        "pace": "Резко пригласи к бою, затем один отчётливый выкрик «Муда»; не добавлять повторы или новые слова.",
-        "pauses": [
-          {
-            "after": "нахал",
-            "milliseconds": 120
-          }
-        ],
-        "emphasis": [
-          "НАХАЛ"
-        ],
-        "arc": "Величественный монолог наконец превращается в личную драку."
-      },
-      "reference": {
-        "id": "p2-approved-icl",
-        "clip": "greeting",
-        "preferredFragment": {
-          "start": 7.7,
-          "end": 11.32,
-          "status": "approved-dio-voice-recipe-not-v3-dialogue"
-        }
-      },
-      "semanticGroup": "ready",
-      "sequence": {
-        "kind": "faceoff",
-        "order": 9
-      },
-      "maxDuration": 3.4,
+      "text": "Ха! Ну вперёд, герой!",
+      "synthesisText": "Ха! Ну вперёд, герой!",
+      "sourceEngine": "original-user-recording",
+      "sourceClip": "dio-hero",
+      "sourceTrim": [
+        0,
+        3.6849791666666665
+      ],
       "outputFile": "faceoff-fight-p2.mp3",
-      "replaces": {
-        "clip": "dio-hero",
-        "part": null
-      },
-      "status": "script-ready-not-produced",
-      "synthesisText": "Подходи, железный НАХАЛ! Муда!"
+      "outputDirectory": "public/assets/voices/faceoff-v4",
+      "kind": "faceoff",
+      "productionMode": "extract-original-no-tts",
+      "status": "original-recording"
     },
     {
       "id": "round-warranty-setup-p1",
@@ -905,7 +669,7 @@
       },
       "maxDuration": 4.0,
       "outputFile": "round-warranty-setup-p1.mp3",
-      "status": "script-ready-not-produced"
+      "status": "retained-v3-recording"
     },
     {
       "id": "round-warranty-setup-p2",
@@ -937,7 +701,7 @@
       },
       "maxDuration": 4.0,
       "outputFile": "round-warranty-setup-p2.mp3",
-      "status": "script-ready-not-produced",
+      "status": "retained-v3-recording",
       "synthesisText": "Ты всё ещё идёшь ко МНЕ?!"
     },
     {
@@ -971,7 +735,7 @@
       },
       "maxDuration": 3.5,
       "outputFile": "round-warranty-reply-p1.mp3",
-      "status": "script-ready-not-produced"
+      "status": "retained-v3-recording"
     },
     {
       "id": "round-warranty-reply-p2",
@@ -1003,7 +767,7 @@
       },
       "maxDuration": 3.5,
       "outputFile": "round-warranty-reply-p2.mp3",
-      "status": "script-ready-not-produced",
+      "status": "retained-v3-recording",
       "synthesisText": "Твою броню издалека не ПОМНЁШЬ!"
     },
     {
@@ -1037,7 +801,7 @@
       },
       "maxDuration": 3.4,
       "outputFile": "round-quiet-setup-p1.mp3",
-      "status": "script-ready-not-produced"
+      "status": "retained-v3-recording"
     },
     {
       "id": "round-quiet-setup-p2",
@@ -1069,7 +833,7 @@
       },
       "maxDuration": 3.4,
       "outputFile": "round-quiet-setup-p2.mp3",
-      "status": "script-ready-not-produced",
+      "status": "retained-v3-recording",
       "synthesisText": "Слышишь ЗЛОВЕЩИЙ гул?!"
     },
     {
@@ -1108,7 +872,7 @@
       },
       "maxDuration": 4.0,
       "outputFile": "round-quiet-reply-p1.mp3",
-      "status": "script-ready-not-produced"
+      "status": "retained-v3-recording"
     },
     {
       "id": "round-quiet-reply-p2",
@@ -1145,7 +909,7 @@
       },
       "maxDuration": 4.0,
       "outputFile": "round-quiet-reply-p2.mp3",
-      "status": "script-ready-not-produced",
+      "status": "retained-v3-recording",
       "synthesisText": "Это ТВОИ колени! Я бы проверил."
     },
     {
@@ -1179,7 +943,7 @@
       },
       "maxDuration": 3.5,
       "outputFile": "round-manual-setup-p1.mp3",
-      "status": "script-ready-not-produced"
+      "status": "retained-v3-recording"
     },
     {
       "id": "round-manual-setup-p2",
@@ -1211,7 +975,7 @@
       },
       "maxDuration": 3.5,
       "outputFile": "round-manual-setup-p2.mp3",
-      "status": "script-ready-not-produced",
+      "status": "retained-v3-recording",
       "synthesisText": "У меня есть ИДЕАЛЬНЫЙ план!"
     },
     {
@@ -1250,7 +1014,7 @@
       },
       "maxDuration": 3.4,
       "outputFile": "round-manual-reply-p1.mp3",
-      "status": "script-ready-not-produced"
+      "status": "retained-v3-recording"
     },
     {
       "id": "round-manual-reply-p2",
@@ -1287,7 +1051,7 @@
       },
       "maxDuration": 3.4,
       "outputFile": "round-manual-reply-p2.mp3",
-      "status": "script-ready-not-produced",
+      "status": "retained-v3-recording",
       "synthesisText": "Главное — НЕ забудь удивиться!"
     },
     {
@@ -1326,7 +1090,7 @@
       },
       "maxDuration": 3.5,
       "outputFile": "round-spares-setup-p1.mp3",
-      "status": "script-ready-not-produced"
+      "status": "retained-v3-recording"
     },
     {
       "id": "round-spares-setup-p2",
@@ -1363,7 +1127,7 @@
       },
       "maxDuration": 3.5,
       "outputFile": "round-spares-setup-p2.mp3",
-      "status": "script-ready-not-produced",
+      "status": "retained-v3-recording",
       "synthesisText": "Что громче: ора или МУДА?!"
     },
     {
@@ -1397,7 +1161,7 @@
       },
       "maxDuration": 3.4,
       "outputFile": "round-spares-reply-p1.mp3",
-      "status": "script-ready-not-produced"
+      "status": "retained-v3-recording"
     },
     {
       "id": "round-spares-reply-p2",
@@ -1429,7 +1193,7 @@
       },
       "maxDuration": 3.4,
       "outputFile": "round-spares-reply-p2.mp3",
-      "status": "script-ready-not-produced",
+      "status": "retained-v3-recording",
       "synthesisText": "ПРОВЕРИМ на твоём корпусе!"
     },
     {
@@ -1463,7 +1227,7 @@
       },
       "maxDuration": 3.4,
       "outputFile": "round-rust-setup-p1.mp3",
-      "status": "script-ready-not-produced"
+      "status": "retained-v3-recording"
     },
     {
       "id": "round-rust-setup-p2",
@@ -1495,7 +1259,7 @@
       },
       "maxDuration": 3.4,
       "outputFile": "round-rust-setup-p2.mp3",
-      "status": "script-ready-not-produced",
+      "status": "retained-v3-recording",
       "synthesisText": "Зацени МОЮ устрашающую позу!"
     },
     {
@@ -1534,7 +1298,7 @@
       },
       "maxDuration": 3.5,
       "outputFile": "round-rust-reply-p1.mp3",
-      "status": "script-ready-not-produced"
+      "status": "retained-v3-recording"
     },
     {
       "id": "round-rust-reply-p2",
@@ -1571,7 +1335,7 @@
       },
       "maxDuration": 3.5,
       "outputFile": "round-rust-reply-p2.mp3",
-      "status": "script-ready-not-produced",
+      "status": "retained-v3-recording",
       "synthesisText": "ЗАМРИ! Хочу запомнить, куда бить."
     },
     {
@@ -1605,7 +1369,7 @@
       },
       "maxDuration": 3.4,
       "outputFile": "round-floor-setup-p1.mp3",
-      "status": "script-ready-not-produced"
+      "status": "retained-v3-recording"
     },
     {
       "id": "round-floor-setup-p2",
@@ -1637,7 +1401,7 @@
       },
       "maxDuration": 3.4,
       "outputFile": "round-floor-setup-p2.mp3",
-      "status": "script-ready-not-produced",
+      "status": "retained-v3-recording",
       "synthesisText": "МОЕМУ величию здесь тесно!"
     },
     {
@@ -1676,7 +1440,7 @@
       },
       "maxDuration": 3.4,
       "outputFile": "round-floor-reply-p1.mp3",
-      "status": "script-ready-not-produced"
+      "status": "retained-v3-recording"
     },
     {
       "id": "round-floor-reply-p2",
@@ -1713,7 +1477,7 @@
       },
       "maxDuration": 3.4,
       "outputFile": "round-floor-reply-p2.mp3",
-      "status": "script-ready-not-produced",
+      "status": "retained-v3-recording",
       "synthesisText": "ПРИГНИСЬ! Тут низкий потолок."
     },
     {
@@ -1747,7 +1511,7 @@
       },
       "maxDuration": 3.5,
       "outputFile": "round-calculate-setup-p1.mp3",
-      "status": "script-ready-not-produced"
+      "status": "retained-v3-recording"
     },
     {
       "id": "round-calculate-setup-p2",
@@ -1779,7 +1543,7 @@
       },
       "maxDuration": 3.5,
       "outputFile": "round-calculate-setup-p2.mp3",
-      "status": "script-ready-not-produced",
+      "status": "retained-v3-recording",
       "synthesisText": "Я бы остановил САМО время!"
     },
     {
@@ -1813,7 +1577,7 @@
       },
       "maxDuration": 3.4,
       "outputFile": "round-calculate-reply-p1.mp3",
-      "status": "script-ready-not-produced"
+      "status": "retained-v3-recording"
     },
     {
       "id": "round-calculate-reply-p2",
@@ -1845,7 +1609,7 @@
       },
       "maxDuration": 3.4,
       "outputFile": "round-calculate-reply-p2.mp3",
-      "status": "script-ready-not-produced",
+      "status": "retained-v3-recording",
       "synthesisText": "Ради ПАУЗЫ между оправданиями?!"
     },
     {
@@ -1879,7 +1643,7 @@
       },
       "maxDuration": 3.4,
       "outputFile": "round-music-setup-p1.mp3",
-      "status": "script-ready-not-produced"
+      "status": "retained-v3-recording"
     },
     {
       "id": "round-music-setup-p2",
@@ -1911,7 +1675,7 @@
       },
       "maxDuration": 3.4,
       "outputFile": "round-music-setup-p2.mp3",
-      "status": "script-ready-not-produced",
+      "status": "retained-v3-recording",
       "synthesisText": "Это МОЙ звёздный выход!"
     },
     {
@@ -1945,7 +1709,7 @@
       },
       "maxDuration": 3.4,
       "outputFile": "round-music-reply-p1.mp3",
-      "status": "script-ready-not-produced"
+      "status": "retained-v3-recording"
     },
     {
       "id": "round-music-reply-p2",
@@ -1977,7 +1741,7 @@
       },
       "maxDuration": 3.4,
       "outputFile": "round-music-reply-p2.mp3",
-      "status": "script-ready-not-produced",
+      "status": "retained-v3-recording",
       "synthesisText": "Постарайся обойтись без ВЫЛЕТА."
     },
     {
@@ -2011,7 +1775,7 @@
       },
       "maxDuration": 3.4,
       "outputFile": "round-polite-setup-p1.mp3",
-      "status": "script-ready-not-produced"
+      "status": "retained-v3-recording"
     },
     {
       "id": "round-polite-setup-p2",
@@ -2043,7 +1807,7 @@
       },
       "maxDuration": 3.4,
       "outputFile": "round-polite-setup-p2.mp3",
-      "status": "script-ready-not-produced",
+      "status": "retained-v3-recording",
       "synthesisText": "Склонись перед МОИМ величием!"
     },
     {
@@ -2077,7 +1841,7 @@
       },
       "maxDuration": 3.5,
       "outputFile": "round-polite-reply-p1.mp3",
-      "status": "script-ready-not-produced"
+      "status": "retained-v3-recording"
     },
     {
       "id": "round-polite-reply-p2",
@@ -2109,7 +1873,7 @@
       },
       "maxDuration": 3.5,
       "outputFile": "round-polite-reply-p2.mp3",
-      "status": "script-ready-not-produced",
+      "status": "retained-v3-recording",
       "synthesisText": "Нагнусь, когда буду ТЕБЯ собирать!"
     },
     {
@@ -2143,7 +1907,7 @@
       },
       "maxDuration": 3.5,
       "outputFile": "round-fear-setup-p1.mp3",
-      "status": "script-ready-not-produced"
+      "status": "retained-v3-recording"
     },
     {
       "id": "round-fear-setup-p2",
@@ -2175,7 +1939,7 @@
       },
       "maxDuration": 3.5,
       "outputFile": "round-fear-setup-p2.mp3",
-      "status": "script-ready-not-produced",
+      "status": "retained-v3-recording",
       "synthesisText": "Ну что, МУРАШКИ по металлу?!"
     },
     {
@@ -2214,7 +1978,7 @@
       },
       "maxDuration": 3.5,
       "outputFile": "round-fear-reply-p1.mp3",
-      "status": "script-ready-not-produced"
+      "status": "retained-v3-recording"
     },
     {
       "id": "round-fear-reply-p2",
@@ -2251,7 +2015,7 @@
       },
       "maxDuration": 3.5,
       "outputFile": "round-fear-reply-p2.mp3",
-      "status": "script-ready-not-produced",
+      "status": "retained-v3-recording",
       "synthesisText": "НЕТ! Прикидываю, где оставить вмятину."
     },
     {
@@ -2285,7 +2049,7 @@
       },
       "maxDuration": 3.4,
       "outputFile": "round-champion-setup-p1.mp3",
-      "status": "script-ready-not-produced"
+      "status": "retained-v3-recording"
     },
     {
       "id": "round-champion-setup-p2",
@@ -2317,7 +2081,7 @@
       },
       "maxDuration": 3.4,
       "outputFile": "round-champion-setup-p2.mp3",
-      "status": "script-ready-not-produced",
+      "status": "retained-v3-recording",
       "synthesisText": "Запомни мой НЕПОБЕДИМЫЙ силуэт!"
     },
     {
@@ -2351,7 +2115,7 @@
       },
       "maxDuration": 3.5,
       "outputFile": "round-champion-reply-p1.mp3",
-      "status": "script-ready-not-produced"
+      "status": "retained-v3-recording"
     },
     {
       "id": "round-champion-reply-p2",
@@ -2383,7 +2147,7 @@
       },
       "maxDuration": 3.5,
       "outputFile": "round-champion-reply-p2.mp3",
-      "status": "script-ready-not-produced",
+      "status": "retained-v3-recording",
       "synthesisText": "После боя придётся УЧИТЬ новый."
     },
     {
@@ -2417,7 +2181,7 @@
       },
       "maxDuration": 3.5,
       "outputFile": "round-bolts-setup-p1.mp3",
-      "status": "script-ready-not-produced"
+      "status": "retained-v3-recording"
     },
     {
       "id": "round-bolts-setup-p2",
@@ -2449,7 +2213,7 @@
       },
       "maxDuration": 3.5,
       "outputFile": "round-bolts-setup-p2.mp3",
-      "status": "script-ready-not-produced",
+      "status": "retained-v3-recording",
       "synthesisText": "ВЕСЬ подвал запомнит этот удар!"
     },
     {
@@ -2488,7 +2252,7 @@
       },
       "maxDuration": 3.5,
       "outputFile": "round-bolts-reply-p1.mp3",
-      "status": "script-ready-not-produced"
+      "status": "retained-v3-recording"
     },
     {
       "id": "round-bolts-reply-p2",
@@ -2525,41 +2289,51 @@
       },
       "maxDuration": 3.5,
       "outputFile": "round-bolts-reply-p2.mp3",
-      "status": "script-ready-not-produced",
+      "status": "retained-v3-recording",
       "synthesisText": "Главное — сам не забудь ВСТАТЬ."
     }
   ],
   "production": {
-    "status": "not-produced",
-    "scriptRevision": "jojo-v3",
-    "totalRecordings": 57,
-    "producedRecordings": 0,
-    "totalDecodedSeconds": null,
-    "automaticSpeechScope": "9 faceoff turns and12 setup/reply pairs in both fixed male voices",
-    "oldSpokenAssetsReusable": false,
+    "status": "complete-with-original-asr-variations-documented",
+    "scriptRevision": "original-faceoff-v4",
+    "totalRecordings": 55,
+    "producedRecordings": 55,
+    "totalDecodedSeconds": 159.003,
+    "automaticSpeechScope": "Seven original faceoff turns and 12 setup/reply pairs in both fixed male voices",
+    "oldSpokenAssetsReusable": "48 unchanged v3 round takes only",
     "effects": "unchanged original assets",
     "p1": {
       "character": "Джотаро",
       "gender": "male",
-      "method": "Original B voice recipe only; complete jotaro-dio.mp3 full ICL",
+      "method": "Original cinematic recordings; selected CosyVoice3 A zero-original recipe for retained v3 round takes.",
       "listeningApprovedIds": []
     },
     "p2": {
       "character": "Дио",
       "gender": "male",
-      "method": "Previously approved Dio full-ICL recipe only; single-actor greeting7.70–11.32",
+      "method": "Original cinematic recordings; selected Qwen full-ICL recipe for retained v3 round takes.",
       "listeningApprovedIds": []
     },
     "asr": {
-      "exactWordMatches": 0,
-      "documentedNameSpellingExceptions": []
+      "exactWordMatches": 49,
+      "documentedOriginalExceptions": [
+        "faceoff-greeting-open",
+        "faceoff-greeting-answer",
+        "faceoff-challenge-p1",
+        "faceoff-taunt-p2",
+        "faceoff-mode-p1",
+        "faceoff-fight-p2"
+      ],
+      "note": "Do not relabel original proper-name/interjection ASR errors as exact matches; source user labels and measured whole turns are preserved."
     },
-    "reports": [],
-    "requiredBeforeRelease": [
-      "Generate all57 new spoken assets; no copied v2 speech",
-      "Check exact spoken words and male speaker consistency",
-      "Measure actual durations and rebuild the aggregate catalog atomically",
-      "Verify full scene playback; no stale speech or device female voice fallback"
-    ]
+    "reports": [
+      "spoken-current-analysis.json",
+      "faceoff-original-v4-analysis.json",
+      "faceoff-original-v4-asr.json"
+    ],
+    "requiredBeforeRelease": []
+  },
+  "integration": {
+    "automaticSpeechScope": "Seven original faceoff turns and 12 setup/reply pairs in both fixed male voices"
   }
 }

@@ -21,8 +21,8 @@ const fixture=()=>Object.fromEntries(script.utterances.map((utterance,i)=>[utter
 const players=[{id:'one',name:'Настоящее имя'},{id:'two',name:'Второе имя'}];
 const gap=VOICE_START_GRACE+VOICE_BREATHING_ROOM;
 
-test('57 planned IDs activate atomically; missing or invalid catalogues retain only silent captions',()=>{
-  const catalog=fixture();assert.equal(SPOKEN_CLIP_IDS.length,57);
+test('55 planned IDs activate atomically; missing or invalid catalogues retain only silent captions',()=>{
+  const catalog=fixture();assert.equal(SPOKEN_CLIP_IDS.length,55);
   assert.deepEqual([...SPOKEN_CLIP_IDS].sort(),script.utterances.map(line=>line.id).sort());
   assert.deepEqual(SPOKEN_FACEOFF_TURNS.map(turn=>turn.id),script.faceoffOrder);
   assert.ok(hasCompleteSpokenCatalog(catalog));
@@ -39,12 +39,12 @@ test('57 planned IDs activate atomically; missing or invalid catalogues retain o
   }
 });
 
-test('nine complete scene turns replace every old conversation, retaining silent titles, acting and measured timing',()=>{
-  const catalog=fixture();catalog['faceoff-mode-p1'].text='Точный утверждённый текст записи!';catalog['faceoff-taunt-p2'].duration=19.127;
+test('seven complete original turns begin at frame zero with acting and measured timing',()=>{
+  const catalog=fixture();catalog['faceoff-mode-p1'].text='Точный утверждённый текст записи!';catalog['faceoff-taunt-p2'].duration=34.127;
   const beats=buildFaceoff(players,'cinema',{catalog}),spoken=beats.filter(beat=>beat.clip),duration=faceoffDuration(beats);
-  assert.deepEqual(spoken.map(beat=>beat.clip),script.faceoffOrder);assert.equal(spoken.length,9);
+  assert.deepEqual(spoken.map(beat=>beat.clip),script.faceoffOrder);assert.equal(spoken.length,7);
   assert.ok(duration>48);assert.equal(duration,getFaceoffDuration(catalog));
-  assert.ok(beats.slice(0,3).every(beat=>!beat.clip&&!beat.ttsText));assert.ok(!beats.at(-1).clip&&!beats.at(-1).ttsText);
+  assert.equal(beats[0].clip,'faceoff-greeting-open');assert.equal(beats[0].at,0);assert.ok(!beats.at(-1).clip&&!beats.at(-1).ttsText);
   for(const [i,beat]of beats.entries()) {
     assert.ok(Math.abs(beat.at+beat.duration-(beats[i+1]?.at??duration))<1e-8);
     if(!beat.clip)continue;
@@ -76,7 +76,7 @@ test('all 48 round takes preserve setup then reply while alternating fixed playe
 
 test('server duration and round countdown use the selected adaptive scenes, including pause and late dialogue',()=>{
   const catalog=fixture(),room=new CombatRoom({id:'ADAPTIVE'});room.addPlayer('a');room.addPlayer('b');
-  catalog['faceoff-taunt-p2'].duration=25;
+  catalog['faceoff-taunt-p2'].duration=40;
   const story=new StorySession(room,{ruleCount:1,buildFaceoff:(p,s)=>buildFaceoff(p,s,{catalog}),buildRoundIntro:(p,s,r,m)=>buildRoundIntro(p,s,r,m,{catalog})});
   story.ready('p1');story.ready('p2');story.advance({actor:'referee',sequenceId:story.sequenceId,ruleIndex:0},true);
   const total=faceoffDuration(story.beats);assert.equal(story.snapshot().duration,total);
@@ -90,9 +90,9 @@ test('server duration and round countdown use the selected adaptive scenes, incl
   assert.equal(snapshot.players.find(p=>p.id===intro.beats[1].speaker).variant,'point');
 });
 
-test('preload requests only the selected current and next sequence, never the 57-file pack',async t=>{
+test('preload requests only the selected current and next sequence, never the entire 55-file pack',async t=>{
   const catalog=fixture(),opening=storyVoicePreload({players,room:'x',story:{stage:'rules'}},{catalog});
-  assert.equal(opening.filter(beat=>beat.clip).length,11);
+  assert.equal(opening.filter(beat=>beat.clip).length,9);
   const current=storyVoicePreload({players,room:'x',round:7,story:{stage:'roundIntro',roundIntro:{round:7,matchSerial:2}}},{catalog});
   assert.equal(current.length,4);assert.deepEqual(current,[...buildRoundIntro(players,'x',7,2,{catalog}).beats,...buildRoundIntro(players,'x',8,2,{catalog}).beats]);
   const rematch=storyVoicePreload({players,room:'x',round:9,phase:'matchOver',story:{stage:'complete',roundIntro:{round:9,matchSerial:2}}},{catalog});
@@ -115,7 +115,7 @@ test('actual voice scheduler gives every new line its full first syllable and en
     clock+=beat.clipDuration;voice.update({sequenceId:'full',elapsed:clock,beats});
   }
   clock=faceoffDuration(beats);voice.update({sequenceId:'full',elapsed:clock,beats});
-  assert.equal(records.length,9);
+  assert.equal(records.length,7);
   for(const[i,record]of records.entries()){
     const beat=beats.filter(beat=>beat.clip)[i];assert.equal(record.offset,0);assert.equal(record.duration,beat.clipDuration);
     assert.ok(record.stop+1e-8>=record.start+record.duration,'whole delayed recording completes before the next one');

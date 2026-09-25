@@ -19,12 +19,12 @@ test('bolt trades 25 energy for one 28 damage short electrical stun', () => {
   const { room, a, b } = fight(); input(room, a, { action: 'special' }); room.step(1 / 60);
   assert.equal(a.energy, 75); assert.equal(a.cooldowns.special, 2.6);
   for (let i = 0; i < 60 && b.hp === MAX_HP; i++) room.step(1 / 60);
-  assert.equal(b.hp, MAX_HP - 28); assert.equal(b.variant, 'electrified'); assert.equal(b.actionDuration, .38);
+  assert.equal(b.hp, MAX_HP - 28); assert.equal(b.variant, 'electrified'); assert.equal(b.actionDuration, .24);
   assert.equal(b.y, 0); assert.equal(b.vy, 0);
   const hp = b.hp; step(room, 120); assert.equal(b.hp, hp); assert.equal(room.projectiles.length, 0);
 });
 
-test('EMP mine stays planted, detonates once, lifts and stuns for .55s', () => {
+test('EMP mine stays planted, detonates once, lifts and releases its stun after .30s', () => {
   const { room, a, b } = fight(); input(room, a, { action: 'special', crouch: true }); room.step(1 / 60);
   assert.equal(a.energy, 65); assert.equal(a.cooldowns.special, 4);
   let x, peak = 0, impacts = 0; const seen = new Set();
@@ -32,7 +32,7 @@ test('EMP mine stays planted, detonates once, lifts and stuns for .55s', () => {
     for (const p of room.projectiles) { x ??= p.x; assert.equal(p.x, x); }
     peak = Math.max(peak, b.y);
     for (const event of room.events) if (event.type === 'hit' && !seen.has(event.id)) {
-      seen.add(event.id); impacts++; assert.equal(event.damage, 42); assert.equal(b.actionDuration, .55);
+      seen.add(event.id); impacts++; assert.equal(event.damage, 42); assert.equal(b.actionDuration, .30);
       assert.equal(b.variant, 'empLift'); assert.ok(b.vy > 5.0);
     }
   });

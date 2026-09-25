@@ -24,10 +24,13 @@ test('the complete selected scene frames full heroes or the labelled mechanism a
   }
 });
 
-test('entrance, two portraits, two mechanism inserts and final two-shot have distinct compositions',()=>{
+test('the voiced opening uses both portraits, mechanism inserts and a final two-shot',()=>{
   const beats=buildFaceoff(playersAt(0),'review'),clawBeat=beats.find(beat=>beat.shot==='claw');
-  const intro=frameAt(0),a=frameAt(3.5),b=frameAt(5.7),core=frameAt(8.5),claw=frameAt(clawBeat.at+1.7),finish=frameAt(FACE_OFF_DURATION);
-  assert.ok(intro.z>a.z+3);assert.ok(intro.y>a.y+.8);
+  const portraitA=beats.find(beat=>beat.shot==='portrait'&&beat.speaker==='a');
+  const portraitB=beats.find(beat=>beat.shot==='portrait'&&beat.speaker==='b');
+  const coreBeat=beats.find(beat=>beat.shot==='core');
+  const a=frameAt(portraitA.at+1.4),b=frameAt(portraitB.at+1.4),core=frameAt(coreBeat.at+1.5),claw=frameAt(clawBeat.at+1.7),finish=frameAt(FACE_OFF_DURATION);
+  assert.equal(beats[0].shot,'portrait');assert.equal(beats[0].clip,'faceoff-greeting-open');
   assert.ok(a.tx<0&&b.tx>0,'both players own a clear hero shot');
   assert.ok(core.z<a.z-1.3&&claw.z>core.z+.6,'detail inserts change scale, not just labels');
   assert.equal(core.ty,.86,'core insert targets the lower reactor housing rather than the face');

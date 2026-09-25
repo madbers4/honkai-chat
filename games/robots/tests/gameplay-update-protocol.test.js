@@ -5,7 +5,7 @@ import WebSocket from 'ws';
 import { startServer } from '../server/index.js';
 import { MAX_HP } from '../shared/constants.js';
 
-test('two sockets see a high crossover, a whiff chain and one tap reactor surviving a jab', { timeout: 10000 }, async t => {
+test('two sockets see a high crossover, a whiff chain and a tapped reactor interrupted by a jab', { timeout: 10000 }, async t => {
   const app = await startServer({ port: 0, host: '127.0.0.1', autoTick: false });
   t.after(() => app.close());
   const clients = [];
@@ -83,21 +83,21 @@ test('two sockets see a high crossover, a whiff chain and one tap reactor surviv
   await send(first, a, 'ultimate'); advance(.10);
   await send(second, b, 'light'); advance(.20);
   assert.ok(a.hp < MAX_HP, 'the charging robot still takes real damage');
-  assert.equal(a.action, 'ultimate', 'ordinary jab does not cancel the committed reactor');
+  assert.equal(a.action, 'hit', 'ordinary jab interrupts the tapped reactor');
   for (const ws of clients) {
     await deliver(ws);
     const player = ws.packets.findLast(packet => packet.type === 'state').state.players[0];
     assert.ok(player.hp < MAX_HP);
-    assert.equal(player.action, 'ultimate'); assert.equal(player.ultimateArmor, true);
-    assert.ok(player.actionTime > .1 && player.actionTime < .4, 'the serialized charge clock was not rewound by the jab');
+    assert.equal(player.action, 'hit'); assert.equal(player.ultimateArmor, false);
+    assert.ok(player.actionTime < .18, 'both clients receive the actual short hit reaction');
   }
-  advance(1.7);
-  assert.equal(b.hp, 0);
+  advance(2.7);
+  assert.equal(b.hp, MAX_HP);
   for (const ws of clients) {
     await deliver(ws);
     const events = [...ws.events.values()].filter(e => e.id > beforeUltimate && e.player === 'p1');
     assert.equal(events.filter(e => e.type === 'ultimate').length, 1);
-    assert.deepEqual(events.filter(e => e.type === 'ultimatePulse').map(e => e.pulse), [0, 1, 2]);
-    assert.equal(ws.packets.findLast(packet => packet.type === 'state').state.players[1].hp, 0);
+    assert.deepEqual(events.filter(e => e.type === 'ultimatePulse').map(e => e.pulse), []);
+    assert.equal(ws.packets.findLast(packet => packet.type === 'state').state.players[1].hp, MAX_HP);
   }
 });

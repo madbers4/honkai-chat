@@ -1,0 +1,67 @@
+{
+  "model": "openai/whisper-large-v3-turbo",
+  "revision": "41f01f3fe87f28c78e2fbf8b568835947dd65ed9",
+  "targetTextPrompt": false,
+  "forcedLanguage": false,
+  "numBeams": 5,
+  "allRecordingsListeningApproved": false,
+  "clips": [
+    {
+      "id": "faceoff-greeting-open",
+      "text": "Вот мы и встретились, Джотаро!",
+      "asrText": "Вот мы и встретились, Тётру!",
+      "exactWordMatch": false,
+      "sha256": "b6688c8dac4ad3c81dcecdf8d6c3e5e8598560f005c1e574579e986c124cf680"
+    },
+    {
+      "id": "faceoff-greeting-answer",
+      "text": "Дио!",
+      "asrText": "Deal!",
+      "exactWordMatch": false,
+      "sha256": "6c81875d6431068931767f9185d76edb726bb2beff6c5399f9635d067eb719c2"
+    },
+    {
+      "id": "faceoff-greeting-package",
+      "text": "Да, я! И что? Что ты мне сделаешь, а, Джотаро?",
+      "asrText": "Да я, и что? Что ты мне сделаешь, а, Джотаро?",
+      "exactWordMatch": true,
+      "sha256": "a4305e44724439b3b9f9852b535bd03ea46a2556943d46961bfe1a1d2d9c2b48"
+    },
+    {
+      "id": "faceoff-challenge-p1",
+      "text": "Яре-яре… Похоже, ты и вправду непрост, однако.",
+      "asrText": "Эра-эра, похоже, ты и вправду не просто, однако.",
+      "exactWordMatch": false,
+      "sha256": "f2ea3c0f7ae36f62d64c9605790d51302428b8e9cd9df9d489a0d8a6e0a59490"
+    },
+    {
+      "id": "faceoff-taunt-p2",
+      "text": "Ха! Похоже, ты зол, Джотаро. Что случилось?",
+      "asrText": "«Ха, похоже, ты знал, Джо Таро. Что случилось?»",
+      "exactWordMatch": false,
+      "sha256": "fa0d1b49114317aec29088336883d1a882e3ba1d3e8ded84027ec93760c91277"
+    },
+    {
+      "id": "faceoff-mode-p1",
+      "text": "Ублюдок! Дио!",
+      "asrText": "Ублюдок! Бил!",
+      "exactWordMatch": false,
+      "sha256": "215445efdd373a3a396be023ceea58066ddcfa7d58f9e59a82b0a54719281e3e"
+    },
+    {
+      "id": "faceoff-fight-p2",
+      "text": "Ха! Ну вперёд, герой!",
+      "asrText": "Ну вперёд, герой!",
+      "exactWordMatch": false,
+      "sha256": "46e3adb7d687b6aa84499e17070ec56aa480bf4cb824b9182987f08a801a4b79"
+    }
+  ],
+  "failed": [
+    "faceoff-greeting-open",
+    "faceoff-greeting-answer",
+    "faceoff-challenge-p1",
+    "faceoff-taunt-p2",
+    "faceoff-mode-p1",
+    "faceoff-fight-p2"
+  ]
+}

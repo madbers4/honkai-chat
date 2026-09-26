@@ -4,6 +4,20 @@ import * as THREE from 'three';
 import { createClubBoundaries } from '../src/club-boundaries.js';
 import { ARENA_EDGE } from '../shared/constants.js';
 
+test('both closures continue as solid fence rails into the foreground outside the combat lane', () => {
+  const set = createClubBoundaries();
+  try {
+    for (const side of ['left', 'right']) {
+      const item = set.group.userData.props.find(prop => prop.name === `${side}-foreground-fence`);
+      assert.ok(item.min[2] < 2.8 && item.max[2] > 40, 'no exposed end at the old gate/cage edge or wide fight framing');
+      assert.ok(side === 'left' ? item.max[0] < -ARENA_EDGE - 1.82 : item.min[0] > ARENA_EDGE + 1.82);
+      const x = side === 'left' ? item.max[0] - .20 : item.min[0] + .20;
+      const ray = new THREE.Raycaster(new THREE.Vector3(0, 2.40, 12), new THREE.Vector3(Math.sign(x), 0, 0));
+      assert.ok(ray.intersectObjects(set.group.children, false).length, 'continuous physical waist rail at the extended fence');
+    }
+  } finally { set.dispose(); }
+});
+
 test('closed end props touch the floor, clear the complete fighter silhouette and span the lane', () => {
   const set=createClubBoundaries();
   try {

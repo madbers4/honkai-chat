@@ -1,0 +1,12 @@
+<!doctype html><html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Локальная проверка WebGL</title>
+<style>html,body{margin:0;height:100%;background:#172025;color:#f0dfc1;font:13px Arial}#arena{position:fixed;inset:0}.tools{position:fixed;left:10px;top:10px;z-index:10;padding:10px;background:#142025ee;max-width:400px}button{padding:10px;margin:3px}pre{white-space:pre-wrap;font-size:11px}</style></head><body><div id="arena"></div><div class="tools"><b>QA · настоящий WebGL-контекст</b><br><button id="lose">Потерять контекст</button><button id="restore">Восстановить контекст</button><button id="prepare">Подготовить эффекты</button><pre id="status">Загрузка…</pre></div><script type="module">
+import { createArena } from '../src/arena.js';
+let arena, message=''; const status=document.querySelector('#status');
+try { arena=await createArena(document.querySelector('#arena'),{allowEffectReview:true}); message='Первый настоящий кадр отрисован.'; }
+catch(error){message=error.message;console.error(error);}
+document.querySelector('#lose').onclick=()=>{arena?.loseContextForReview();message='Вызван WEBGL_lose_context. Проверь видимое сообщение.';};
+document.querySelector('#restore').onclick=()=>{arena?.restoreContextForReview();message='Запрошено восстановление. Роботы должны вернуться.';};
+document.querySelector('#prepare').onclick=async()=>{try{await arena?.prepareCombat();message='Эффекты подготовлены.';}catch(error){message=error.message;}};
+setInterval(()=>{status.textContent=message+'\n'+JSON.stringify(arena?.getRenderStats(),null,2);},200);
+window.addEventListener('pagehide',()=>arena?.dispose(),{once:true});
+</script></body></html>

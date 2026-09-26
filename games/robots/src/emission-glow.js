@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
+import { supportsFloatTargets, checkRenderTarget } from './render-compatibility.js';
 
 /** The bloom buffer only contains declared emitters; bright paper, paint and
  * specular highlights never enter it. Depth-writing black proxies retain the
@@ -15,9 +16,9 @@ export function glowSize(width, height, dpr = 1) {
 }
 
 export function createEmissionGlow(renderer, { onFailure = console.warn } = {}) {
-  const supported = Boolean(renderer.extensions.has('EXT_color_buffer_float'));
+  let supported = supportsFloatTargets(renderer);
   let quality = 'high', reduced = false, enabled = true, disposed = false, lost = false;
-  let failed = !supported, resources = null, width = 1, height = 1, dpr = 1;
+  let failed = !supported, resources = null, targetsValidated = false, width = 1, height = 1, dpr = 1;
   const originals = [], proxies = new Map();
   const black = new THREE.MeshBasicMaterial({ color: 0, side: THREE.DoubleSide });
   const background = new THREE.Color(0);
@@ -54,9 +55,11 @@ export function createEmissionGlow(renderer, { onFailure = console.warn } = {}) 
     if (!resources) return;
     for (const target of Object.values(resources)) target.dispose();
     resources = null;
+    targetsValidated = false;
   }
   function allocate() {
-    if (resources || failed || disposed || lost || quality === 'low' || !enabled) return;
+    if (failed || disposed || lost || quality === 'low' || !enabled) return;
+    if (!resources) {
     const size = glowSize(width, height, dpr);
     const target = depthBuffer => new THREE.WebGLRenderTarget(size.width, size.height, {
       type: THREE.HalfFloatType, format: THREE.RGBAFormat, depthBuffer,
@@ -64,6 +67,13 @@ export function createEmissionGlow(renderer, { onFailure = console.warn } = {}) 
     });
     resources = { emission: target(true), horizontal: target(false), vertical: target(false) };
     for (const [name, value] of Object.entries(resources)) value.texture.name = `emission-glow-${name}`;
+    }
+    if (!targetsValidated) {
+      const previous = renderer.getRenderTarget();
+      try { for (const target of Object.values(resources)) { renderer.setRenderTarget(target); checkRenderTarget(renderer); } }
+      finally { renderer.setRenderTarget(previous); }
+      targetsValidated = true;
+    }
   }
   function proxyFor(material) {
     if (material.userData.glowSource !== 'emissive') return material;
@@ -98,7 +108,7 @@ export function createEmissionGlow(renderer, { onFailure = console.warn } = {}) 
   }
   function drawPass(material, target) { quad.material = material; renderer.setRenderTarget(target); quad.render(renderer); }
   function onLost() { lost = true; releaseTargets(); }
-  function onRestored() { lost = false; failed = !supported; }
+  function onRestored() { lost = false; supported = supportsFloatTargets(renderer, true); failed = !supported; }
   renderer.domElement.addEventListener('webglcontextlost', onLost);
   renderer.domElement.addEventListener('webglcontextrestored', onRestored);
 
@@ -136,6 +146,7 @@ export function createEmissionGlow(renderer, { onFailure = console.warn } = {}) 
     },
     resize(w, h, ratio = 1) {
       width = w; height = h; dpr = ratio;
+      targetsValidated = false;
       if (resources) { const size = glowSize(width, height, dpr); for (const target of Object.values(resources)) target.setSize(size.width, size.height); }
     },
     setQuality(value) { quality = value === 'low' ? 'low' : 'high'; if (quality === 'low') releaseTargets(); },

@@ -1,0 +1,17 @@
+<!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Проверка оград и ударов</title>
+<style>body{margin:0;background:#101719;color:#eee;font:14px system-ui}#stage{position:fixed;inset:0}nav{position:fixed;top:10px;left:10px;right:10px;display:flex;gap:6px;flex-wrap:wrap}button{padding:12px;background:#172b31e8;color:#efcd8b;border:1px solid #897a61;cursor:pointer}#result{position:fixed;bottom:14px;left:14px;background:#102025dd;padding:10px}</style>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script>
+<div id="stage"></div><nav><button data-frame="center">Центр</button><button data-frame="left">Левая ограда</button><button data-frame="right">Правая ограда</button><button data-frame="wide">Вся арена</button><button data-frame="air">Вся арена в прыжке</button><button id="punch">Звуки попаданий</button></nav><p id="result">Загружаем арену…</p>
+<script type="module">
+import {createArena} from '/src/arena.js';import {CombatRoom} from '/server/combat.js';import {ARENA_EDGE} from '/shared/constants.js';import {GameAudio} from '/src/audio.js';
+const arena=await createArena(document.querySelector('#stage'));const game=new CombatRoom('REVIEW');game.addPlayer('Первый');game.addPlayer('Второй');game.phase='fight';
+const result=document.querySelector('#result');let selection='center';
+function frame(){const state=game.snapshot();state.phase='fight';state.events=[];
+ const positions={center:[-2.8,2.8],left:[-ARENA_EDGE,-ARENA_EDGE+3],right:[ARENA_EDGE-3,ARENA_EDGE],wide:[-ARENA_EDGE,ARENA_EDGE],air:[-ARENA_EDGE,ARENA_EDGE]}[selection];
+ state.players.forEach((p,i)=>Object.assign(p,{x:positions[i],y:selection==='air'?4.4:0,vx:0,vy:0,action:selection==='air'?'jump':'idle',facing:i?-1:1}));arena.update(state,'p1');}
+document.querySelectorAll('[data-frame]').forEach(button=>button.onclick=()=>{selection=button.dataset.frame;frame();result.textContent=button.textContent;});
+const audio=new GameAudio();document.querySelector('#punch').onclick=async()=>{audio.muted=false;audio.unlock();await audio.ctx.resume();audio.stop();
+ for(const [i,variant] of ['jab','cross','heavyDrive','heavyHook','heavyPress'].entries())setTimeout(()=>audio.play('hit',{id:i+1,variant}),i*550);
+ setTimeout(()=>audio.play('block',{id:9}),2900);result.textContent='Контакт: лёгкий → перекрёстный → три тяжёлых → блок. ORA/MUDA — отдельный канал.';};
+frame();result.textContent='Выберите край арены или прослушайте контакты.';
+</script></html>

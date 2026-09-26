@@ -5,7 +5,7 @@ import { ARENA_EDGE } from '../shared/constants.js';
 
 // A chassis may stand at ±ARENA_EDGE; its toes extend another 1.82 m.
 // Keep the complete, solid set outside that envelope, including bolt heads.
-export const CLUB_BOUNDARIES = Object.freeze({ innerX: ARENA_EDGE + 2.02, backZ: -3.19, frontZ: 2.4 });
+export const CLUB_BOUNDARIES = Object.freeze({ innerX: ARENA_EDGE + 2.02, backZ: -3.19, frontZ: 40.4 });
 
 /** Closed workshop storage bays, built as solid carpentry and ironwork. */
 export function createClubBoundaries() {
@@ -63,7 +63,7 @@ export function createClubBoundaries() {
     batches.get(material).push(geometry);
   }
   function box(w,h,d,material,x,y,z,rx=0,ry=0,rz=0) {
-    const geometry=scope?.name==='upper-wall-timber-structure'
+    const geometry=scope?.name==='upper-wall-timber-structure' || scope?.name.endsWith('-foreground-fence')
       ? new THREE.BoxGeometry(w,h,d)
       : new RoundedBoxGeometry(w,h,d,1,Math.min(.018,w*.13,h*.13,d*.13));
     add(geometry,material,x,y,z,rx,ry,rz);
@@ -219,6 +219,33 @@ export function createClubBoundaries() {
     meshPanel(outside-.08,-2.72,2.49,2.45,4.88);
     for(const z of [-2.72,-.11,2.49]) box(.10,2.5,.085,'iron',outside-.08,3.66,z);
     beam([outside-.07,.17,-2.75],[outside-.07,2.29,2.46],.13,.13);
+  });
+
+  // Continue both closures towards and past the widest combat camera. Sparse
+  // solid bars preserve the fighters' silhouette; capped posts and bolted rails
+  // have real backs rather than a cut-off, one-sided fence texture.
+  for (const side of [-1, 1]) prop(`${side < 0 ? 'left' : 'right'}-foreground-fence`, () => {
+    const x = side < 0 ? -inner - .27 : inner + 2.57;
+    const start = side < 0 ? 2.29 : 2.69, end = CLUB_BOUNDARIES.frontZ;
+    const count = 8, span = (end - start) / count, top = 4.9;
+    for (let i = 0; i <= count; i++) {
+      const z = start + span * i;
+      // First upright is already part of the original gate/cage.
+      if (i) {
+        box(.22, top, .24, 'iron', x, top / 2, z);
+        box(.42, .10, .45, 'edge', x, .05, z);
+        box(.28, .10, .30, 'edge', x, top + .015, z);
+        for (const y of [.24, 2.36, 4.66]) bolt(x - side * .126, y, z, 'x');
+      }
+      if (i === count) continue;
+      const center = z + span / 2;
+      for (const y of [.18, 2.40, 4.77]) box(.105, .115, span + .06, 'iron', x, y, center);
+      for (let bar = 1; bar <= 7; bar++) {
+        const barZ = z + span * bar / 8;
+        box(.052, 4.58, .052, 'iron', x, 2.49, barZ);
+      }
+      box(.09, .31, span - .22, 'dark', x, .36, center);
+    }
   });
 
   for(const side of [-1,1]) prop(`${side<0?'left':'right'}-boundary-lantern`,()=>{

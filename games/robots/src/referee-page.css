@@ -133,3 +133,63 @@ body.referee-page { margin:0; color:#efe9db; background:#10191d; font-family:Man
 .ref-lore-reference .ref-charter { white-space:pre-line;line-height:1.65; }
 .ref-lore-reference h3 { font-size:14px;color:#ffe1ad;margin:20px 0 6px; }
 .ref-lore-reference p { line-height:1.65; }
+/* The live desk contains one stage action. Utility controls stay behind •••. */
+.referee-shell { min-width:0; overflow-x:clip; }
+.ref-header-tools { min-width:0; }
+.ref-settings { position:relative; z-index:30; }
+.ref-settings summary { list-style:none; min-width:44px; min-height:44px; display:grid; place-items:center; border:1px solid #65716a70; border-radius:5px; cursor:pointer; letter-spacing:3px; }
+.ref-settings summary::-webkit-details-marker { display:none; }
+.ref-settings>div { position:absolute; right:0; top:calc(100% + 7px); width:240px; padding:8px; background:#20332d; border:1px solid #9a987060; box-shadow:0 12px 32px #0008; border-radius:5px; }
+.ref-settings button { display:block; width:100%; min-height:44px; padding:10px 12px; text-align:left; background:transparent; color:#eee6d3; border:0; border-bottom:1px solid #a9b39420; font-size:12px; }
+.ref-settings button:hover { background:#b6c19718; }
+.ref-settings summary:focus-visible,.ref-feed:focus-visible { outline:2px solid #e4b169; outline-offset:3px; }
+.ref-join-form .ref-favorite { margin:22px 0 10px; min-width:0; }
+.ref-join-form .ref-favorite label { min-height:48px; margin:6px 0; padding:12px; font-size:12px; line-height:1.5; }
+.ref-join-form .ref-favorite input { display:inline-block; width:18px; height:18px; flex:none; padding:0; margin:0; accent-color:#dcb976; }
+.ref-join-form .ref-volume { margin:12px 0; padding-left:10px; border-left:2px solid #997138; min-height:0; color:#425044; font-weight:600; }
+.ref-join { overflow:auto; }
+.ref-feed { position:relative; overflow:auto; overscroll-behavior:contain; scrollbar-width:thin; padding:0 5px 0 0; scroll-behavior:auto; }
+.ref-feed-track { display:flex; flex-direction:column; gap:24px; min-height:100%; justify-content:flex-end; padding:12px 0 22px; }
+.ref-feed-entry { flex:none; opacity:.4; border-top:1px solid #9f987740; padding-top:18px; transition:opacity .5s ease; overflow-wrap:anywhere; min-width:0; }
+.ref-feed-entry:first-child { border-top:0; }
+.ref-feed-entry.is-current { opacity:1; }
+.ref-feed-label { display:block; font-size:9px; font-weight:800; letter-spacing:1.5px; line-height:1.5; color:#826437; margin-bottom:9px; }
+.ref-feed-copy { font-size:clamp(21px,2vw,29px); line-height:1.55; font-weight:500; letter-spacing:-.25px; white-space:pre-line; }
+.ref-feed-entry[data-kind=recording] .ref-feed-label { color:#426d6a; }
+.ref-feed-entry[data-kind=charter] .ref-feed-copy { font-size:clamp(18px,1.6vw,23px); }
+.ref-feed-entry[data-kind=lead] .ref-feed-copy { font-size:clamp(21px,2vw,29px); }
+.ref-feed[data-paused=true] .ref-feed-entry { transition:none; }
+.ref-paper-heading { margin-bottom:8px; padding-bottom:13px; border-bottom:1px solid #a39b7c55; }
+.ref-paper { position:relative; min-width:0; }
+.ref-paper::after { content:''; position:absolute; left:0; top:25%; width:3px; height:25%; background:#b3965d55; pointer-events:none; }
+.ref-gate { border-top:1px solid #9e987757; margin-top:12px; padding-top:12px; }
+.ref-gate p { font-size:11px; line-height:1.55; color:#65705c; margin-bottom:10px; }
+.ref-gate button { width:100%; background:#2b5345; min-height:52px; letter-spacing:.6px; box-shadow:0 4px 14px #25493724; }
+.ref-reading-note { flex:none; }
+.ref-lore-reference summary,.ref-lore-reference h3 { color:#71552d; }
+.ref-join-form { max-width:460px; }
+.ref-private-dialog .ref-icon-button { min-width:44px; min-height:44px; }
+@media (max-height:620px) and (orientation:landscape) {
+ .ref-layout { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+ .ref-header { min-height:48px; }.ref-header-tools { gap:7px; }.ref-connection { max-width:150px; }
+ .ref-settings summary { min-height:40px; }.ref-feed-track { gap:18px; padding-top:0; padding-bottom:14px; }
+ .ref-feed-entry { padding-top:12px; }.ref-feed-label { font-size:8px; margin-bottom:6px; }
+ .ref-feed-copy { font-size:18px; line-height:1.48; }.ref-feed-entry[data-kind=charter] .ref-feed-copy { font-size:16px; }
+ .ref-feed-entry[data-kind=lead] .ref-feed-copy { font-size:18px; }.ref-paper-heading { padding-bottom:7px; }
+ .ref-gate { margin-top:7px; padding-top:7px; }.ref-gate p { font-size:9px; margin-bottom:6px; }.ref-gate button { min-height:44px; }
+ .ref-reading-note { font-size:8px; margin-top:7px!important; }.ref-join { align-items:start; padding:16px 4vw; gap:5vw; }
+ .ref-join-form { padding:18px 22px; }.ref-join-form .ref-favorite { margin:14px 0 8px; }
+ .ref-join-form .ref-favorite label { min-height:44px; padding:9px; }.ref-join-copy h1 { font-size:32px; }
+}
+@media (max-width:700px) and (orientation:portrait) {
+ .referee-shell { height:100dvh; min-height:560px; padding-bottom:max(10px,env(safe-area-inset-bottom)); }
+ .ref-header { min-height:88px; }.ref-header-tools { flex-wrap:nowrap; }.ref-connection { max-width:190px; }
+ .ref-layout { min-height:0; flex:1; gap:10px; }.ref-arena-panel { height:25dvh; min-height:155px; max-height:245px; }
+ .ref-reading { min-height:0; flex:1; }.ref-paper { min-height:0; padding:14px 18px 10px; }.ref-script-scroll { overflow:auto; min-height:0; }
+ .ref-feed-copy { font-size:21px; line-height:1.5; }.ref-feed-entry[data-kind=charter] .ref-feed-copy { font-size:17px; }
+ .ref-feed-entry[data-kind=lead] .ref-feed-copy { font-size:20px; }.ref-gate p { font-size:10px; }
+ .ref-paper-heading { margin-bottom:6px; }.ref-feed-track { gap:19px; }.ref-join { display:block; overflow:auto; min-height:0; padding:10px 5px 20px; }
+ .ref-join-copy h1 { font-size:34px; margin:10px 0 14px; }.ref-join-copy>p { font-size:12px; }.ref-join-footnote { margin:12px 0 22px; }
+ .ref-join-form { padding:22px; }.ref-settings summary { min-height:40px; }.ref-reading-note { font-size:8px; }
+}
+@media (prefers-reduced-motion:reduce) { .ref-feed-entry { transition:none; }.ref-feed-track { scroll-behavior:auto; } }

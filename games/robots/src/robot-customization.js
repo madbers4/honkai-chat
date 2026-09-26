@@ -190,7 +190,6 @@ export function createRobotCustomization({ armorMaterials, turret, turretSurface
   for(const material of armorMaterials)installPaint(material,uniforms);
   const bounds=new THREE.Box3().setFromPoints(turretSurface),center=bounds.getCenter(new THREE.Vector3());
   const accessories=new Map(), mount=new THREE.Group();mount.name='RobotCustomization_Mount';turret.add(mount);
-  const envMap=armorMaterials.find(m=>m.envMap)?.envMap;
   let value=normalizeCustomization(),current=null,disposed=false,selectedCore=null;
   function set(input) {
     if(disposed)return value;
@@ -202,6 +201,10 @@ export function createRobotCustomization({ armorMaterials, turret, turretSurface
       current=null;
       if(next.accessory!=='none'){
         if(!accessories.has(next.accessory)){
+          // Arena/preview can remove HDR reflections after creating the rig.
+          // Read the live armor policy for late cosmetics, never a captured map
+          // that could bring unsupported PMREM back after a renderer fallback.
+          const envMap=armorMaterials.find(material=>material.envMap)?.envMap??null;
           const created=makeAccessory(next.accessory,envMap);accessories.set(next.accessory,created);mount.add(created.group);
           // Mount at the actual lower lens face, not the visor's overhang: the
           // latter is 23cm further forward and would leave floating whiskers.

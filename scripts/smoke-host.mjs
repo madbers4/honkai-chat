@@ -26,7 +26,7 @@ for (const clip of Object.values(GENERATED_VOICE_CLIPS)) {
 }
 assert.match(await fetchText('/robots/?role=referee'), /Бойцовский клуб/);
 const sockets = [];
-const timeout = setTimeout(() => { console.error('Multiplayer smoke check timed out'); process.exit(1); }, 15000);
+const timeout = setTimeout(() => { console.error('Multiplayer smoke check timed out'); process.exit(1); }, 40000);
 function next(socket, type, predicate = () => true) {
   return new Promise(resolve => {
     function handler(data) { const value = JSON.parse(data); if (value.type === type && predicate(value)) { socket.off('message', handler); resolve(value); } }
@@ -46,22 +46,39 @@ try {
   assert.ok(state.players.every(player => player.hp === MAX_HP && player.maxHp === MAX_HP), 'deployed combat health must match this release');
   assert.equal(state.story.stage, 'workshop');
   assert.deepEqual(state.players[0].customization, { body: 'jade', core: 'violet', accessory: 'clubCap' });
+  // Read the cards as two fighters, then attach the optional referee during
+  // the cinema. Automatic referee card timing is covered by the server tests.
+  let stage = next(first, 'state', packet => packet.state.story.stage === 'rules');
+  first.send(JSON.stringify({ type: 'ready' })); second.send(JSON.stringify({ type: 'ready' }));
+  let current = (await stage).state;
+  for (let index = 0; index < RULE_CARDS.length; index++) {
+    stage = next(first, 'state', packet => packet.state.story.ruleIndex === index + 1);
+    const packet = JSON.stringify({ type: 'storyAdvance', sequenceId: current.story.sequenceId, ruleIndex: index });
+    first.send(packet); second.send(packet); current = (await stage).state;
+  }
+  assert.equal(current.story.stage, 'faceoff'); assert.equal(current.story.duration, FACE_OFF_DURATION);
   const referee = new WebSocket(origin.replace(/^http/, 'ws') + '/robots/ws'); sockets.push(referee); await once(referee, 'open');
   response = next(referee, 'refereeWelcome'); referee.send(JSON.stringify({ type: 'watch', room }));
   const refWelcome = await response; assert.equal(refWelcome.room, room);
   response = next(referee, 'refereeState', packet => packet.favorite === 'p2');
   referee.send(JSON.stringify({ type: 'refereeFavorite', favorite: 'p2' })); await response;
-  let stage = next(referee, 'state', packet => packet.state.story.stage === 'rules');
-  first.send(JSON.stringify({ type: 'ready' })); second.send(JSON.stringify({ type: 'ready' }));
-  let current = (await stage).state;
-  assert.deepEqual(current.referee, { connected: true });
+  response = next(referee, 'refereeState', packet => packet.prepared === true);
+  referee.send(JSON.stringify({ type: 'refereeReady' })); await response;
+  current = (await next(referee, 'state', packet => packet.state.story.stage === 'faceoff' && packet.state.story.elapsed >= 3)).state;
+  assert.equal(current.referee.connected, true); assert.equal(current.referee.preparing, false);
   assert.ok(!JSON.stringify(current).includes(refWelcome.token));
-  for (let index = 0; index < RULE_CARDS.length; index++) {
-    stage = next(referee, 'state', packet => packet.state.story.ruleIndex === index + 1);
-    referee.send(JSON.stringify({ type: 'storyAdvance', sequenceId: current.story.sequenceId, ruleIndex: index }));
-    current = (await stage).state;
-  }
-  assert.equal(current.story.stage, 'faceoff'); assert.equal(current.players.length, 2);
-  assert.equal(current.story.duration, FACE_OFF_DURATION);
-  console.log(`PASS: both games, story assets, ${MAX_HP} HP, customization, two fighters, private referee, shared rules and faceoff.`);
+  stage = next(referee, 'state', packet => packet.state.story.stage === 'refereeIntro');
+  const skip = JSON.stringify({ type: 'storyAdvance', sequenceId: current.story.sequenceId, ruleIndex: RULE_CARDS.length });
+  first.send(skip); second.send(skip);
+  current = (await stage).state;
+  const gate = current.story.refereeIntro.sequenceId, heldTime = current.time;
+  const held = next(referee, 'state', packet => packet.state.story.refereeIntro?.elapsed >= .3);
+  first.send(JSON.stringify({ type: 'refereeStartRound', sequenceId: gate }));
+  current = (await held).state; assert.equal(current.time, heldTime, 'fighter cannot release the referee gate');
+  stage = next(referee, 'state', packet => packet.state.phase === 'countdown');
+  referee.send(JSON.stringify({ type: 'refereeStartRound', sequenceId: gate }));
+  current = (await stage).state; assert.ok(current.countdown > 2.8, 'full countdown starts after the referee');
+  current = (await next(referee, 'state', packet => packet.state.phase === 'fight')).state;
+  assert.ok(current.time > 74 && current.time <= 75);
+  console.log(`PASS: both games, story assets, ${MAX_HP} HP, customization, two fighters, private referee and held round start → countdown → fight.`);
 } finally { for (const socket of sockets) socket.terminate(); clearTimeout(timeout); }

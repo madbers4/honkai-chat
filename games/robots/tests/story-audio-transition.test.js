@@ -21,7 +21,7 @@ const routeStubs = {
 function domFixture() {
   const nodes = new Map(), radios = [];
   const get = key => { if (!nodes.has(key)) nodes.set(key, node()); return nodes.get(key); };
-  const node = () => ({ children: [], style: {}, dataset: {}, listeners: {}, value: '', textContent: '', disabled: false,
+  const node = () => ({ children: [], style: {setProperty(){}}, dataset: {}, listeners: {}, value: '', textContent: '', disabled: false,
     classList: { add(){}, remove(){}, toggle(){} },
     setAttribute(key, value) { this[key] = value; }, insertAdjacentHTML(){},
     appendChild(child) { this.children.push(child); }, append(...children) { this.children.push(...children); },
@@ -29,6 +29,7 @@ function domFixture() {
     replaceChildren(...children) { this.children = children; },
     addEventListener(type, listener) { (this.listeners[type] ||= []).push(listener); }, removeEventListener(){},
     querySelector(selector) {
+      if (selector.includes('[name="ref-favorite"]:checked')) return radios.find(input => input.checked);
       const radio = selector.match(/value="(.*?)"/);
       return radio ? radios.find(input => input.value === radio[1]) : get(selector.match(/data-ref="(.*?)"/)?.[1] || selector);
     },
@@ -37,7 +38,7 @@ function domFixture() {
   });
   for (const value of ['neutral', 'p1', 'p2']) radios.push({ ...node(), value });
   const listeners = new Map();
-  return { nodes, document: { body: node(), createElement: node, getElementById: get,
+  return { nodes, radios, document: { body: node(), createElement: node, getElementById: get,
     querySelector: get, querySelectorAll: () => [], hidden: false,
     addEventListener(type, listener) { if (!listeners.has(type)) listeners.set(type, new Set()); listeners.get(type).add(listener); },
     removeEventListener(type, listener) { listeners.get(type)?.delete(listener); },
@@ -58,7 +59,7 @@ test('player and referee stop a surviving final blast before rematch story, once
   t.after(() => { refereePage?.dispose(); for (const [key, value] of saved) {
     if (value === undefined) delete globalThis[key]; else globalThis[key] = value;
   } });
-  const { nodes, document } = domFixture();
+  const { nodes, radios, document } = domFixture();
   const storage = new Map();
   globalThis.document = document;
   globalThis.location = { href: 'http://test/', origin: 'http://test', hostname: 'test' };
@@ -163,16 +164,24 @@ test('player and referee stop a surviving final blast before rematch story, once
   assert.equal(playerAudio.resets, 1, 'leaving the player room resets the OST');
   const { mountRefereePage } = await vite.ssrLoadModule('/src/referee-page.js');
   let handlers;
-  refereePage = mountRefereePage({ room: 'ABC234', createClientImpl: options => {
-    handlers = options; return { stop(){ options.onStatus({ status: 'idle' }); }, restore: () => false, setFavorite: () => true };
-  }, createArenaImpl: async () => ({ update(){}, dispose(){} }) });
-  handlers.onStatus({ status: 'connected' });
+  t.mock.method(GameAudio.prototype, 'unlock', function() {});
+  t.mock.method(GameAudio.prototype, 'prepareCombat', async function() {});
+  refereePage = mountRefereePage({ room: 'ABC234', waitForLayout:async()=>{},
+    createVoiceImpl:()=>({unlock:async()=>true,prepareAll:async()=>{},setMuted(){},update(){},cancel(){},dispose(){}}),
+    createClientImpl: options => {
+      handlers = options; return { stop(){ options.onStatus({ status: 'idle' }); }, start(){options.onStatus({status:'connected'});},
+        setFavorite(value){options.onFavorite(value,{prepared:false});return true;},
+        markReady(){options.onFavorite('p1',{prepared:true});return true;} };
+    }, createArenaImpl: async () => ({ update(){}, dispose(){} }) });
+  const submit=async()=>{for(const fn of nodes.get('form').listeners.submit)await fn({preventDefault(){}});};
+  await submit();handlers.onSnapshot(base,{baseline:true,freshEvents:[]});
+  radios.find(input=>input.value==='p1').checked=true;await submit();
   await checkRoute('referee', state => {
     handlers.onSnapshot(state, { baseline: false, freshEvents: state.events });
-    if (state.phase === 'story') assert.equal(nodes.get('script').textContent, intro.beats[0].text, 'the referee keeps the same first reading cue');
+    if (state.phase === 'story') assert.equal(nodes.get('feed').children[0].children.at(-1).children[1].textContent, intro.beats[0].text, 'the referee keeps the same first reading cue');
   }, () => [...audioStates.values()][1]);
   const refereeAudio = [...audioStates.values()][1];
-  assert.equal(refereeAudio.music.at(-1).muted, true, 'referee music remains muted by default');
+  assert.equal(refereeAudio.music.at(-1).muted, false, 'explicit preparation enables the full referee soundtrack');
   document.hidden = true; document.emit('visibilitychange'); assert.equal(refereeAudio.music.at(-1).hidden, true);
   document.hidden = false; document.emit('visibilitychange'); assert.equal(refereeAudio.music.at(-1).hidden, false);
   handlers.onStatus({ status: 'reconnecting' }); assert.equal(refereeAudio.music.at(-1).connected, false);

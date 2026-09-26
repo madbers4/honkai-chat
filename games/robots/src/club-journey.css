@@ -7,6 +7,11 @@
 .club-journey[data-stage=faceoff] .faceoff-voice-note{display:none}
 .journey-rule-copy>[data-rule-text]{white-space:pre-line;overflow-wrap:anywhere}
 .journey-round-intro{position:absolute;inset:0;pointer-events:none;z-index:-1}
+.journey-referee-intro{align-self:center;justify-self:center;text-align:center;max-width:620px;padding:24px;background:#0b151aca;border:1px solid #d5b87855;border-radius:4px}
+.journey-referee-intro h2{font:500 clamp(30px,5vw,58px)/1.2 'Oswald',sans-serif;color:#edc887;margin:14px 0}
+.journey-referee-intro p{font-size:clamp(13px,2vw,18px);line-height:1.6;color:#eee3ce}
+.journey-referee-intro small{color:#bdc7bb;line-height:1.5}
+.club-journey[data-stage=refereeIntro]{background:linear-gradient(#08121777,transparent 30%,#08121766)}
 .club-journey[data-stage=roundIntro]{background:transparent}
 .club-journey[data-stage=roundIntro] .journey-header{position:absolute;right:max(3vw,env(safe-area-inset-right));bottom:18px;border:0;padding:0;z-index:8}
 .club-journey[data-stage=roundIntro] .journey-header>div:first-child{display:none}

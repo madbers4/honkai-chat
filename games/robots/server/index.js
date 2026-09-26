@@ -140,6 +140,8 @@ export async function startServer({
 
   function broadcast(room) {
     const refereeConnected = room.referee?.socket?.readyState === WebSocket.OPEN;
+    room.story?.setRefereeConnected(refereeConnected, room.referee?.prepared === true);
+    room.story?.prepareRound();
     const snapshot = room.game.snapshot();
     const state = { type: 'state', state: room.story ? room.story.decorate(snapshot, refereeConnected) : { ...snapshot, referee: { connected: refereeConnected } } };
     for (const session of room.sessions.values()) send(session.socket, state);
@@ -170,9 +172,13 @@ export async function startServer({
     const previous = session.socket;
     session.socket = socket; session.disconnectedAt = null;
     socket.roomId = room.game.id; socket.role = 'referee';
+    // A referee can also join a room created by a legacy client that does not
+    // request an opening story. Its next round still needs the announcer gate.
+    room.story ??= new StorySession(room.game, { openingComplete: true });
+    if (!['p1', 'p2'].includes(session.favorite)) session.favorite = null;
     if (previous && previous !== socket) previous.close(4001, 'Пульт рефери открыт на другом устройстве.');
     send(socket, { type: 'refereeWelcome', room: room.game.id, token: session.token });
-    send(socket, { type: 'refereeState', favorite: session.favorite });
+    send(socket, { type: 'refereeState', favorite: session.favorite, selectionRequired: !session.favorite, prepared: session.prepared === true });
     broadcast(room);
   }
 
@@ -245,20 +251,39 @@ export async function startServer({
           if (session.disconnectedAt && Date.now() - session.disconnectedAt > RECONNECT_WINDOW_MS) { error('Время восстановления пульта истекло. Войдите по приглашению заново.'); return; }
         } else {
           if (session && (session.socket || !session.disconnectedAt || Date.now() - session.disconnectedAt < RECONNECT_WINDOW_MS)) { error('Микрофон уже у другого рефери. Для восстановления используйте его устройство.'); return; }
-          session = room.referee = { token: randomBytes(24).toString('hex'), socket: null, favorite: 'neutral', disconnectedAt: null };
+          session = room.referee = { token: randomBytes(24).toString('hex'), socket: null, favorite: null, prepared: false, disconnectedAt: null };
         }
+        // A fresh page has not decoded its audio/GPU assets even if it restores
+        // an existing credential. Ordinary same-page socket reconnects preserve
+        // readiness by omitting this flag (or sending false).
+        if (message.preparing === true) session.prepared = false;
         bindReferee(socket, room, session);
         return;
       }
       const room = rooms.get(socket.roomId);
       if (room && socket.role === 'referee' && room.referee?.socket === socket) {
         if (message.type === 'refereeFavorite') {
-          if (['p1', 'p2', 'neutral'].includes(message.favorite)) room.referee.favorite = message.favorite;
-          send(socket, { type: 'refereeState', favorite: room.referee.favorite });
+          if (['p1', 'p2'].includes(message.favorite)) room.referee.favorite = message.favorite;
+          send(socket, { type: 'refereeState', favorite: room.referee.favorite, selectionRequired: !room.referee.favorite, prepared: room.referee.prepared === true });
           return;
         }
-        if (message.type === 'storyAdvance') {
-          room.story?.advance({ actor: 'referee', sequenceId: message.sequenceId, ruleIndex: message.ruleIndex }, true);
+        if (message.type === 'refereeReady') {
+          if (!room.referee.favorite) {
+            send(socket, { type: 'notice', message: 'Выберите, за кого тайно болеть, прежде чем выходить в эфир.' });
+            return;
+          }
+          room.referee.prepared = true;
+          send(socket, { type: 'refereeState', favorite: room.referee.favorite, selectionRequired: false, prepared: true });
+          room.lastActivity = Date.now(); broadcast(room); return;
+        }
+        if (message.type === 'refereeStartRound') {
+          if (!room.referee.favorite) {
+            send(socket, { type: 'notice', message: 'Выберите, за кого тайно болеть. Это останется только на вашем пульте.' });
+            return;
+          }
+          if (!room.story?.startRefereeRound(message.sequenceId)) {
+            send(socket, { type: 'notice', message: 'Дождитесь подводки к текущему раунду и подключения обоих бойцов.' });
+          } else room.lastActivity = Date.now();
           broadcast(room); return;
         }
         send(socket, { type: 'notice', message: 'У рефери микрофон. Управление роботами остаётся у бойцов.' });
@@ -313,7 +338,7 @@ export async function startServer({
     frame++;
     for (const room of rooms.values()) {
       room.story?.step(dt);
-      room.game.step(dt);
+      if (!room.story?.holdCombat(dt)) room.game.step(dt);
       room.story?.prepareRound();
       if (frame % (SIMULATION_HZ / SNAPSHOT_HZ) === 0) broadcast(room);
     }

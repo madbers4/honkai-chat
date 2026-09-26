@@ -4,9 +4,6 @@ import WebSocket from 'ws';
 import { once } from 'node:events';
 import { startServer } from '../server/index.js';
 import { createRefereeClient, REFEREE_SESSION_PREFIX } from '../src/referee-client.js';
-import { buildRoundIntro } from '../shared/round-intro.js';
-import { VOICE_CLIPS } from '../shared/voice-clips.js';
-import { RULE_CARDS, getClubRuleCard } from '../shared/club-story.js';
 
 const store = () => { const data = new Map(); return { data, getItem: key => data.get(key), setItem: (key, value) => data.set(key, value), removeItem: key => data.delete(key) }; };
 function fixture() {
@@ -42,7 +39,7 @@ test('only an explicit entry or matching own session opens watch; fighter tokens
   const f = fixture(); assert.equal(f.sockets.length, 0); assert.equal(f.client.restore(), false);
   f.storage.setItem('belobog-session', JSON.stringify({ room: 'ABC234', token: 'fighter-secret' }));
   f.client.start(); assert.equal(f.sockets.length, 1); assert.deepEqual(f.sockets[0].sent, []);
-  f.welcome(); assert.deepEqual(f.sockets[0].sent[0], { type: 'watch', room: 'ABC234' });
+  f.welcome(); assert.deepEqual(f.sockets[0].sent[0], { type: 'watch', room: 'ABC234', preparing: true });
   assert.equal(f.storage.data.size, 2); assert.ok([...f.storage.data.keys()].some(k => k.startsWith(REFEREE_SESSION_PREFIX)));
   const restored = createRefereeClient(f.options); assert.equal(restored.restore(), true);
   f.sockets.at(-1).open(); assert.equal(f.sockets.at(-1).sent[0].token, 'referee-secret');
@@ -90,19 +87,45 @@ test('takeover and room closure stop automatic retries, and errors remain correc
   f.client.stop();
 });
 
-test('advance uses the latest exact rule generation, cannot fire while paused and sends no fighter actions', () => {
+test('round start sends only the current ceremony token, never rule or fighter input', () => {
   const f = fixture(); f.client.start(); f.welcome(); const socket = f.sockets[0];
-  assert.equal(f.client.advanceRules(), false);
-  socket.message({ type: 'state', state: state([], { stage: 'rules', sequenceId: 'show:1', ruleIndex: 2, paused: false }) });
-  assert.equal(f.client.advanceRules(), true);
-  assert.deepEqual(socket.sent.at(-1), { type: 'storyAdvance', sequenceId: 'show:1', ruleIndex: 2 });
-  socket.message({ type: 'state', state: state([], { stage: 'rules', sequenceId: 'show:2', ruleIndex: 0, paused: true }) });
-  assert.equal(f.client.advanceRules(), false);
-  socket.message({ type: 'state', state: state([], { stage: 'roundIntro', sequenceId: 'show:2', ruleIndex: 0 }) });
-  assert.equal(f.client.advanceRules(), false);
-  assert.equal(f.client.setFavorite('p1'), true); assert.equal(f.client.setFavorite('<invalid>'), false);
-  assert.ok(socket.sent.every(p => ['watch', 'ping', 'storyAdvance', 'refereeFavorite'].includes(p.type)));
+  assert.equal(f.client.startRound(), false);
+  socket.message({ type: 'state', state: state([], { stage: 'refereeIntro', refereeIntro: { sequenceId: 'gate:1' }, paused: false }) });
+  assert.equal(f.client.startRound(), false);
+  socket.message({ type: 'refereeState', favorite: 'p1', prepared: true });
+  assert.equal(f.client.startRound(), true);
+  assert.deepEqual(socket.sent.at(-1), { type: 'refereeStartRound', sequenceId: 'gate:1' });
+  socket.message({ type: 'state', state: state([], { stage: 'refereeIntro', refereeIntro: { sequenceId: 'gate:2' }, paused: true }) });
+  assert.equal(f.client.startRound(), false);
+  socket.message({ type: 'state', state: state([], { stage: 'rules', sequenceId: 'show:2', ruleIndex: 0 }) });
+  assert.equal(f.client.startRound(), false);
+  assert.equal(f.client.setFavorite('p1'), true); assert.equal(f.client.setFavorite('neutral'), false);
+  assert.equal(f.client.setFavorite('<invalid>'), false);
+  assert.ok(socket.sent.every(p => ['watch', 'ping', 'refereeStartRound', 'refereeFavorite'].includes(p.type)));
   f.client.stop();
+});
+
+test('a transport stall consumes historical hits instead of replaying the explosion tail', () => {
+  const f = fixture(); f.client.start(); f.welcome(); const socket = f.sockets[0];
+  socket.message({ type: 'state', state: state([{ id: 1 }]) });
+  f.advance(400);
+  socket.message({ type: 'state', state: state([{ id: 1 }, { id: 2, type: 'destruction' }]) });
+  assert.deepEqual(f.frames.at(-1).meta.freshEvents, []);
+  socket.message({ type: 'state', state: state([{ id: 2, type: 'destruction' }, { id: 3, type: 'hit' }]) });
+  assert.deepEqual(f.frames.at(-1).meta.freshEvents, [{ id: 3, type: 'hit' }]);
+  f.client.stop();
+});
+
+test('a new page asks for preparation, while a ready socket reconnect preserves readiness', () => {
+  const f = fixture(); f.client.start(); f.welcome(); const socket = f.sockets[0];
+  assert.equal(socket.sent[0].preparing, true);
+  socket.message({ type: 'refereeState', favorite: 'p1', prepared: false });
+  assert.equal(f.client.markReady(), true); assert.deepEqual(socket.sent.at(-1), { type: 'refereeReady' });
+  socket.message({ type: 'refereeState', favorite: 'p1', prepared: true });
+  socket.closed(); f.advance(500); f.welcome(); assert.equal(f.sockets.at(-1).sent[0].preparing, false);
+  const restored = createRefereeClient(f.options); restored.restore(); f.sockets.at(-1).open();
+  assert.equal(f.sockets.at(-1).sent[0].preparing, true, 'a fresh page has a fresh audio context');
+  f.client.stop(); restored.stop();
 });
 
 test('missing pong and handshake failures have bounded retries, not a permanent dead connection', () => {
@@ -121,7 +144,7 @@ async function packet(socket, type) {
 }
 const until = async predicate => { for (let i = 0; i < 100; i++) { if (predicate()) return; await new Promise(resolve => setTimeout(resolve, 10)); } throw Error('Condition not reached'); };
 
-test('real referee client joins a two-fighter story, advances exactly one card and restores its private session', async t => {
+test('real referee joins automatic rules and restores the private choice without any public leakage', async t => {
   const app = await startServer({ host: '127.0.0.1', port: 0, autoTick: false }); t.after(() => app.close());
   const origin = `http://127.0.0.1:${app.port}`, one = new WebSocket(origin.replace('http', 'ws') + '/ws'), two = new WebSocket(origin.replace('http', 'ws') + '/ws');
   await Promise.all([once(one, 'open'), once(two, 'open')]);
@@ -131,113 +154,17 @@ test('real referee client joins a two-fighter story, advances exactly one card a
   let client = createRefereeClient({ room: welcome.room, origin, WebSocketImpl: WebSocket, storage, onSnapshot: s => states.push(s), onFavorite: f => favorites.push(f), onStatus: s => statuses.push(s) });
   t.after(() => client.stop()); client.start(); await until(() => states.length > 0);
   assert.equal(app.rooms.get(welcome.room).game.players.length, 2);
+  client.setFavorite('p2'); await until(() => favorites.at(-1) === 'p2');
+  client.markReady(); await until(() => app.rooms.get(welcome.room).referee.prepared === true);
   one.send(JSON.stringify({ type: 'ready' })); two.send(JSON.stringify({ type: 'ready' })); await until(() => states.at(-1)?.story.stage === 'rules');
-  assert.equal(client.advanceRules(), true); await until(() => states.at(-1)?.story.ruleIndex === 1);
-  assert.equal(states.at(-1).story.ruleIndex, 1);
+  const before = states.at(-1).story.ruleIndex;
+  for (let i = 0; i < 60 * 56; i++) { app.rooms.get(welcome.room).story.step(1 / 60); if (app.rooms.get(welcome.room).story.snapshot().ruleIndex > before) break; }
+  app.broadcast(app.rooms.get(welcome.room));
+  await until(() => states.at(-1)?.story.ruleIndex > before);
   client.setFavorite('p2'); await until(() => favorites.at(-1) === 'p2');
   assert.ok(states.every(s => !JSON.stringify(s).includes('favorite')));
   client.stop(); await new Promise(resolve => setTimeout(resolve, 15));
   client = createRefereeClient({ room: welcome.room, origin, WebSocketImpl: WebSocket, storage, onSnapshot: s => states.push(s), onFavorite: f => favorites.push(f) });
   assert.equal(client.restore(), true); await until(() => client.getStatus() === 'connected');
   await until(() => favorites.at(-1) === 'p2'); assert.equal(app.rooms.get(welcome.room).game.players.length, 2);
-});
-
-test('mounted player/referee pages share the charter, respect reading control, and retain timed/final lines', async t => {
-  // Vite loads the actual CSS-importing route. Only the DOM/GPU/transport
-  // surfaces are replaced; presentation handlers and shared director are real.
-  const { createServer } = await import('vite');
-  const vite = await createServer({ configFile: false, cacheDir: 'artifacts/referee-test-cache', server: { middlewareMode: true }, appType: 'custom' });
-  t.after(() => vite.close());
-  const { mountRefereePage } = await vite.ssrLoadModule('/src/referee-page.js');
-  const { createClubJourney } = await vite.ssrLoadModule('/src/club-journey.js');
-  const saved = new Map(['document', 'location', 'localStorage', 'matchMedia','fetch'].map(key => [key, globalThis[key]]));
-  const voiceFetches=[];
-  globalThis.fetch=async (...args)=>{
-    if (!String(args[0]).includes('/assets/voices/')) return saved.get('fetch')(...args);
-    voiceFetches.push(String(args[0]));return {ok:true,arrayBuffer:async()=>new ArrayBuffer(1)};
-  };
-  let mountedPage;
-  t.after(() => { mountedPage?.dispose(); for (const [key, value] of saved) { if (value === undefined) delete globalThis[key]; else globalThis[key] = value; } });
-  const nodes = new Map(), radios = [];
-  const node = () => ({ textContent: '', hidden: false, disabled: false, value: '', children: [], style: {}, dataset: {}, listeners: {},
-    classList: { add() {}, remove() {}, toggle() {} },
-    setAttribute(name, value) { this[name] = value; }, appendChild(child) { this.children.push(child); }, append(...children) { this.children.push(...children); },
-    insertBefore(child, before) { this.children.splice(Math.max(0, this.children.indexOf(before)), 0, child); },
-    replaceChildren(...children) { this.children = children; }, addEventListener(type, fn) { (this.listeners[type] ||= []).push(fn); }, removeEventListener() {},
-    click() { if (!this.disabled) for (const fn of this.listeners.click || []) fn({ target: this }); }, close() {}, showModal() {}, remove() {},
-    get firstElementChild() { return this.children[0] ||= node(); },
-    querySelector(selector) {
-      const radio = selector.match(/value="(.*?)"/); if (radio) return radios.find(input => input.value === radio[1]);
-      const key = selector.match(/data-ref="(.*?)"/)?.[1] || selector;
-      if (!nodes.has(key)) nodes.set(key, node()); return nodes.get(key);
-    }, querySelectorAll() { return radios; },
-  });
-  for (const value of ['neutral', 'p1', 'p2']) radios.push({ ...node(), value });
-  globalThis.document = { body: node(), createElement: node, title: '', hidden: false, addEventListener() {}, removeEventListener() {} };
-  globalThis.location = { href: 'http://test/?role=referee&room=ABC234' }; globalThis.localStorage = store(); globalThis.matchMedia = () => ({ matches: false });
-  let handlers;
-  const page = mountRefereePage({ room: 'ABC234', createClientImpl: options => {
-    handlers = options; return { stop() {}, restore: () => false, setFavorite: () => true, advanceRules: () => true };
-  }, createArenaImpl: async () => ({ update() {}, dispose() {} }) });
-  mountedPage = page; handlers.onStatus({ status: 'connected', message: 'Микрофон у вас' });
-  const roster = [{ id: 'p1', name: 'ИСКРА', maxHp: 180, hp: 90, wins: 5 }, { id: 'p2', name: 'ИНЕЙ', maxHp: 180, hp: 0, wins: 2 }];
-  const ended = { room: 'ABC234', round: 7, phase: 'matchOver', elapsed: 80, time: 40, winner: 'p1', players: roster, events: [], story: { sequenceId: 'one', stage: 'complete' } };
-  globalThis.localStorage.setItem('belobog-local-tts','true');
-  const sent = [],journeyMount=node(), journey = createClubJourney(journeyMount, { send: packet => sent.push(packet), leave() {}, toggleSound() {}, toast() {} });
-  assert.equal(globalThis.localStorage.getItem('belobog-local-tts'),undefined,'the retired preference cannot activate a phone voice');
-  assert.doesNotMatch(journeyMount.children[0].innerHTML,/data-tts|голосом устройства/);
-  assert.equal(nodes.has('[data-tts]'),false,'no handler or checkbox revives device speech');
-  t.after(() => journey.reset());
-  // Deliberately reverse the roster and supply hostile names: both surfaces
-  // must keep the correct corner, the same words and plain-text presentation.
-  const fighters = [{ ...roster[1], name: '<img>\u202e{a}' }, { ...roster[0], name: 'Царь болтов' }];
-  let rules;
-  for (let index = 0; index < RULE_CARDS.length; index++) {
-    rules = { ...ended, phase: 'story', players: fighters, referee: { connected: true }, story: {
-      sequenceId: 'charter', stage: 'rules', ruleIndex: index, ruleCount: RULE_CARDS.length,
-      ruleAcks: [], ready: { p1: true, p2: true }, paused: false, refereeConnected: true,
-    } };
-    if (nodes.has('.journey-rules')) nodes.get('.journey-rules').scrollTop = 123;
-    journey.update(rules, 'p1'); handlers.onSnapshot(rules, { baseline: true, freshEvents: [] });
-    assert.equal(nodes.get('[data-rule-text]').textContent, getClubRuleCard(index, fighters).text);
-    assert.equal(nodes.get('script').textContent, nodes.get('[data-rule-text]').textContent);
-    assert.doesNotMatch(nodes.get('script').textContent, /[<>{}\u202e]/u);
-    assert.equal(nodes.get('[data-rule-text]').innerHTML, undefined, 'player names never enter HTML');
-    assert.equal(nodes.get('script').innerHTML, undefined, 'referee names never enter HTML');
-    assert.equal(nodes.get('[data-next]').disabled, true, 'only the connected referee can advance');
-    assert.equal(nodes.get('ack').disabled, false);
-    assert.equal(nodes.get('.journey-rules').scrollTop, 0, 'a new card starts at the top');
-    nodes.get('.journey-rules').scrollTop = 45;
-    journey.update(rules, 'p1');
-    assert.equal(nodes.get('.journey-rules').scrollTop, 45, 'server ticks preserve the reading position');
-  }
-  rules.story = { ...rules.story, refereeConnected: false };
-  journey.update(rules, 'p1'); nodes.get('[data-next]').click();
-  assert.deepEqual(sent.at(-1), { type: 'storyAdvance', sequenceId: 'charter', ruleIndex: RULE_CARDS.length - 1 });
-  rules.story.ruleAcks = ['p1']; journey.update(rules, 'p1');
-  assert.equal(nodes.get('[data-next]').disabled, true, 'a fighter waits for the peer after acknowledging');
-  rules.story = { ...rules.story, ruleAcks: [], refereeConnected: true, paused: true };
-  journey.update(rules, 'p1'); handlers.onSnapshot(rules, { baseline: false, freshEvents: [] });
-  assert.equal(nodes.get('[data-next]').disabled, true); assert.equal(nodes.get('ack').disabled, true);
-  handlers.onSnapshot(ended, { baseline: true, freshEvents: [] });
-  assert.match(nodes.get('script').textContent, /Победитель матча/); assert.equal(nodes.get('ack').disabled, false);
-  nodes.get('ack').click(); assert.match(nodes.get('script').textContent, /последнее слово/);
-  nodes.get('ack').click(); assert.match(nodes.get('script').textContent, /Оба участника/); assert.equal(nodes.get('ack').disabled, true);
-  handlers.onSnapshot({ ...ended, elapsed: 81 }, { baseline: false, freshEvents: [] }); assert.doesNotMatch(nodes.get('script').textContent, /Победитель матча/);
-  const intro = buildRoundIntro(roster, 'ABC234', 7, 4);
-  for (const [elapsed, index] of [[.4, 0], [intro.beats[1].at - .01, 0], [intro.beats[1].at, 1], [intro.duration - .01, 1]]) {
-    handlers.onSnapshot({ ...ended, phase: 'story', elapsed: 90 + elapsed, story: { sequenceId: 'two', stage: 'roundIntro',
-      roundIntro: { sequenceId: 'two:round7', round: 7, matchSerial: 4, elapsed, duration: intro.duration } } }, { baseline: false, freshEvents: [] });
-    assert.equal(nodes.get('title').textContent, roster.find(player => player.id === intro.beats[index].speaker).name);
-    assert.equal(nodes.get('script').textContent, intro.beats[index].text);
-    if (!index) assert.ok(nodes.get('next').textContent.includes(intro.beats[1].text));
-    assert.equal(nodes.get('ack').disabled, true);
-  }
-  const nextMatch=buildRoundIntro(roster,'ABC234',1,2),nextUrls=nextMatch.beats.map(beat=>VOICE_CLIPS[beat.clip].url);
-  await new Promise(resolve=>setImmediate(resolve));
-  assert.ok(nextUrls.every(url=>!voiceFetches.some(fetched=>fetched.endsWith(url))),'the next deck starts with a genuinely cold pair');
-  journey.update({...ended,phase:'finishing',finish:{stage:'offer'},story:{stage:'complete',roundIntro:{round:7,matchSerial:1}}},'p1');
-  await new Promise(resolve=>setImmediate(resolve));
-  assert.ok(nextUrls.every(url=>voiceFetches.some(fetched=>fetched.endsWith(url))),'mounted journey preloads the rematch during the finale despite its hidden complete UI');
-  await Promise.resolve();
 });

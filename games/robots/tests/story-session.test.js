@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CombatRoom } from '../server/combat.js';
 import { StorySession } from '../server/story-session.js';
+import { refereeRuleDuration } from '../shared/referee-round.js';
 
 const create = (training = false) => {
   const game = new CombatRoom({ id: 'STORY', mode: training ? 'training' : 'pvp' });
@@ -31,17 +32,23 @@ test('both fighters must finish the workshop and acknowledge each rule before th
   story.step(1); assert.equal(game.events.filter(e => e.type === 'round').length, roundEvents);
 });
 
-test('a connected referee advances rules, while leaving immediately returns control to both fighters', () => {
+test('a connected referee gets comfortable automatic rules, while leaving returns control to both fighters', () => {
   const { story, advance } = create(); story.ready('p1'); story.ready('p2');
+  story.setRefereeConnected(true);
   assert.equal(advance('p1', true), false); assert.equal(story.ruleIndex, 0);
-  assert.equal(advance('referee', true), true); assert.equal(story.ruleIndex, 1);
+  assert.equal(advance('referee', true), false, 'reading needs no advance button');
+  const duration = refereeRuleDuration(0, story.game.players);
+  for (let n = 0; n < duration * 60 - 1; n++) story.step(1 / 60);
+  assert.equal(story.ruleIndex, 0);
+  story.step(1 / 60); assert.equal(story.ruleIndex, 1);
+  story.setRefereeConnected(false);
   assert.equal(advance('referee', false), false);
   advance('p1'); advance('p2'); assert.equal(story.stage, 'faceoff');
 });
 
 test('player disconnect freezes the presentation and a reconnect resumes the same beat', () => {
   const { game, story, advance } = create(); story.ready('p1'); story.ready('p2');
-  advance('referee', true); advance('referee', true);
+  advance('p1'); advance('p2'); advance('p1'); advance('p2');
   story.step(.1); game.setConnected('p2', false);
   assert.equal(story.snapshot().paused, true);
   for (let n = 0; n < 600; n++) story.step(1 / 60);
@@ -55,7 +62,7 @@ test('training acknowledges only its human and skipping a PvP faceoff requires b
   assert.equal(practice.story.stage, 'rules'); practice.advance('p1'); practice.advance('p1');
   assert.equal(practice.story.stage, 'faceoff');
   const { game, story, advance } = create(); story.ready('p1'); story.ready('p2');
-  advance('referee', true); advance('referee', true);
+  advance('p1'); advance('p2'); advance('p1'); advance('p2');
   assert.equal(advance('p1'), false, 'a stale ready action cannot immediately skip the scene');
   for (let n = 0; n < 31; n++) story.step(.1);
   advance('p1'); assert.equal(story.stage, 'faceoff'); advance('p1'); assert.equal(story.stage, 'faceoff');
@@ -65,7 +72,7 @@ test('training acknowledges only its human and skipping a PvP faceoff requires b
 
 test('each real round gets one exchange while reconnect countdowns do not replay it or hide mechanical reboot', () => {
   const { game, story, advance } = create(); story.ready('p1'); story.ready('p2');
-  advance('referee', true); advance('referee', true);
+  advance('p1'); advance('p2'); advance('p1'); advance('p2');
   const step = seconds => { for (let i = 0; i < Math.ceil(seconds * 60); i++) { story.step(1 / 60); game.step(1 / 60); story.prepareRound(); } };
   step(24.1);
   assert.equal(story.snapshot().stage, 'roundIntro');

@@ -10,7 +10,7 @@ test('production opening stays server-authoritative through the complete scene, 
   room.addPlayer('Медный Сом'); room.addPlayer('Барон Коротыш');
   const scene = new StorySession(room, { ruleCount: 1, faceoffDuration: FACE_OFF_DURATION, buildFaceoff });
   scene.ready('p1'); scene.ready('p2');
-  scene.advance({ actor: 'referee', sequenceId: scene.sequenceId, ruleIndex: 0 }, true);
+  for (const actor of ['p1', 'p2']) scene.advance({ actor, sequenceId: scene.sequenceId, ruleIndex: 0 });
   const step = seconds => { for (let i = 0; i < Math.round(seconds * 60); i++) scene.step(1 / 60); };
   assert.equal(scene.snapshot().duration, FACE_OFF_DURATION);
   const positions = [room.player('p1').x, room.player('p2').x];

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { loadRobotAssets, createRobot } from './robot.js';
 import { createEmissionGlow } from './emission-glow.js';
 import { GRAPHICS_PRESETS, graphicsPreset, graphicsPixelRatio, readGraphicsPreference, observeGraphicsPreference } from './graphics-quality.js';
+import { supportsFloatTargets, omitUnsupportedReflections, guardShaderErrors } from './render-compatibility.js';
 
 export function frameCustomizationPreview(camera,width,height) {
   const aspect=Math.max(1,width)/Math.max(1,height);
@@ -37,7 +38,8 @@ export function createCustomizationPreview(host, { value, reducedMotion, quality
     robot.group.rotation.y=yaw;
     robot.update({action:'idle',actionTime:elapsed,facing:1,x:0,y:0,hp:180,maxHp:180,energy:100,guard:100,
       customization:value(),visualReducedMotion:reduced(),visualQuality:quality},dt,elapsed);
-    glow.setReducedMotion(reduced());glow.render(scene,camera);
+    try { glow.setReducedMotion(reduced());glow.render(scene,camera); }
+    catch(cause){console.warn('Robot workshop rendering unavailable.',cause);error();return;}
     frame=requestAnimationFrame(render);
   };
   const wake=()=>{if(!disposed&&visible&&robot&&!frame){last=0;frame=requestAnimationFrame(render);}};
@@ -77,7 +79,8 @@ export function createCustomizationPreview(host, { value, reducedMotion, quality
       const ring=new THREE.Mesh(ringGeo,ringMat);ring.rotation.x=Math.PI/2;ring.position.y=-.012;stage.add(ring);resources.push(ringGeo,ringMat);
       const floorGeo=new THREE.PlaneGeometry(200,200),floorMat=new THREE.MeshStandardMaterial({color:'#253438',roughness:.9});
       const floor=new THREE.Mesh(floorGeo,floorMat);floor.rotation.x=-Math.PI/2;floor.position.y=-.15;floor.receiveShadow=true;stage.add(floor);resources.push(floorGeo,floorMat);
-      robot=createRobot();scene.add(robot.group);status.hidden=true;resize();wake();
+      const stopShaderGuard=guardShaderErrors(renderer);resources.push({dispose:stopShaderGuard});
+      robot=createRobot();omitUnsupportedReflections(robot.group,supportsFloatTargets(renderer));scene.add(robot.group);status.hidden=true;resize();wake();
     }catch(cause){console.warn('Robot workshop preview unavailable.',cause);error();}
   }).catch(error);
   return {

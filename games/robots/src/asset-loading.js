@@ -85,7 +85,7 @@ export async function loadArenaAssets({ robot, wallpaper, fallbackWallpaper, pos
 
 export function arenaFailureMessage(error) {
   if (error?.kind === 'network') return 'Не удалось скачать файлы арены. Проверь соединение и нажми «Повторить загрузку».';
-  if (error?.kind === 'graphics') return 'Браузер не смог включить WebGL. Закрой лишние вкладки и повтори загрузку или открой игру в другом браузере.';
+  if (error?.kind === 'graphics') return `Не удалось отрисовать 3D арену в WebGL${/^GL_[A-Z_]+$/.test(error.code || '') ? ` (${error.code})` : ''}. Закрой лишние вкладки и нажми «Повторить загрузку».`;
   if (error?.kind === 'model') return 'Не удалось прочитать модель робота. Нажми «Повторить загрузку», чтобы скачать её заново.';
   return 'Не удалось запустить арену. Нажми «Повторить загрузку».';
 }

@@ -73,6 +73,8 @@ test('reconnect and old snapshot baselines consume explosions without replaying 
   assert.equal(shouldPresentCombatEvent({hidden:true,phase:'fight'}),false);
   assert.equal(shouldPresentCombatEvent({phase:'finishing'}),true);
   assert.equal(shouldPresentCombatEvent({phase:'roundOver'}),true);
+  assert.equal(shouldPresentCombatEvent({phase:'fight',renderUnavailable:true}),false);
+  assert.equal(shouldPresentCombatEvent({phase:'finishing',renderUnavailable:true}),false,'lost-context explosions cannot accumulate for restoration');
 });
 
 test('ability lighting keeps one shader light layout between idle, activation and cleanup',()=>{

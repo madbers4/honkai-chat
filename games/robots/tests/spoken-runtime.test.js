@@ -78,7 +78,7 @@ test('server duration and round countdown use the selected adaptive scenes, incl
   const catalog=fixture(),room=new CombatRoom({id:'ADAPTIVE'});room.addPlayer('a');room.addPlayer('b');
   catalog['faceoff-taunt-p2'].duration=40;
   const story=new StorySession(room,{ruleCount:1,buildFaceoff:(p,s)=>buildFaceoff(p,s,{catalog}),buildRoundIntro:(p,s,r,m)=>buildRoundIntro(p,s,r,m,{catalog})});
-  story.ready('p1');story.ready('p2');story.advance({actor:'referee',sequenceId:story.sequenceId,ruleIndex:0},true);
+  story.ready('p1');story.ready('p2');for(const actor of ['p1','p2'])story.advance({actor,sequenceId:story.sequenceId,ruleIndex:0});
   const total=faceoffDuration(story.beats);assert.equal(story.snapshot().duration,total);
   for(let i=0;i<48*60;i++)story.step(1/60);assert.equal(story.stage,'faceoff');
   room.setConnected('p2',false);const held=story.elapsed;story.step(.1);assert.equal(story.elapsed,held);room.setConnected('p2',true);
@@ -98,7 +98,7 @@ test('preload requests only the selected current and next sequence, never the en
   const rematch=storyVoicePreload({players,room:'x',round:9,phase:'matchOver',story:{stage:'complete',roundIntro:{round:9,matchSerial:2}}},{catalog});
   assert.deepEqual(rematch,buildRoundIntro(players,'x',1,3,{catalog}).beats,'result screen warms the new deck before the rematch countdown');
   for(const phase of ['finishing','paused']) assert.deepEqual(storyVoicePreload({players,room:'x',round:9,phase,finish:{stage:'offer'},story:{stage:'complete',roundIntro:{round:9,matchSerial:2}}},{catalog}),rematch,'even an immediate rematch has its dialogue warmed during the finale');
-  assert.equal(storyVoicePreload({story:{stage:'roundIntro',refereeConnected:true}},{catalog}).length,4,'referee suppresses speech, not the warm pair needed after a disconnect');
+  assert.equal(storyVoicePreload({story:{stage:'roundIntro',refereeConnected:true}},{catalog}).length,4,'the recorded exchange and next pair stay warm with a referee too');
   const urls=[],voice=createStoryVoice({clipCatalog:catalog,fetcher:async url=>{urls.push(url);return{ok:true,arrayBuffer:async()=>new ArrayBuffer(1)}}});
   t.after(()=>voice.dispose());await voice.preload(current);await voice.preload(current);
   assert.equal(urls.length,4);assert.ok(urls.every(url=>current.some(beat=>catalog[beat.clip].url===url)));

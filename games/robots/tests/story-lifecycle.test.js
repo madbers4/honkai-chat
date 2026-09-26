@@ -6,6 +6,7 @@ import { startServer } from '../server/index.js';
 import { RULE_CARDS } from '../shared/club-story.js';
 import { WINS_TO_MATCH, COUNTDOWN_SECONDS } from '../shared/constants.js';
 import { buildRoundIntro } from '../shared/round-intro.js';
+import { refereeRuleDuration } from '../shared/referee-round.js';
 
 let pingSerial = 0;
 async function connect(app) {
@@ -111,8 +112,10 @@ test('late duplicated rule acknowledgements cannot become faceoff skip votes', a
 test('real player/referee reconnects freeze only player-owned story time and preserve the three-second fight resume', async t => {
   const f = await setup(t); let ref = await connect(f.app);
   ref.sendPacket({ type: 'watch', room: f.a.room }); const refWelcome = await ref.take(kind('refereeWelcome')); await ref.sync();
+  ref.sendPacket({ type: 'refereeFavorite', favorite: 'p1' }); ref.sendPacket({ type: 'refereeReady' });
+  await ref.take(packet => packet.type === 'refereeState' && packet.prepared); await ref.sync();
   let state = await enterRules(f); const sequenceId = state.story.sequenceId;
-  ref.sendPacket({ type: 'storyAdvance', sequenceId, ruleIndex: 0 }); await ref.sync(); state = await f.one.sync(); assert.equal(state.story.ruleIndex, 1);
+  state = await advance(f, refereeRuleDuration(0, state.players)); assert.equal(state.story.ruleIndex, 1);
   const refClosed = once(ref, 'close'); ref.close(); await refClosed;
   await f.one.take(p => p.type === 'state' && !p.state.referee.connected && p.state.story.ruleIndex === 1);
   f.one.sendPacket({ type: 'storyAdvance', sequenceId, ruleIndex: 1 }); await f.one.sync();

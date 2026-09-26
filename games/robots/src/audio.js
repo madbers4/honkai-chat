@@ -2,6 +2,7 @@ import { healthPercent } from '../shared/health.js';
 import { createCombatVoice } from './combat-voice.js';
 import { createBattleMusic } from './battle-music.js';
 import { preparationDeadline } from './preparation-deadline.js';
+import { createImpactBank, impactCue } from './impact-audio.js';
 
 export class GameAudio {
   constructor() { this.muted = localStorage.getItem('belobog-muted') === 'true'; this.voices = new Set(); }
@@ -18,6 +19,7 @@ export class GameAudio {
       this.noise = this.ctx.createBuffer(1, this.ctx.sampleRate, this.ctx.sampleRate);
       const data = this.noise.getChannelData(0);
       for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+      this.impacts = createImpactBank(this.ctx);
       this.combatVoice = createCombatVoice({ context: this.ctx, destination: this.master, muted: () => this.muted });
       void this.combatVoice.preload();
     }
@@ -78,9 +80,20 @@ export class GameAudio {
   metal(base, weight = 1, length = .24) {
     [1, 1.47, 2.81].forEach((ratio, index) => this.tone(base * ratio, length / (1 + index * .4), 'sine', weight * [.21, .12, .065][index], base * ratio * .73, index * .008));
   }
+  impact(type, event) {
+    const cue = impactCue(type, event), buffer = this.impacts?.get(cue?.kind);
+    if (!buffer || !this.ctx || this.muted || this.ctx.state !== 'running' || this.voices.size >= 56) return false;
+    const source = this.ctx.createBufferSource(), gain = this.ctx.createGain();
+    source.buffer = buffer;
+    // Subtle variation preserves the three authored heavy timbres.
+    source.playbackRate.value = 1 + ((Number(event.id) || 0) % 5 - 2) * .009;
+    gain.gain.value = cue.gain; source.connect(gain); gain.connect(this.master);
+    this.track(source, gain); source.start(); return true;
+  }
   play(type, event = {}) {
-    if (typeof document !== 'undefined' && document.hidden) return;
+    if (event.presentationHistorical || typeof document !== 'undefined' && document.hidden) return;
     this.combatVoice?.play({ ...event, type });
+    const impactPlayed = this.impact(type, event);
     if (type === 'ui') this.tone(640, .055, 'sine', .13, 920);
     if (type === 'countdown') this.tone(480, .13, 'triangle', .4);
     if (type === 'fight') { this.tone(150, .6, 'sawtooth', .3, 42); this.burst(.25, 1600, .7); }
@@ -95,10 +108,11 @@ export class GameAudio {
     if (type === 'hit') {
       const heavyPitch = { heavyDrive: 195, heavyHook: 235, heavyPress: 145 }[event.variant];
       const heavy = event.damage >= 14 || Boolean(heavyPitch);
-      this.burst(heavy ? .2 : .13, heavy ? 950 : 1600, .8);
-      this.tone(heavy ? 105 : 150, heavy ? .25 : .16, 'triangle', .8, 32);
-      this.tone(2300 + (event.combo || 0) * 120, .06, 'sine', .15, 800);
-      this.metal(heavyPitch ?? (heavy ? 185 : event.variant === 'cross' ? 290 : 390), heavy ? 1.4 : .8, heavy ? .35 : .19);
+      if (!impactPlayed) {
+        this.burst(heavy ? .2 : .13, heavy ? 950 : 1600, .8);
+        this.tone(heavy ? 105 : 150, heavy ? .25 : .16, 'triangle', .8, 32);
+        this.metal(heavyPitch ?? (heavy ? 185 : 390), heavy ? 1.4 : .8, heavy ? .35 : .19);
+      }
       if (event.counter) this.tone(1200, .25, 'triangle', .3, 250);
       const remainingHealth = healthPercent({ hp: event.targetHp, maxHp: event.targetMaxHp });
       if (remainingHealth > 0 && remainingHealth <= 60) {
@@ -107,11 +121,11 @@ export class GameAudio {
         this.tone(critical ? 1150 : 1650, .09, 'square', .045, 190, .08);
       }
     }
-    if (type === 'block') { this.metal(630, 1.1, .3); this.burst(.1, 4200, .4, 950); }
+    if (type === 'block' && !impactPlayed) { this.metal(630, 1.1, .3); this.burst(.1, 4200, .4, 950); }
     if (type === 'dash') this.burst(event.variant === 'airDash' ? .27 : .2, event.variant === 'airDash' ? 2600 : 650, .38, 250);
     if (type === 'feint') { this.burst(.12, 1800, .2); this.tone(390, .17, 'triangle', .2, 100); }
     if (type === 'grab') { this.burst(.09, 2400, .55); this.tone(240, .18, 'square', .13, 115); }
-    if (type === 'grabStrike') { this.metal(event.chain > 1 ? 145 : 200, 1.8, .35); this.tone(92, .23, 'triangle', .75, 28); this.burst(.16, 1300, .55, 280); }
+    if (type === 'grabStrike' && !impactPlayed) { this.metal(event.chain > 1 ? 145 : 200, 1.8, .35); this.tone(92, .23, 'triangle', .75, 28); this.burst(.16, 1300, .55, 280); }
     if (type === 'grabBreak') { this.burst(.14, 3600, .6); this.tone(700, .26, 'triangle', .36, 1450); }
     if (type === 'throw') { this.tone(170, .36, 'triangle', .55, 35); this.burst(.24, 1600, .5, 380); this.metal(240, .8, .2); }
     if (type === 'burst') { this.tone(110, .38, 'sawtooth', .25, 700); this.tone(1800, .45, 'sine', .16, 80); this.burst(.38, 3200, .75); }

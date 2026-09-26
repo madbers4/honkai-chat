@@ -64,8 +64,10 @@ test('bot defensive burst uses 65 percent of max HP instead of the old absolute 
 test('hit fault audio follows the same 60/25 percent health bands as robot lights and keeps legacy samples valid', () => {
   function faultTone(hp, maxHp) {
     const tones = [];
-    GameAudio.prototype.play.call({ tone: (...args) => tones.push(args), burst() {}, metal() {} }, 'hit',
-      { damage: 7, targetHp: hp, targetMaxHp: maxHp });
+    const audio = Object.assign(Object.create(GameAudio.prototype), {
+      tone: (...args) => tones.push(args), burst() {}, metal() {},
+    });
+    audio.play('hit', { damage: 7, targetHp: hp, targetMaxHp: maxHp });
     return tones.find(args => args[2] === 'square')?.[0] ?? null;
   }
   assert.equal(faultTone(109, 180), null);

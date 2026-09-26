@@ -43,6 +43,7 @@ export function createClubJourney(container, { send, leave, toggleSound, toast, 
     <article class="journey-rules" hidden><div class="journey-rule-stamp" aria-hidden="true"><span data-rule-section>УСТАВ</span><b data-rule-number></b><small>НОВОГО<br>БОЙЦОВСКОГО КЛУБА</small></div><div class="journey-rule-copy"><span class="journey-kicker" data-rule-kicker></span><h2 data-rule-title></h2><p data-rule-text></p><div class="journey-rule-dots" aria-hidden="true"></div></div></article>
     <div class="journey-faceoff" hidden></div>
     <div class="journey-round-intro" hidden></div>
+    <article class="journey-referee-intro" hidden aria-live="polite"><span class="journey-kicker" data-referee-round></span><h2>Слово рефери.</h2><p>Сейчас он объявит раунд и даст сигнал к бою.</p><small data-referee-connection>Таймер ждёт его сигнала.</small></article>
     <footer class="journey-footer"><div><span data-stage-caption></span><strong data-stage-status aria-live="polite"></strong></div><button class="button primary" data-next></button></footer>
     <div class="journey-paused" hidden role="status"><strong>ДЕРЖИМ ПАУЗУ</strong><span>Ждём возвращения бойца. История продолжится с этого места.</span></div>`;
   container.append(root);
@@ -196,12 +197,17 @@ export function createClubJourney(container, { send, leave, toggleSound, toast, 
       q('.journey-rules').hidden = story.stage !== 'rules';
       q('.journey-faceoff').hidden = story.stage !== 'faceoff';
       q('.journey-round-intro').hidden = story.stage !== 'roundIntro';
+      q('.journey-referee-intro').hidden = story.stage !== 'refereeIntro';
       q('.journey-paused').hidden = !story.paused;
+      text(q('.journey-paused strong'), story.refereePreparing ? 'ГОТОВИМ МИКРОФОН' : 'ДЕРЖИМ ПАУЗУ');
+      text(q('.journey-paused span'), story.refereePreparing
+        ? 'Рефери проверяет звук и готовится к эфиру. Начало дождётся его.'
+        : 'Ждём возвращения бойца. История продолжится с этого места.');
       workshop?.setVisible?.(story.stage === 'workshop' && tab === 'appearance');
       if (story.stage !== 'faceoff') { faceoff.update({ active: false }); if (lastStage === 'faceoff') voice.cancel(); }
       if (story.stage !== 'roundIntro') roundUI.update({ active: false });
       const next = q('[data-next]'); next.disabled = story.paused;
-      next.hidden = story.stage === 'roundIntro';
+      next.hidden = story.stage === 'roundIntro' || story.stage === 'refereeIntro';
       if (story.stage === 'workshop') {
         const locked = Boolean(story.ready[id]);
         q('[data-name]').disabled = q('[data-character]').disabled = locked; workshop?.setEnabled?.(!locked);
@@ -225,12 +231,20 @@ export function createClubJourney(container, { send, leave, toggleSound, toast, 
         next.disabled = story.paused || story.refereeConnected || ack;
         text(next, story.refereeConnected ? 'СЛУШАЕМ РЕФЕРИ' : ack ? 'ЖДЁМ СОПЕРНИКА…' : story.ruleIndex === RULE_CARDS.length - 1 ? 'ВЫХОД НА АРЕНУ →' : 'ПРАВИЛО ПРИНЯТО →');
         text(q('[data-stage-caption]'), story.refereeConnected ? rule.kind === 'charter' ? 'РЕФЕРИ ЗАЧИТЫВАЕТ УСТАВ' : 'РЕФЕРИ ОБЪЯСНЯЕТ БОЙ' : 'ПРОЧИТАЙТЕ И ПОДТВЕРДИТЕ ВДВОЁМ');
-        text(q('[data-stage-status]'), story.refereeConnected ? 'Он перевернёт карточку после объявления.' : 'Нет рефери? Дайте голос своим машинам.');
+        text(q('[data-stage-status]'), story.refereeConnected ? 'Карточки сменяются сами. Дайте ведущему прочитать.' : 'Нет рефери? Дайте голос своим машинам.');
       } else if (story.stage === 'roundIntro') {
         const info = story.roundIntro;
         if (roundKey !== info.sequenceId) { roundKey = info.sequenceId; roundIntro = buildRoundIntro(snapshot.players, snapshot.room, info.round, info.matchSerial); }
         roundUI.update({ active: true, players: snapshot.players, intro: roundIntro, elapsed: story.elapsed, paused: story.paused });
-        voice.update({ sequenceId: info.sequenceId, elapsed: story.elapsed, paused: story.paused, beats: roundIntro.beats, enabled: !isMuted && !story.refereeConnected });
+        voice.update({ sequenceId: info.sequenceId, elapsed: story.elapsed, paused: story.paused, beats: roundIntro.beats, enabled: !isMuted });
+      } else if (story.stage === 'refereeIntro') {
+        voice.cancel();
+        text(q('[data-referee-round]'), `ПЕРЕД РАУНДОМ ${snapshot.round}`);
+        const remaining = story.refereeIntro?.disconnectedRemaining;
+        text(q('[data-referee-connection]'), story.refereeConnected ? 'Таймер ждёт его сигнала.'
+          : Number.isFinite(remaining) ? `Возвращаем связь с рефери · ${Math.ceil(remaining)} с` : 'Возвращаем связь с рефери…');
+        text(q('[data-stage-caption]'), 'МИКРОФОН У ВЕДУЩЕГО');
+        text(q('[data-stage-status]'), 'После объявления — три секунды до боя.');
       } else if (story.stage === 'faceoff') {
         if (faceoffKey !== story.sequenceId) { faceoffKey = story.sequenceId; beats = buildFaceoff(snapshot.players, snapshot.room); }
         const frame = { active: true, sequenceId: story.sequenceId, elapsed: story.elapsed, paused: story.paused, players: snapshot.players, beats, voiceStatus };

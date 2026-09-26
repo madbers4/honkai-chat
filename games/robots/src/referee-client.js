@@ -14,11 +14,11 @@ export function createRefereeClient({ room: requestedRoom, origin = globalThis.l
   const room = cleanRoomCode(requestedRoom), key = `${REFEREE_SESSION_PREFIX}${sessionScope}:${room}`;
   let socket = null, generation = 0, retryTimer = null, heartbeatTimer = null, connectTimer = null;
   let token = null, stopped = true, welcomed = false, attempts = 0, outageAt = null, pendingPing = null;
-  let baseline = true, highWater = -1, seen = new Set(), currentState = null, status = 'idle';
+  let baseline = true, highWater = -1, seen = new Set(), currentState = null, status = 'idle', lastSnapshotAt = null, prepared = false;
   try { const saved = JSON.parse(storage?.getItem(key) || 'null'); if (saved?.room === room && typeof saved.token === 'string' && saved.token.length <= 128) token = saved.token; } catch {}
   const report = (next, message = '') => { status = next; onStatus({ status, message, room }); };
   const cancelTimers = () => { for (const timer of [retryTimer, heartbeatTimer, connectTimer]) if (timer != null) clearTimer(timer); retryTimer = heartbeatTimer = connectTimer = null; };
-  const forget = () => { token = null; try { storage?.removeItem(key); } catch {} };
+  const forget = () => { token = null; prepared = false; try { storage?.removeItem(key); } catch {} };
   const transmit = packet => {
     if (!socket || socket.readyState !== 1 || stopped) return false;
     try { socket.send(JSON.stringify(packet)); return true; } catch { return false; }
@@ -51,7 +51,7 @@ export function createRefereeClient({ room: requestedRoom, origin = globalThis.l
     connectTimer = setTimer(() => { if (active() && !welcomed) lost(); }, 12000);
     ownSocket.addEventListener('open', () => {
       if (!active()) return;
-      transmit({ type: 'watch', room, ...(token ? { token } : {}) }); heartbeat(epoch);
+      transmit({ type: 'watch', room, preparing: !prepared, ...(token ? { token } : {}) }); heartbeat(epoch);
     });
     ownSocket.addEventListener('message', event => {
       if (!active()) return;
@@ -64,17 +64,22 @@ export function createRefereeClient({ room: requestedRoom, origin = globalThis.l
         try { storage?.setItem(key, JSON.stringify({ room, token })); } catch {}
         report('connected', 'Микрофон у вас');
       } else if (message.type === 'refereeState' && welcomed) {
-        onFavorite(['p1', 'p2'].includes(message.favorite) ? message.favorite : 'neutral');
+        prepared = message.prepared === true;
+        onFavorite(['p1', 'p2'].includes(message.favorite) ? message.favorite : null,
+          { prepared, selectionRequired: message.selectionRequired === true });
       } else if (message.type === 'state' && welcomed && message.state?.room === room) {
         const state = message.state;
         const events = Array.isArray(state.events) ? state.events : [];
-        const freshEvents = baseline ? [] : events.filter(item => item.id != null && !seen.has(item.id) && !(typeof item.id === 'number' && item.id <= highWater));
+        // A stalled tab/socket can deliver an old tail without disconnecting.
+        // Consume it, but never replay a burst of old hits or explosions.
+        const historical = baseline || (lastSnapshotAt != null && now() - lastSnapshotAt > 350);
+        const freshEvents = historical ? [] : events.filter(item => item.id != null && !seen.has(item.id) && !(typeof item.id === 'number' && item.id <= highWater));
         for (const item of events) {
           seen.add(item.id); if (typeof item.id === 'number') highWater = Math.max(highWater, item.id);
         }
         if (seen.size > 512) seen = new Set([...seen].slice(-256));
-        currentState = state; const wasBaseline = baseline; baseline = false;
-        onSnapshot(state, { baseline: wasBaseline, freshEvents });
+        currentState = state; baseline = false; lastSnapshotAt = now();
+        onSnapshot(state, { baseline: historical, freshEvents });
       } else if (message.type === 'notice') onNotice(String(message.message || 'Уведомление клуба'));
       else if (message.type === 'error') halt('error', String(message.message || 'Не удалось открыть пульт.'), /ключ|истекло|не найдена/i.test(message.message || ''));
       else if (message.type === 'pong' && message.t === pendingPing) pendingPing = null;
@@ -91,15 +96,17 @@ export function createRefereeClient({ room: requestedRoom, origin = globalThis.l
     if (!validRoomCode(room)) { report('error', 'Введите шестизначный код комнаты из приглашения.'); return false; }
     stopped = false; welcomed = false; attempts = 0; outageAt = null; if (fresh) forget(); open(); return true;
   }
-  function advanceRules() {
+  function startRound() {
     const story = currentState?.story;
-    if (!welcomed || baseline || status !== 'connected' || story?.stage !== 'rules' || story.paused) return false;
-    return transmit({ type: 'storyAdvance', sequenceId: story.sequenceId, ruleIndex: story.ruleIndex });
+    if (!welcomed || !prepared || baseline || status !== 'connected' || story?.stage !== 'refereeIntro' || story.paused
+      || !story.refereeIntro?.sequenceId || currentState?.phase === 'paused') return false;
+    return transmit({ type: 'refereeStartRound', sequenceId: story.refereeIntro.sequenceId });
   }
   function setFavorite(favorite) {
-    return welcomed && status === 'connected' && ['p1', 'p2', 'neutral'].includes(favorite)
+    return welcomed && status === 'connected' && ['p1', 'p2'].includes(favorite)
       ? transmit({ type: 'refereeFavorite', favorite }) : false;
   }
-  return Object.freeze({ start, restore: () => token ? start() : false, hasSession: () => Boolean(token), advanceRules, setFavorite,
+  function markReady() { return welcomed && status === 'connected' ? transmit({ type: 'refereeReady' }) : false; }
+  return Object.freeze({ start, restore: () => token ? start() : false, hasSession: () => Boolean(token), startRound, setFavorite, markReady,
     stop: () => halt('idle'), forget, getStatus: () => status });
 }

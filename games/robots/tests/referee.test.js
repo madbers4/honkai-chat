@@ -50,10 +50,15 @@ test('club cards use actual rules and names are one-pass safe quoted text', () =
   assert.equal(formatClubText('{actor}', { actor: { name: 'ЛЕДЯНАЯ КОРОЛЕВА' } }), '«ЛЕДЯНАЯ КОРОЛЕВА»');
 });
 
-test('editorial pool has 210 unique readable lines in 35 real contexts', () => {
-  assert.equal(REFEREE_LINES.length, 210); assert.equal(Object.keys(REFEREE_CATEGORIES).length, 35);
-  assert.equal(new Set(REFEREE_LINES.map(l => l.id)).size, 210);
-  assert.equal(new Set(REFEREE_LINES.map(l => l.text)).size, 210);
+test('editorial pool has distinct readable copy for every real context and genuinely different partisan options', () => {
+  assert.equal(new Set(REFEREE_LINES.map(l => l.id)).size, REFEREE_LINES.length);
+  assert.equal(new Set(REFEREE_LINES.map(l => l.text)).size, REFEREE_LINES.length);
+  for (const category of Object.keys(REFEREE_CATEGORIES)) {
+    const lines = REFEREE_LINES.filter(line => line.category === category);
+    assert.ok(lines.length >= 4, `${category} has useful variation`);
+    if (lines.some(line => line.bias !== 'any')) for (const bias of ['any','favored','opposed'])
+      assert.ok(lines.filter(line => line.bias === bias).length >= 2, `${category}/${bias} has independent writing`);
+  }
   for (const line of REFEREE_LINES) {
     assert.ok(REFEREE_CATEGORIES[line.category]);
     assert.ok(line.text.length >= 30 && line.text.length <= 180, `${line.id}: speakable length`);
@@ -143,9 +148,9 @@ test('waiting introduction, real round start, leader and quiet gaps have distinc
   const director = createRefereeDirector(); director.update(snapshot(room));
   room.damage(a, b, V5_ATTACKS.jab, 'light', a.x, { variant: 'jab' }); room.step(1 / 60);
   const result = director.update(snapshot(room)); assert.equal(result.current.category, 'ko'); assert.equal(result.next.category, 'leadChange');
-  const quietFight = fight(8), quiet = createRefereeDirector(); let last;
-  for (const state of trace(quietFight.room, 19)) last = quiet.update(state);
-  assert.equal(last.current.category, 'quiet');
+  const quietFight = fight(8), quiet = createRefereeDirector(); const quietCues = new Set();
+  for (const state of trace(quietFight.room, 25)) { const cue = quiet.update(state).current; if (cue) quietCues.add(cue.category); }
+  assert.ok(quietCues.has('quiet'), 'sustained inactivity receives an observation without requiring a click');
   const assembling = new CombatRoom({ id: 'ASSEMBLE' }), announce = createRefereeDirector();
   assembling.addPlayer('ПЕРВЫЙ'); assert.equal(announce.update(snapshot(assembling)).current, null);
   assembling.addPlayer('ВТОРОЙ'); assert.equal(announce.update(snapshot(assembling)).current.category, 'introduction');
@@ -167,18 +172,20 @@ test('first late snapshot, duplicate event tails, pause, resume and rewind canno
   assert.equal(director.update(snapshot(room)).current, null, 'old event ids are not resurrected by forward seek');
 });
 
-test('one reading holds 5–8 seconds despite fast contacts, while actual KO interrupts immediately', () => {
+test('one complete reading survives fast contacts and KO queues ahead of lesser facts', () => {
   const { room, a, b } = fight(); const director = createRefereeDirector({ seed: 3 }); director.update(snapshot(room));
   room.damage(a, b, V5_ATTACKS.jab, 'light', a.x, { variant: 'jab' });
   const first = director.update(snapshot(room)).current;
-  assert.ok(first.expiresAt - room.elapsed >= 5 && first.expiresAt - room.elapsed <= 8);
+  assert.ok(first.readSeconds >= 4.6 && first.readSeconds <= 10.5);
+  assert.ok(Math.abs(first.expiresAt - first.startedAt - first.readSeconds) < 1e-8);
   for (let i = 0; i < 3; i++) {
     trace(room, .15); room.damage(a, b, V5_ATTACKS.cross, 'light', a.x, { variant: 'cross' });
     assert.equal(director.update(snapshot(room)).current.id, first.id);
   }
   b.hp = 1; room.damage(a, b, V5_ATTACKS.jab, 'light', a.x, { variant: 'jab' }); room.step(1 / 60);
-  const ko = director.update(snapshot(room)).current;
-  assert.equal(ko.category, 'ko'); assert.notEqual(ko.id, first.id);
+  const result = director.update(snapshot(room)), ko = result.next;
+  assert.equal(result.current.id, first.id, 'the host finishes their sentence before the result');
+  assert.equal(ko.category, 'ko');
   assert.ok(ko.text.includes('ИСКРА') || !ko.text.includes('ИНЕЙ'), 'victory is never assigned to the loser');
 });
 

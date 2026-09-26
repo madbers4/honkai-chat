@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { checkRenderTarget, graphicsFailure } from './render-compatibility.js';
 
 /** Three r180's compileAsync polls forever and cannot be cancelled. Compile
  * once, retain this attempt's programs, then own the bounded readiness polling
@@ -25,7 +26,10 @@ export function compileArenaPrograms(renderer, scene, camera, {signal, timeoutMs
           if (renderer.getContext?.().isContextLost()) { abort(); return; }
           for (const program of programs) {
             if (!program) throw new Error('Программа графики недоступна. Повтори попытку.');
-            if (program.isReady()) programs.delete(program);
+            if (program.isReady()) {
+              if (program.diagnostics?.runnable === false) throw graphicsFailure('GL_SHADER', 'Графический драйвер не смог собрать эффекты (GL_SHADER).');
+              programs.delete(program);
+            }
           }
           if (!programs.size) finish(); else poll = setTimeout(check,10);
         } catch (error) { finish(error); }
@@ -84,6 +88,7 @@ export async function warmArenaGraphics({renderer, scene, camera, glow, onProgre
     await compileArenaPrograms(renderer,scene,camera,{signal,timeoutMs});
     assertActive();
     renderer.setRenderTarget(target);
+    checkRenderTarget(renderer);
     glow.render(scene, camera);
     onProgress({kind:'graphics',loaded:2,total:3});
     // Glow material proxies and shadow variants exist after the first draw.
@@ -98,6 +103,6 @@ export async function warmArenaGraphics({renderer, scene, camera, glow, onProgre
 
 /** After reconnect/visibility gaps, consume old event IDs without replaying
  * their explosions, hit freezes or camera kicks. Snapshots still restore poses. */
-export function shouldPresentCombatEvent({historical, hidden, phase} = {}) {
-  return !historical && !hidden && ['fight','roundOver','finishing','matchOver'].includes(phase);
+export function shouldPresentCombatEvent({historical, hidden, phase, renderUnavailable} = {}) {
+  return !historical && !hidden && !renderUnavailable && ['fight','roundOver','finishing','matchOver'].includes(phase);
 }

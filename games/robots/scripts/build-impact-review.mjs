@@ -1,0 +1,14 @@
+import { mkdir, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import { IMPACT_KINDS, synthesizeImpact } from '../src/impact-audio.js';
+const output = path.resolve(process.argv[2] || 'artifacts/contact-foley');
+await mkdir(output, { recursive: true });
+const rate = 32000;
+const sequence = new Float32Array(rate * 4.6);
+for (const [index, kind] of IMPACT_KINDS.entries()) sequence.set(synthesizeImpact(kind), Math.round(rate * (.25 + index * .65)));
+const wav = Buffer.alloc(44 + sequence.length * 2);
+wav.write('RIFF'); wav.writeUInt32LE(wav.length - 8, 4); wav.write('WAVEfmt ', 8); wav.writeUInt32LE(16, 16);
+wav.writeUInt16LE(1, 20); wav.writeUInt16LE(1, 22); wav.writeUInt32LE(rate, 24); wav.writeUInt32LE(rate * 2, 28);
+wav.writeUInt16LE(2, 32); wav.writeUInt16LE(16, 34); wav.write('data', 36); wav.writeUInt32LE(sequence.length * 2, 40);
+sequence.forEach((sample, index) => wav.writeInt16LE(Math.round(Math.max(-1, Math.min(1, sample)) * 32767), 44 + index * 2));
+const target = path.join(output, 'contact-foley.wav'); await writeFile(target, wav); console.log(target);

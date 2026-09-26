@@ -240,7 +240,7 @@ test('overload emits exactly three authoritative pulses for 220 unscaled damage 
   assert.equal(room.player('p2').hp, 0);
   const pulses = room.events.filter(event => event.type === 'ultimatePulse');
   assert.deepEqual(pulses.map(event => event.pulse), [0, 1, 2]);
-  assert.ok(pulses.every(event => event.facing === 1 && event.range === 5.2 && event.variant === 'overload'));
+  assert.ok(pulses.every(event => event.facing === 1 && event.range === ATTACKS.ultimate.range && event.variant === 'overload'));
   assert.equal(new Set(pulses.map(event => event.id)).size, 3);
   assert.deepEqual(room.events.filter(event => event.type === 'hit' && event.variant === 'overload').map(event => event.damage), [45, 55, 120], 'counter windows must not boost overload damage');
   advance(room, 0.4);
@@ -250,7 +250,7 @@ test('overload emits exactly three authoritative pulses for 220 unscaled damage 
   assert.equal(room.player('p1').variant, 'overloadRecovery');
 });
 
-test('an ultimate ignores parry and its telegraph allows an early retreat out of pulse range', () => {
+test('an ultimate ignores parry and reaches retreating fighters at the arena edge', () => {
   const blocked = roomAt(4);
   blocked.player('p1').energy = 100;
   input(blocked, 'p1', { action: 'ultimate' }); advance(blocked, 1.77);
@@ -264,7 +264,7 @@ test('an ultimate ignores parry and its telegraph allows an early retreat out of
   advance(retreat, 0.18);
   input(retreat, 'p2', { action: 'dash', move: 1 });
   advance(retreat, 2.3, { p2: { move: 1 } });
-  assert.equal(retreat.player('p2').hp, MAX_HP);
+  assert.equal(retreat.player('p2').hp, 0);
 });
 
 test('disconnect freezes reward windows and pulse progression; resume does not duplicate an already-fired pulse', () => {

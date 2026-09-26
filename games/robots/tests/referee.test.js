@@ -110,9 +110,9 @@ test('actual defenses, projectile contacts and paid burst are distinguished from
 
 test('ultimate charge and waves reflect actual events, never presumed damage', () => {
   const { room, a } = fight(5.5); a.energy = 100;
-  const states = trace(room, 2, frame => { if (!frame) send(room, a, 'ultimate'); });
+  const states = trace(room, 2.6, frame => { if (!frame) send(room, a, 'ultimate'); if (frame === 85) send(room, room.player('p2'), 'jump'); });
   eventCue(states, 'ultimate', null, 'ultimateCharge'); eventCue(states, 'ultimatePulse', null, 'ultimatePulse');
-  assert.equal(room.player('p2').hp, MAX_HP, 'all waves were out of range');
+  assert.equal(room.player('p2').hp, MAX_HP, 'all waves passed underneath a timed jump');
   assert.ok(REFEREE_LINES.filter(l => l.category === 'ultimatePulse').every(l => !/попал|нанёс|пробил/u.test(l.text)));
 });
 

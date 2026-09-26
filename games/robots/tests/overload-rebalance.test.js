@@ -27,12 +27,12 @@ test('full front block survives all pulses and does not get trapped by overload 
   assert.equal(room.phase, 'fight');
 });
 
-test('leaving marked range, stepping behind or interrupting windup all defeat the overload', () => {
+test('retreat and crossing behind cannot leave the arena-wide overload; grabbing still interrupts', () => {
   const retreat = fight(); retreat.beginAction(retreat.player('p1'), 'ultimate');
   step(retreat, .12); input(retreat, 'p2', { action: 'dash', move: 1 }); step(retreat, 2.4, { p2: { move: 1 } });
-  assert.equal(retreat.player('p2').hp, MAX_HP);
+  assert.equal(retreat.player('p2').hp, 0);
   const behind = fight(); behind.beginAction(behind.player('p1'), 'ultimate'); behind.player('p2').x = -4.6;
-  step(behind, 2.4); assert.equal(behind.player('p2').hp, MAX_HP);
+  step(behind, 2.4); assert.equal(behind.player('p2').hp, 0);
   const interrupted = fight(2.1); interrupted.beginAction(interrupted.player('p1'), 'ultimate');
   step(interrupted, .35); input(interrupted, 'p2', { action: 'heavy', crouch: true }); step(interrupted, .4);
   assert.equal(interrupted.player('p2').hp, MAX_HP); assert.ok(interrupted.events.some(e => e.type === 'grab'), 'a committed close-range grab interrupts the reactor');

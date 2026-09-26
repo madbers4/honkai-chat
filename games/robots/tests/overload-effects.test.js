@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { createOverloadEffects, overloadChargeRadius } from '../src/overload-effects.js';
-import { ATTACKS, ULTIMATE_PULSES } from '../shared/constants.js';
+import { ATTACKS, ULTIMATE_PULSES, ARENA_EDGE, ULTIMATE_ARMOR } from '../shared/constants.js';
 function setup(t) {
   const scene = new THREE.Scene(), fx = createOverloadEffects(scene);
   const state = { room: 'A', round: 1, phase: 'fight', players: [
@@ -23,6 +23,26 @@ test('overload pulses and current cages freeze while paused; no snapshot can inv
   state.phase = 'paused'; for (let i = 0; i < 120; i++) fx.update(1 / 60, i, state);
   assert.equal(beam.children[0].material.uniforms.age.value, before); assert.deepEqual(Array.from(cage.geometry.attributes.position.array), position);
   fx.emit({ ...event, id: 3 }, state); assert.equal(fx.getStats().pulses, 1);
+});
+
+test('beam and warning span both walls; shield visibly loses strength and breaks without leaking after clear', t => {
+  const { fx, scene, state } = setup(t), source = state.players[0];
+  source.x = 8; source.facing = -1; source.ultimateShield = ULTIMATE_ARMOR.capacity;
+  source.actionTime = .6; fx.update(0, 0, state);
+  const shield = scene.getObjectByName('overload-shield-0'), lane = scene.getObjectByName('overload-danger-zone');
+  assert.ok(shield.visible); assert.equal(lane.position.x, 0); assert.equal(lane.scale.x, ARENA_EDGE * 2);
+  source.ultimateShield = 12; fx.update(0, 0, state);
+  assert.equal(scene.getObjectByName('overload-shield-band-0-2').visible, false);
+  source.actionTime = ATTACKS.ultimate.startup;
+  fx.emit({ id: 31, type: 'ultimatePulse', player: 'p1', pulse: 0, facing: -1 }, state);
+  const beam = scene.getObjectByName('ultimate-pulse-0').children[0];
+  assert.equal(beam.parent.position.x + beam.position.x - beam.scale.x / 2, -ARENA_EDGE);
+  assert.equal(beam.parent.position.x + beam.position.x + beam.scale.x / 2, ARENA_EDGE);
+  source.ultimateShield = 0; source.action = 'hit';
+  fx.emit({ id: 32, type: 'ultimateShield', player: 'p1', broken: true }, state); fx.update(.02, 0, state);
+  assert.ok(shield.visible && shield.scale.x > 1.23);
+  fx.clear(); assert.equal(shield.visible, false);
+  fx.update(0, 0, state); assert.equal(shield.visible, false);
 });
 test('historical events, old timestamps and changing room/round cannot replay overload bursts', t => {
   const { fx, state } = setup(t);

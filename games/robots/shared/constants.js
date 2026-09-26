@@ -23,7 +23,7 @@ export const ATTACKS = Object.freeze({
   light: { duration: 0.34, startup: 0.105, active: 0.11, range: 2.35, damage: 7, guardDamage: 12, knockback: 0.9, stun: 0.22 },
   heavy: { duration: 0.81, startup: 0.36, active: 0.17, range: 2.85, damage: 17, guardDamage: 39, knockback: 4.6, stun: 0.43 },
   special: { duration: 0.78, startup: 0.30, active: 0.06, energy: 25, cooldown: 2.6, damage: 28, guardDamage: 28, knockback: 2.8, stun: 0.24, speed: 11.5, height: 1.35, life: 1.5 },
-  ultimate: { duration: 3.05, startup: 1.85, active: 0.46, range: 5.2, hitHeight: 1.6, energy: 80, cooldown: 8, damage: 220, guardDamage: 86, knockback: 5.4, stun: 0.38 },
+  ultimate: { duration: 3.05, startup: 1.85, active: 0.46, range: ARENA_EDGE * 2, hitHeight: 1.6, energy: 80, cooldown: 8, damage: 220, guardDamage: 86, knockback: 5.4, stun: 0.38 },
   dash: { duration: 0.31, cooldown: 1.1, speed: 8.8 },
 });
 
@@ -41,9 +41,9 @@ export const ULTIMATE_PULSES = Object.freeze([
 ]);
 // Compatibility for external copy consumers; the control is now an immediate tap.
 export const ULTIMATE_HOLD_SECONDS = 0;
-// A tapped activation commits the cost, not invulnerability. Direct damage can
-// interrupt the reactor, including jabs and projectiles, throughout the charge.
-export const ULTIMATE_ARMOR = Object.freeze({ enabled: false, until: 0, breakers: Object.freeze(['grab', 'launcher', 'shockwave', 'slam']) });
+// Absorbs one ordinary jab → cross → rake series (6 + 8 + 12 damage).
+// Abilities disrupt the reactor immediately; stronger melee spends real damage.
+export const ULTIMATE_ARMOR = Object.freeze({ enabled: true, capacity: 26, until: ATTACKS.ultimate.duration, breakers: Object.freeze(['bolt', 'shockwave', 'grab']) });
 
 export const V3_RULES = Object.freeze({
   grabStartup: 0.26, grabActive: 0.10, grabDuration: 0.95, grabRange: 2.5,

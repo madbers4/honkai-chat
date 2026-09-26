@@ -39,8 +39,8 @@ test('jumping immediately at the warning is too early, while all three unavoided
   assert.equal(room.phase, 'roundOver');
 });
 
-test('a delayed real jab or incoming bolt interrupts the visible charge, while a miss does not', () => {
-  for (const attack of ['light', 'special']) for (const facing of [-1, 1]) {
+test('a delayed incoming bolt interrupts the visible charge, while a missed jab does not', () => {
+  for (const attack of ['special']) for (const facing of [-1, 1]) {
     const { room, a, b, log } = fight(attack === 'light' ? 2.2 : 4, facing);
     b.energy = 100; send(room, a, 'ultimate'); frames(room, 60);
     send(room, b, attack); frames(room, 95);
@@ -54,13 +54,13 @@ test('a delayed real jab or incoming bolt interrupts the visible charge, while a
   assert.equal(miss.log.filter(e => e.type === 'ultimatePulse').length, 3);
 });
 
-test('retreat and front guard remain valid fallbacks if a player misses the jumping cue', () => {
+test('front guard remains a fallback, but retreat cannot evade the arena-wide discharge', () => {
   for (const facing of [-1, 1]) for (const response of ['dash', 'block']) {
     const { room, a, b, log } = fight(4, facing);
     send(room, a, 'ultimate'); frames(room, 85);
     send(room, b, response === 'dash' ? 'dash' : null, { move: response === 'dash' ? facing : 0, block: response === 'block' });
     frames(room, 70, () => send(room, b, null, { move: response === 'dash' ? facing : 0, block: response === 'block' }));
-    assert.equal(b.hp, MAX_HP - (response === 'block' ? 28 : 0));
+    assert.equal(b.hp, response === 'block' ? MAX_HP - 28 : 0);
     assert.equal(log.filter(e => e.type === 'ultimatePulse').length, 3);
   }
 });

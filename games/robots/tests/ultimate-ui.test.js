@@ -17,7 +17,7 @@ test('tap prompt reflects legal availability and its charge ring follows the ser
   player.defenseOnly = 0; player.action = 'ultimate'; player.actionTime = ATTACKS.ultimate.startup / 2; player.energy = 0; player.cooldowns.ultimate = 8;
   ui.update(state, player.id); assert.equal(title.textContent, 'ЗАРЯДКА'); assert.equal(properties['--charge'], '0.5');
   ui.hold({ active: false, amount: 0 }); assert.equal(properties['--charge'], '0.5');
-  assert.ok(classes.has('arming')); assert.match(hint.textContent, /УДАР ПРЕРВЁТ/); assert.doesNotMatch(hint.textContent, /БРОНЯ/);
+  assert.ok(classes.has('arming')); assert.match(hint.textContent, /ЩИТ.*ИМПУЛЬС/);
   player.actionTime = ATTACKS.ultimate.startup; ui.update(state, player.id); assert.equal(title.textContent, 'РАЗРЯД'); assert.ok(classes.has('discharging'));
   assert.equal(properties['--charge'], '1'); assert.ok(!classes.has('arming'));
 });

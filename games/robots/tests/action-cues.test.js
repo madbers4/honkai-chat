@@ -44,13 +44,14 @@ for (const facing of [-1, 1]) test(`ultimate jump cue corresponds to a real esca
   }
 });
 
-test('ultimate prompts expire with the charge and never tell a stunned, airborne or out-of-lane player to jump', () => {
+test('ultimate prompts cover both arena ends but never tell a stunned or airborne player to jump', () => {
   const { room, a, b } = match(); a.action = 'ultimate'; a.actionTime = ATTACKS.ultimate.startup - .40;
   const snapshot = () => room.snapshot();
   assert.equal(current(room, b)?.key, 'overload-jump');
   for (const remaining of [.80, .10, 0]) { a.actionTime = ATTACKS.ultimate.startup - remaining; assert.notEqual(current(room, b)?.key, 'overload-jump'); }
   a.actionTime = ATTACKS.ultimate.startup - .40;
-  for (const patch of [{ y: .5 }, { action: 'hit' }, { landingRecovery: .1 }, { grabbedBy: a.id }, { x: a.x - 2 }, { x: a.x + 6 }]) {
+  for (const x of [-10.8, 10.8]) { const state = snapshot(); state.players[1].x = x; assert.equal(planActionCue(state, b.id)?.key, 'overload-jump'); }
+  for (const patch of [{ y: .5 }, { action: 'hit' }, { landingRecovery: .1 }, { grabbedBy: a.id }]) {
     const state = snapshot(); Object.assign(state.players[1], patch); assert.notEqual(planActionCue(state, b.id)?.key, 'overload-jump');
   }
   a.action = 'hit'; assert.equal(overloadThreat(snapshot(), b.id), null);

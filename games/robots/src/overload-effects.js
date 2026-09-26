@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { ATTACKS, ULTIMATE_PULSES } from '../shared/constants.js';
+import { ATTACKS, ULTIMATE_PULSES, ARENA_EDGE, ULTIMATE_ARMOR } from '../shared/constants.js';
 
 const amber = new THREE.Color('#ffc166'), cyan = new THREE.Color('#6feaff');
 const clamp = THREE.MathUtils.clamp;
@@ -28,6 +28,8 @@ export function createOverloadEffects(scene) {
   let low = false, reduced = false, disposed = false, pulseCursor = 0, clock = 0, context = null;
   const seen = new Set(), resources = new Set(), stats = { pulses: 0, contacts: 0 };
   const ringGeometry = new THREE.RingGeometry(.94, 1, 64), planeGeometry = new THREE.PlaneGeometry(1, 1);
+  const shieldGeometry = new THREE.SphereGeometry(1, 20, 12);
+  resources.add(shieldGeometry);
   ringGeometry.name = 'overload-conductor-ring'; planeGeometry.name = 'ultimate-beam';
   resources.add(ringGeometry); resources.add(planeGeometry);
   function material(shader, color = amber) {
@@ -55,8 +57,12 @@ export function createOverloadEffects(scene) {
     const lane = new THREE.Mesh(planeGeometry, material(laneShader)); lane.name = 'overload-danger-zone'; lane.rotation.x = -Math.PI / 2; lane.visible = false; scene.add(lane);
     const ground = ring(); ground.name = 'overload-charge-ring'; ground.rotation.x = -Math.PI / 2; ground.visible = false; scene.add(ground);
     const cage = arcMesh(); cage.name = 'overload-victim-current'; cage.visible = false; scene.add(cage);
+    const shield = new THREE.Mesh(shieldGeometry, ringMaterial()); shield.name = `overload-shield-${i}`;
+    shield.material.wireframe = true; shield.visible = false; scene.add(shield);
+    const shieldBands = [ring(), ring(), ring()];
+    shieldBands.forEach((band, j) => { band.name = `overload-shield-band-${i}-${j}`; band.visible = false; scene.add(band); });
     const light = new THREE.PointLight(amber, 0, 3.2, 2); light.name = `OverloadSpill_${i}`; scene.add(light);
-    return { group, rings, arcs, lane, ground, cage, light, owner: null, life: 0, duration: .36, power: 0, contactTint: amber.clone(), fallbackAnchor: new THREE.Vector3() };
+    return { group, rings, arcs, lane, ground, cage, shield, shieldBands, shieldFlash: 0, shieldBreak: 0, light, owner: null, life: 0, duration: .36, power: 0, contactTint: amber.clone(), fallbackAnchor: new THREE.Vector3() };
   });
   const pulses = Array.from({ length: 6 }, () => {
     const group = new THREE.Group(), beam = new THREE.Mesh(planeGeometry, material(beamShader)); group.add(beam);
@@ -70,7 +76,7 @@ export function createOverloadEffects(scene) {
     return p && Number.isFinite(p.x + p.y + p.z) ? p : rig(player).fallbackAnchor.set((player?.x || 0) + (key === 'muzzle' ? (player?.facing || 1) * .65 : 0), (player?.y || 0) + 1.25, .35);
   }
   function clear() {
-    for (const s of rigs) { s.group.visible = s.lane.visible = s.ground.visible = s.cage.visible = false; s.life = 0; s.light.intensity = 0; }
+    for (const s of rigs) { s.group.visible = s.lane.visible = s.ground.visible = s.cage.visible = s.shield.visible = false; s.shieldBands.forEach(b => { b.visible = false; }); s.shieldFlash = s.shieldBreak = 0; s.life = 0; s.light.intensity = 0; }
     for (const s of pulses) { s.group.visible = false; s.life = 0; }
     seen.clear(); pulseCursor = 0; clock = 0;
   }
@@ -80,7 +86,7 @@ export function createOverloadEffects(scene) {
     context = key;
   }
   function emit(event, state) {
-    const handled = event.type === 'ultimate' || event.type === 'ultimatePulse' || ['hit', 'block'].includes(event.type) && event.variant === 'overload';
+    const handled = event.type === 'ultimate' || event.type === 'ultimateShield' || event.type === 'ultimatePulse' || ['hit', 'block'].includes(event.type) && event.variant === 'overload';
     if (!handled) return null;
     useContext(state);
     if (disposed || event.presentationHistorical || state?.phase === 'paused') return 0;
@@ -88,15 +94,19 @@ export function createOverloadEffects(scene) {
     if (key && seen.has(key)) return 0;
     if (key) { seen.add(key); if (seen.size > 256) seen.delete(seen.values().next().value); }
     const source = state?.players?.find(p => p.id === event.player), color = tint(source);
+    if (event.type === 'ultimateShield') {
+      if (source) { const s = rig(source); s.shieldFlash = .16; s.shieldBreak = event.broken ? .25 : 0; }
+      return event.broken ? .10 : .025;
+    }
     if (event.type === 'ultimate') return 0;
     if (event.type === 'ultimatePulse') {
       const pulse = clamp(event.pulse || 0, 0, 2), age = source?.action === 'ultimate' ? (source.actionTime || 0) - ULTIMATE_PULSES[pulse].time : source?.actionTime || 0;
       if (!source || age > .28 || age < -.08 || !(source.action === 'ultimate' || source.action === 'victory' && source.variant === 'overloadRecovery')) return 0;
       const s = pulses[pulseCursor++ % pulses.length], p = anchor(source, 'muzzle');
       s.final = pulse === 2; s.duration = s.final ? .43 : .23; s.life = s.duration;
-      s.facing = event.facing === -1 ? -1 : 1; s.length = clamp((event.range || ATTACKS.ultimate.range) - Math.abs(p.x - source.x), 1, 6);
+      s.facing = event.facing === -1 ? -1 : 1; s.length = ARENA_EDGE * 2;
       s.group.name = `ultimate-pulse-${pulse}`; s.group.visible = true; s.group.position.set(p.x, p.y, p.z + .035);
-      s.beam.position.x = s.facing * s.length / 2; s.beam.scale.set(s.length, s.final ? 1.65 : .62, 1);
+      s.beam.position.x = -p.x; s.beam.scale.set(s.length, s.final ? 1.65 : .62, 1);
       s.beam.material.uniforms.tint.value.copy(color); s.beam.material.uniforms.age.value = 0;
       s.beam.material.uniforms.power.value = reduced ? .5 : 1; s.beam.material.uniforms.reduced.value = reduced ? 1 : 0;
       for (const r of s.rings) r.material.color.copy(color).multiplyScalar(2.1);
@@ -127,10 +137,23 @@ export function createOverloadEffects(scene) {
     useContext(state);
     const paused = state?.phase === 'paused';
     const step = paused ? 0 : clamp(Number.isFinite(dt) ? dt : 0, 0, .05); clock += step;
-    for (const s of rigs) { s.group.visible = s.lane.visible = s.ground.visible = false; s.light.intensity = 0; }
+    for (const s of rigs) { s.group.visible = s.lane.visible = s.ground.visible = s.shield.visible = false; s.shieldBands.forEach(b => { b.visible = false; }); s.light.intensity = 0; }
     for (const player of state?.players ?? []) {
       const s = rig(player), color = tint(player), p = anchor(player, 'core');
       const active = player.action === 'ultimate' && ['fight', 'paused'].includes(state?.phase);
+      s.shieldFlash = Math.max(0, s.shieldFlash - step); s.shieldBreak = Math.max(0, s.shieldBreak - step);
+      const strength = active ? clamp((player.ultimateShield || 0) / ULTIMATE_ARMOR.capacity, 0, 1) : 0;
+      s.shield.visible = strength > 0 || s.shieldBreak > 0;
+      s.shield.position.set(player.x || 0, (player.y || 0) + 1.15, .1);
+      const expand = s.shieldBreak > 0 ? (1 - s.shieldBreak / .25) * .4 : 0;
+      s.shield.scale.set(1.23 + expand, 1.08 + expand * .2, .9 + expand);
+      s.shield.material.color.copy(cyan).multiplyScalar(2.1);
+      s.shield.material.opacity = s.shieldBreak > 0 ? s.shieldBreak * .65 : .035 + strength * .035 + s.shieldFlash * .7;
+      s.shieldBands.forEach((band, i) => {
+        band.visible = strength > i / 3; band.position.copy(s.shield.position);
+        band.rotation.set(.14 * (i - 1), .15 * (i - 1), 0); band.scale.setScalar(1.20 + i * .08);
+        band.material.color.copy(cyan).multiplyScalar(1.8); band.material.opacity = (.16 + s.shieldFlash) * clamp(strength * 3 - i, 0, 1);
+      });
       if (active) {
         const t = Math.max(0, player.actionTime || 0), load = clamp(t / ATTACKS.ultimate.startup, 0, 1);
         const charging = t < ATTACKS.ultimate.startup;
@@ -146,8 +169,8 @@ export function createOverloadEffects(scene) {
           r.material.opacity = (i ? .13 + load * .14 : .42 + load * .32) * (reduced ? .8 : 1);
         });
         s.arcs.material.color.copy(color).multiplyScalar(2.2); arcs(s.arcs, t, (.22 + load * .75) * fade);
-        s.lane.visible = fade > 0; s.lane.position.set(player.x + (player.facing || 1) * ATTACKS.ultimate.range / 2, .052, 0);
-        s.lane.scale.set(ATTACKS.ultimate.range * (player.facing || 1), 1.30, 1); s.lane.material.uniforms.tint.value.copy(color);
+        s.lane.visible = fade > 0; s.lane.position.set(0, .052, 0);
+        s.lane.scale.set(ARENA_EDGE * 2, 1.30, 1); s.lane.material.uniforms.tint.value.copy(color);
         s.lane.material.uniforms.power.value = (.45 + load * .4) * fade;
         s.ground.visible = charging; s.ground.position.set(player.x, .057, 0); s.ground.scale.setScalar(1.20 - load * .86);
         s.ground.material.color.copy(color).multiplyScalar(1.6); s.ground.material.opacity = (.2 + load * .35) * fade;
@@ -167,7 +190,7 @@ export function createOverloadEffects(scene) {
       const age = 1 - s.life / s.duration; s.beam.material.uniforms.age.value = age;
       s.rings.forEach((r, i) => {
         r.visible = !low && (i === 0 || !reduced); const progress = clamp(age * 1.6 - i * .19, 0, 1);
-        r.position.set(s.facing * s.length * progress, 0, .025); r.rotation.y = .8 * s.facing;
+        r.position.set(-s.group.position.x + s.facing * (progress - .5) * s.length, 0, .025); r.rotation.y = .8 * s.facing;
         r.scale.setScalar((s.final ? .45 : .28) * (1 - age * .55) * (1 + i * .13));
         r.material.opacity = Math.sin(progress * Math.PI) * (1 - age) * (reduced ? .3 : .7);
       });
@@ -175,5 +198,5 @@ export function createOverloadEffects(scene) {
   }
   return { emit, update, clear, setQuality(value) { low = value === 'low'; }, setReducedMotion(value) { reduced = Boolean(value); },
     getStats() { return { ...stats, activePulses: pulses.filter(s => s.life > 0).length, capacity: pulses.length, lights: rigs.length, resources: resources.size }; },
-    dispose() { if (disposed) return; clear(); disposed = true; for (const s of rigs) { scene.remove(s.group, s.ground, s.lane, s.cage, s.light); s.light.dispose(); } for (const s of pulses) scene.remove(s.group); for (const value of resources) value.dispose(); resources.clear(); } };
+    dispose() { if (disposed) return; clear(); disposed = true; for (const s of rigs) { scene.remove(s.group, s.ground, s.lane, s.cage, s.shield, ...s.shieldBands, s.light); s.light.dispose(); } for (const s of pulses) scene.remove(s.group); for (const value of resources) value.dispose(); resources.clear(); } };
 }

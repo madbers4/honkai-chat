@@ -5,7 +5,7 @@ import WebSocket from 'ws';
 import { startServer } from '../server/index.js';
 import { MAX_HP } from '../shared/constants.js';
 
-test('two sockets see a high crossover, a whiff chain and a tapped reactor interrupted by a jab', { timeout: 10000 }, async t => {
+test('two sockets see a high crossover, a whiff chain, reactor shield damage and interruption by a bolt', { timeout: 10000 }, async t => {
   const app = await startServer({ port: 0, host: '127.0.0.1', autoTick: false });
   t.after(() => app.close());
   const clients = [];
@@ -82,14 +82,23 @@ test('two sockets see a high crossover, a whiff chain and a tapped reactor inter
   const beforeUltimate = game.nextEventId - 1;
   await send(first, a, 'ultimate'); advance(.10);
   await send(second, b, 'light'); advance(.20);
-  assert.ok(a.hp < MAX_HP, 'the charging robot still takes real damage');
-  assert.equal(a.action, 'hit', 'ordinary jab interrupts the tapped reactor');
+  assert.equal(a.hp, MAX_HP, 'first jab is absorbed by the reactor shield');
+  assert.equal(a.action, 'ultimate');
+  assert.equal(a.ultimateShield, 20);
   for (const ws of clients) {
     await deliver(ws);
     const player = ws.packets.findLast(packet => packet.type === 'state').state.players[0];
-    assert.ok(player.hp < MAX_HP);
-    assert.equal(player.action, 'hit'); assert.equal(player.ultimateArmor, false);
-    assert.ok(player.actionTime < .18, 'both clients receive the actual short hit reaction');
+    assert.equal(player.hp, MAX_HP);
+    assert.equal(player.action, 'ultimate'); assert.equal(player.ultimateArmor, true);
+    assert.equal(player.ultimateShield, 20, 'both clients see damage to shield strength');
+  }
+  advance(.22); b.energy = 100;
+  await send(second, b, 'special'); advance(.40);
+  assert.ok(a.hp < MAX_HP); assert.equal(a.action, 'hit'); assert.equal(a.ultimateShield, 0);
+  for (const ws of clients) {
+    await deliver(ws);
+    const player = ws.packets.findLast(packet => packet.type === 'state').state.players[0];
+    assert.equal(player.ultimateArmor, false); assert.equal(player.ultimateShield, 0);
   }
   advance(2.7);
   assert.equal(b.hp, MAX_HP);

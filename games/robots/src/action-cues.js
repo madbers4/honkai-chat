@@ -10,8 +10,7 @@ export function overloadThreat(state, playerId) {
   const player = state.players?.find(p => p.id === playerId), enemy = state.players?.find(p => p.id !== playerId);
   if (!player || !enemy || player.hp <= 0 || player.connected === false || enemy.hp <= 0 || enemy.action !== 'ultimate') return null;
   const remaining = ATTACKS.ultimate.startup - enemy.actionTime;
-  const distance = (player.x - enemy.x) * enemy.facing;
-  if (!(remaining > 0) || distance < -.10 || distance > ATTACKS.ultimate.range + .35 || player.y - enemy.y > ATTACKS.ultimate.hitHeight) return null;
+  if (!(remaining > 0) || player.y - enemy.y > ATTACKS.ultimate.hitHeight) return null;
   return { remaining, jumpNow: remaining <= .60 && remaining >= .15 };
 }
 

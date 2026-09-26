@@ -1,7 +1,7 @@
 import {
   ACTIONS, ARENA_EDGE, ATTACKS, COMBAT_WINDOWS, COUNTDOWN_SECONDS, GRAVITY, INPUT_TIMEOUT_SECONDS, MAX_HP,
   JUMP_SPEED, PLAYER_RADIUS, ROUND_BREAK_SECONDS, ROUND_SECONDS, ULTIMATE_PULSES, V3_RULES, V5_ATTACKS, V5_RULES, FINISH_RULES, WINS_TO_MATCH, VARIANT_ATTACKS, WALK_SPEED,
-  canAttemptAirDash, canAttemptBurst, canAttemptFeint, clamp, HEAVY_RULES, AIR_MOVE_SPEED,
+  canAttemptAirDash, canAttemptBurst, canAttemptFeint, clamp, HEAVY_RULES, AIR_MOVE_SPEED, ULTIMATE_ARMOR,
 } from '../shared/constants.js';
 import { cleanCharacter } from '../shared/fighter-profile.js';
 import { normalizeCustomization } from '../shared/robot-customization.js';
@@ -24,7 +24,7 @@ function makePlayer(id, name, bot = false, character = '', customization) {
     customization: normalizeCustomization(customization),
     x: id === 'p1' ? -2.7 : 2.7, y: 0, vx: 0, vy: 0, facing: id === 'p1' ? 1 : -1,
     hp: MAX_HP, maxHp: MAX_HP, energy: 40, guard: 100, wins: 0, action: 'idle', actionTime: 0,
-    actionDuration: 0, variant: '', combo: 0, cooldowns: { dash: 0, special: 0, ultimate: 0, burst: 0 },
+    actionDuration: 0, variant: '', combo: 0, ultimateShield: 0, cooldowns: { dash: 0, special: 0, ultimate: 0, burst: 0 },
     counterWindow: 0, launchWindow: 0, parryWindow: 0, parryCooldown: 0,
     defenseOnly: 0, groundHeavy: false, heavyHopStarted: false, slamBounceUsed: false,
     traversalJump: false, traversalSide: 0, traversalLandingSide: 0,
@@ -209,6 +209,7 @@ export class CombatRoom {
     if (['ko', 'recover', 'defeated', 'destroyed'].includes(action)) player.defenseOnly = 0;
     player.actionTime = 0;
     player.actionDuration = duration;
+    player.ultimateShield = action === 'ultimate' ? ULTIMATE_ARMOR.capacity : 0;
     player.hitTargets.clear();
     player.ultimatePulses.clear();
     player.projectileLaunched = false;
@@ -604,13 +605,21 @@ export class CombatRoom {
     const bufferedDefense = isDefensiveAction(target.queued?.action) && target.queued.expires >= this.combatTime ? target.queued : null;
     if (counter) attacker.counterWindow = 0;
     if (punish) target.punishConsumed = true;
-    target.hp = Math.max(0, target.hp - dealt);
+    const shieldBefore = target.action === 'ultimate' ? target.ultimateShield : 0;
+    const absorbs = ultimateArmored(target, kind, variant, metadata);
+    const absorbed = absorbs ? Math.min(shieldBefore, dealt) : 0;
+    if (shieldBefore > 0) {
+      target.ultimateShield = absorbs ? Math.max(0, shieldBefore - dealt) : 0;
+      this.event('ultimateShield', target, { x: target.x, y: target.y + 1.25, remaining: target.ultimateShield,
+        capacity: ULTIMATE_ARMOR.capacity, broken: target.ultimateShield === 0, variant });
+    }
+    target.hp = Math.max(0, target.hp - (dealt - absorbed));
     const armored = ultimateArmored(target, kind, variant, metadata);
     if (!armored) target.vx = direction * attack.knockback;
     if (!armored) grantHeavyAdvantage(target, variant);
     const slamBounce = !armored && applySlamBounce(target, variant);
     const empLaunch = variant === 'shockwave' && target.y < VARIANT_ATTACKS.shockwave.hitHeight && !target.airLaunchUsed;
-    const launch = (variant === 'launcher' || empLaunch) && !target.airLaunchUsed;
+    const launch = !armored && (variant === 'launcher' || empLaunch) && !target.airLaunchUsed;
     if (launch) {
       target.vy = empLaunch ? VARIANT_ATTACKS.shockwave.launchSpeed : V5_ATTACKS.launcher.launchSpeed;
       target.y = Math.max(0.03, target.y);
@@ -647,7 +656,7 @@ export class CombatRoom {
     }
     const stun = kind === 'ultimate' ? attack.stun : airborneBefore && target.airHits > V5_RULES.airHitLimit ? 0.05 : airborneBefore && !launch ? Math.min(attack.stun, 0.24) : attack.stun;
     if (!armored) this.setAction(target, 'hit', stun, kind === 'ultimate' ? 'overloadHit' : metadata.throw ? 'thrown' : empLaunch ? 'empLift' : variant === 'bolt' ? 'electrified' : launch ? 'launched' : slamBounce ? 'slamBounce' : isGroundHeavy(variant) ? 'heavyStagger' : '');
-    this.event('hit', attacker, { x: target.x, y: target.y + 1.15, target: target.id, damage: dealt, combo: attacker.combo, action: kind, variant, counter, punish, armored, airborne: airborneBefore || launch });
+    this.event('hit', attacker, { x: target.x, y: target.y + 1.15, target: target.id, damage: dealt - absorbed, shieldDamage: absorbed, combo: attacker.combo, action: kind, variant, counter, punish, armored, airborne: airborneBefore || launch });
     if (launch) this.event('launch', attacker, { x: target.x, y: target.y + 1.15, target: target.id, variant, velocity: target.vy });
     this.lastHit = { player: attacker.id, target: target.id, variant, combo: attacker.combo, at: this.combatTime };
     return true;
@@ -680,10 +689,10 @@ export class CombatRoom {
       else if (enemy.input.block && enemy.y === 0 && player.y === 0 && distance < 2.45 && this.random() < 0.44) {
         action = 'heavy';
         player.botCrouchTimer = 0.35;
-      } else if (enemy.action === 'ultimate' && enemy.actionTime > 0.22 && distance < 5.4 && this.random() < 0.62) {
-        player.botRetreatTimer = 0.75;
+      } else if (enemy.action === 'ultimate' && enemy.actionTime > ATTACKS.ultimate.startup - .55 && enemy.actionTime < ATTACKS.ultimate.startup - .15 && this.random() < 0.62) {
+        player.botRetreatTimer = 0;
         player.botBlockTimer = 0;
-        if (player.cooldowns.dash <= 0) action = 'dash';
+        action = 'jump';
       } else if (incoming && this.random() < 0.62) action = 'jump';
       else if (player.jumpCancelWindow > 0 && this.random() < 0.78) action = 'jump';
       else if (player.y > 0.42 && player.cancelWindow > 0 && distance < 3.2) action = player.airActions < 3 ? 'light' : 'heavy';
@@ -821,8 +830,9 @@ export class CombatRoom {
         if (player.actionTime + 1e-8 < properties.time || player.ultimatePulses.has(pulse)) continue;
         player.ultimatePulses.add(pulse);
         this.event('ultimatePulse', player, { y: player.y + 1.35, pulse, facing: player.facing, range: attack.range, variant: 'overload', damage: properties.damage });
-        const horizontal = (target.x - player.x) * player.facing;
-        if (horizontal > -0.3 && horizontal < attack.range && Math.abs(target.y - player.y) < attack.hitHeight) {
+        // Reactor discharge fills the arena in both directions. Only vertical
+        // clearance avoids it: crouching and crossing behind are still in lane.
+        if (Math.abs(target.y - player.y) < attack.hitHeight) {
           this.damage(player, target, { ...attack, ...properties }, 'ultimate', player.x, { variant: 'overload' });
         }
       }
@@ -1073,6 +1083,7 @@ export class CombatRoom {
         hp: roundNumber(player.hp), maxHp: player.maxHp, energy: roundNumber(player.energy), guard: roundNumber(player.guard), wins: player.wins,
         action: player.action, variant: player.variant, actionTime: roundNumber(player.actionTime), actionDuration: player.actionDuration,
         ultimateArmor: ultimateArmored(player, 'light', 'jab'),
+        ultimateShield: roundNumber(player.ultimateShield),
         counterWindow: roundNumber(player.counterWindow), launchWindow: roundNumber(player.launchWindow), jumpCancelWindow: roundNumber(player.jumpCancelWindow), parryCooldown: roundNumber(player.parryCooldown),
         defenseOnly: roundNumber(player.defenseOnly), groundHeavy: player.groundHeavy, slamBounceUsed: player.slamBounceUsed,
         landedTime: player.landedTime,

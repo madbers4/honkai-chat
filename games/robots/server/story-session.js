@@ -134,7 +134,7 @@ export class StorySession {
     }
     // The opening sequence persists across stages. A delayed rules packet must
     // not be reinterpreted as an explicit vote to skip the faceoff.
-    if (this.stage === 'faceoff' && ruleIndex === this.ruleCount && this.elapsed >= 3 && actor !== 'referee' && this.game.player(actor)?.connected) {
+    if (this.stage === 'faceoff' && ruleIndex === this.ruleCount && this.elapsed + 1e-8 >= 3 && actor !== 'referee' && this.game.player(actor)?.connected) {
       this.skipVotes.add(actor);
       if (this.allMarked(this.skipVotes)) this.startFight();
       return true;

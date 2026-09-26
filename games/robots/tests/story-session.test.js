@@ -12,6 +12,19 @@ const create = (training = false) => {
   return { game, story, advance };
 };
 
+test('faceoff skip accepts exactly 180 fixed ticks despite floating point accumulation', () => {
+  const { story, advance } = create();
+  story.ready('p1'); story.ready('p2');
+  advance('p1'); advance('p2'); advance('p1'); advance('p2');
+  for (let tick = 0; tick < 179; tick++) story.step(1 / 60);
+  assert.equal(advance('p1'), false, 'cannot skip before three seconds');
+  story.step(1 / 60);
+  assert.equal(story.snapshot().elapsed, 3);
+  assert.equal(advance('p1'), true);
+  assert.equal(advance('p2'), true);
+  assert.equal(story.stage, 'complete');
+});
+
 test('both fighters must finish the workshop and acknowledge each rule before the timed faceoff', () => {
   const { game, story, advance } = create();
   story.ready('p1'); assert.equal(story.stage, 'workshop'); assert.equal(game.phase, 'waiting');

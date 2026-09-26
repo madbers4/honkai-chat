@@ -1,5 +1,6 @@
 import { reactionLines } from "./commentary";
 import { dialogue } from "./dialogue";
+import { refreshSavedCopy } from "./retired-copy";
 import { BONUS_MS, MAX_ATTEMPTS, type Game } from "./game";
 import {
   difficulties,
@@ -211,7 +212,16 @@ export function parseGame(raw: string | null): Game | null {
             (300000 - value.remaining),
         );
     }
-    return value as unknown as Game;
+    const game = value as unknown as Game;
+    return {
+      ...game,
+      messages: game.messages.map((message) => ({
+        ...message,
+        text: refreshSavedCopy(message.text),
+      })),
+      pending: game.pending.map(refreshSavedCopy),
+      commentary: { ...game.commentary, text: refreshSavedCopy(game.commentary.text) },
+    };
   } catch {
     return null;
   }

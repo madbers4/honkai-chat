@@ -33,8 +33,8 @@ async function enterBoard(page: Page, level = 0) {
   await page.getByRole("button", { name: "Войти на стрим" }).click();
   await flushChat(page);
   for (const name of [
-    "Искра. Немедленно отключи бомбу.",
-    "Привет. Как дела? Отключи бомбу.",
+    "Искра. Немедленно отключи —.",
+    "Привет. Как дела? Отключи —.",
     "Ты его получила. Давай инструкцию.",
     "Понял. Открывай панель.",
   ]) {
@@ -137,7 +137,7 @@ test("five failures use five attempts; the clock pauses for messages and between
         .click();
   }
   await expect(
-    page.getByRole("heading", { name: "Взрывной контент." }),
+    page.getByRole("heading", { name: "— контент." }),
   ).toBeVisible();
   await expect(page.getByRole("button", { name: /Попытка/ })).toHaveCount(0);
   await page.screenshot({
@@ -199,7 +199,7 @@ test("chat is untimed, messages type in sequence, game timeout gives a single bo
   await page.clock.fastForward(60001);
   await flushChat(page);
   await expect(
-    page.getByRole("heading", { name: "Взрывной контент." }),
+    page.getByRole("heading", { name: "— контент." }),
   ).toBeVisible();
   await page.reload();
   expect((await saved(page)).lossReason).toBe("time");
